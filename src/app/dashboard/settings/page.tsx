@@ -1,7 +1,6 @@
-
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import {
   useUser,
   useFirestore,
@@ -32,7 +31,7 @@ export default function SettingsPage() {
   const firestore = useFirestore()
   const { toast } = useToast()
 
-  const userDocRef = user ? doc(firestore, "users", user.uid) : null
+  const userDocRef = useMemo(() => (user ? doc(firestore, "users", user.uid) : null), [user, firestore]);
   const { data: userProfile, loading: profileLoading } = useDoc<Staff>(userDocRef)
 
   const [formData, setFormData] = useState<Partial<Staff>>({})
