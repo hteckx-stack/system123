@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { DataTableRowActions } from "./data-table-row-actions"
 
-export const columns: ColumnDef<Staff>[] = [
+export const getColumns = (onEdit: (staff: Staff) => void): ColumnDef<Staff>[] => [
   {
     accessorKey: "photoUrl",
     header: "",
@@ -59,6 +59,6 @@ export const columns: ColumnDef<Staff>[] = [
   },
   {
     id: "actions",
-    cell: ({ row }) => <DataTableRowActions row={row} />,
+    cell: ({ row }) => <DataTableRowActions row={row} onEdit={onEdit} />,
   },
 ]
