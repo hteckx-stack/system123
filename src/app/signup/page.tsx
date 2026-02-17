@@ -4,26 +4,27 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useRouter } from 'next/navigation';
-import { AtSign, KeyRound } from 'lucide-react';
+import { User as UserIcon, Mail, KeyRound } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { PlaceHolderImages } from "@/lib/placeholder-images";
-import { useAuth } from '@/firebase';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { useAuth, useFirestore, useUser } from '@/firebase';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
-import { useUser } from '@/firebase';
+import { updateUser } from '@/firebase/firestore/users';
 
-
-export default function LoginPage() {
+export default function SignupPage() {
   const router = useRouter();
   const auth = useAuth();
+  const firestore = useFirestore();
   const { toast } = useToast();
   const { user, loading } = useUser();
-  const [email, setEmail] = useState('admin@bluelink.com');
-  const [password, setPassword] = useState('password123');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   
-  const loginImage = PlaceHolderImages.find(p => p.id === 'login-splash');
+  const signupImage = PlaceHolderImages.find(p => p.id === 'login-splash');
 
   // Redirect if user is already logged in
   useEffect(() => {
@@ -33,16 +34,44 @@ export default function LoginPage() {
   }, [user, loading, router]);
 
 
-  const handleLogin = async (event: React.FormEvent) => {
+  const handleSignUp = async (event: React.FormEvent) => {
     event.preventDefault();
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const authUser = userCredential.user;
+
+      const photoUrl = `https://picsum.photos/seed/${authUser.uid}/100/100`;
+
+      // Update Firebase Auth profile
+      await updateProfile(authUser, {
+          displayName: name,
+          photoURL: photoUrl
+      });
+      
+      // Create user document in Firestore
+      const newStaffData = {
+          name,
+          email,
+          status: 'active' as const,
+          photoUrl,
+          department: "Not Assigned",
+          position: "Not Assigned",
+          phone: ""
+      };
+      updateUser(firestore, authUser.uid, newStaffData);
+
       router.push('/dashboard');
     } catch (error: any) {
+      let description = "An unexpected error occurred.";
+      if (error.code === 'auth/email-already-in-use') {
+          description = "This email address is already in use.";
+      } else if (error.code === 'auth/weak-password') {
+          description = "The password is too weak. Please use at least 6 characters."
+      }
       toast({
         variant: 'destructive',
-        title: 'Login Failed',
-        description: "Invalid email or password.",
+        title: 'Sign Up Failed',
+        description,
       });
     }
   };
@@ -100,69 +129,53 @@ export default function LoginPage() {
                     />
                 </svg>
             </div>
-            <h1 className="text-3xl font-bold">Login</h1>
+            <h1 className="text-3xl font-bold">Sign Up</h1>
             <p className="text-balance text-muted-foreground">
-              Enter your email below to login to your account
+              Create an account to get started
             </p>
           </div>
-          <form onSubmit={handleLogin} className="grid gap-4">
+          <form onSubmit={handleSignUp} className="grid gap-4">
             <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
-               <div className="relative">
-                  <AtSign className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="admin@example.com"
-                    required
-                    className="pl-10"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
+                <Label htmlFor="name">Full Name</Label>
+                <div className="relative">
+                    <UserIcon className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+                    <Input id="name" placeholder="John Doe" required className="pl-10" value={name} onChange={(e) => setName(e.target.value)} />
                 </div>
             </div>
             <div className="grid gap-2">
-              <div className="flex items-center">
-                <Label htmlFor="password">Password</Label>
-                <Link
-                  href="#"
-                  className="ml-auto inline-block text-sm underline"
-                >
-                  Forgot your password?
-                </Link>
-              </div>
+              <Label htmlFor="email">Email</Label>
+               <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+                  <Input id="email" type="email" placeholder="name@example.com" required className="pl-10" value={email} onChange={(e) => setEmail(e.target.value)} />
+                </div>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="password">Password</Label>
               <div className="relative">
                 <KeyRound className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type="password"
-                  required
-                  className="pl-10"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
+                <Input id="password" type="password" required className="pl-10" value={password} onChange={(e) => setPassword(e.target.value)} />
               </div>
             </div>
             <Button type="submit" className="w-full">
-              Login
+              Create Account
             </Button>
-             <div className="mt-4 text-center text-sm">
-              Don&apos;t have an account?{" "}
-              <Link href="/signup" className="underline">
-                Sign up
-              </Link>
+            <div className="mt-4 text-center text-sm">
+                Already have an account?{" "}
+                <Link href="/login" className="underline">
+                    Log in
+                </Link>
             </div>
           </form>
         </div>
       </div>
-      <div className="hidden bg-muted lg:block">
-         {loginImage && <Image
-          src={loginImage.imageUrl}
+       <div className="hidden bg-muted lg:block">
+         {signupImage && <Image
+          src={signupImage.imageUrl}
           alt="Image"
           width={1920}
           height={1080}
           className="h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
-          data-ai-hint={loginImage.imageHint}
+          data-ai-hint={signupImage.imageHint}
         />}
       </div>
     </div>
