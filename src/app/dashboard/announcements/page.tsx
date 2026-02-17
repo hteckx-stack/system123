@@ -59,7 +59,7 @@ export default function AnnouncementsPage() {
   }
 
   const handleSelectAll = (checked: boolean | "indeterminate") => {
-    if (checked) {
+    if (checked === true) {
       setSelectedStaff(mockStaff.map((staff) => staff.id))
     } else {
       setSelectedStaff([])
@@ -104,7 +104,8 @@ export default function AnnouncementsPage() {
     setSelectedStaff([])
   }
   
-  const areAllSelected = selectedStaff.length > 0 && selectedStaff.length === mockStaff.length;
+  const isAllSelected = mockStaff.length > 0 && selectedStaff.length === mockStaff.length;
+  const isIndeterminate = selectedStaff.length > 0 && !isAllSelected;
 
   return (
     <div className="space-y-8">
@@ -163,7 +164,7 @@ export default function AnnouncementsPage() {
                      <div className="flex items-center space-x-2 border-b pb-4">
                         <Checkbox 
                             id="select-all-staff" 
-                            checked={areAllSelected}
+                            checked={isIndeterminate ? 'indeterminate' : isAllSelected}
                             onCheckedChange={handleSelectAll}
                         />
                         <Label htmlFor="select-all-staff" className="font-medium cursor-pointer">
