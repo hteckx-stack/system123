@@ -27,8 +27,13 @@ export function useCollection<T extends DocumentData>(query: Query<T> | null) {
                 setLoading(false);
             }, 
             (error) => {
+                let path = 'unknown collection';
+                // This is a workaround to get the path from a query object, as the public API does not expose it.
+                if (query && (query as any)._query?.path?.segments) {
+                    path = (query as any)._query.path.segments.join('/');
+                }
                 const permissionError = new FirestorePermissionError({
-                    path: 'unknown collection', 
+                    path: path, 
                     operation: 'list',
                 });
                 errorEmitter.emit('permission-error', permissionError);
