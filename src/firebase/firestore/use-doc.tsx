@@ -3,13 +3,15 @@ import { useState, useEffect } from 'react';
 import { onSnapshot, type DocumentReference, type DocumentData } from 'firebase/firestore';
 import { errorEmitter } from '../error-emitter';
 import { FirestorePermissionError } from '../errors';
+import { useUser } from '../auth/use-user';
 
 export function useDoc<T extends DocumentData>(ref: DocumentReference<T> | null) {
     const [data, setData] = useState<T | null>(null);
     const [loading, setLoading] = useState(true);
+    const { loading: userLoading } = useUser();
 
     useEffect(() => {
-        if (!ref) {
+        if (!ref || userLoading) {
             setLoading(false);
             setData(null);
             return;
@@ -32,14 +34,13 @@ export function useDoc<T extends DocumentData>(ref: DocumentReference<T> | null)
                     operation: 'get',
                 });
                 errorEmitter.emit('permission-error', permissionError);
-                console.error("Firestore error: ", error);
                 setLoading(false);
                 setData(null);
             }
         );
 
         return () => unsubscribe();
-    }, [ref]);
+    }, [ref, userLoading]);
 
     return { data, loading };
 }
