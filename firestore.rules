@@ -3,26 +3,26 @@ service cloud.firestore {
   match /databases/{database}/documents {
     // Users
     match /users/{userId} {
-      allow get, write: if request.auth != null && request.auth.token.email != null;
+      allow get, write: if request.auth != null;
     }
     match /users {
-      allow list: if request.auth != null && request.auth.token.email != null;
+      allow list: if request.auth != null;
     }
 
     // Documents
     match /documents/{documentId} {
-      allow get, write: if request.auth != null && request.auth.token.email != null;
+      allow get, write: if request.auth != null;
     }
      match /documents {
-      allow list: if request.auth != null && request.auth.token.email != null;
+      allow list: if request.auth != null;
     }
 
     // Announcements
     match /announcements/{announcementId} {
-      allow get, write: if request.auth != null && request.auth.token.email != null;
+      allow get, write: if request.auth != null;
     }
     match /announcements {
-      allow list: if request.auth != null && request.auth.token.email != null;
+      allow list: if request.auth != null;
     }
   }
 }
