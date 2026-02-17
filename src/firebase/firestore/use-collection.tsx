@@ -8,10 +8,11 @@ import { useUser } from '../auth/use-user';
 export function useCollection<T extends DocumentData>(query: Query<T> | null) {
     const [data, setData] = useState<T[] | null>(null);
     const [loading, setLoading] = useState(true);
-    const { loading: userLoading } = useUser();
+    const { user, loading: userLoading } = useUser();
 
     useEffect(() => {
-        if (!query || userLoading) {
+        // Don't run query if no query, user is loading, or user is not logged in.
+        if (!query || userLoading || !user) {
             setLoading(false);
             setData(null);
             return;
@@ -45,7 +46,7 @@ export function useCollection<T extends DocumentData>(query: Query<T> | null) {
         );
 
         return () => unsubscribe();
-    }, [query, userLoading]);
+    }, [query, userLoading, user]);
 
     return { data, loading };
 }

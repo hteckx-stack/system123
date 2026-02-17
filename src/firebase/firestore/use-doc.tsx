@@ -8,10 +8,11 @@ import { useUser } from '../auth/use-user';
 export function useDoc<T extends DocumentData>(ref: DocumentReference<T> | null) {
     const [data, setData] = useState<T | null>(null);
     const [loading, setLoading] = useState(true);
-    const { loading: userLoading } = useUser();
+    const { user, loading: userLoading } = useUser();
 
     useEffect(() => {
-        if (!ref || userLoading) {
+        // Don't run query if no ref, user is loading, or user is not logged in.
+        if (!ref || userLoading || !user) {
             setLoading(false);
             setData(null);
             return;
@@ -40,7 +41,7 @@ export function useDoc<T extends DocumentData>(ref: DocumentReference<T> | null)
         );
 
         return () => unsubscribe();
-    }, [ref, userLoading]);
+    }, [ref, userLoading, user]);
 
     return { data, loading };
 }
