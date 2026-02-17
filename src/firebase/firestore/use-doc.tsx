@@ -11,35 +11,36 @@ export function useDoc<T extends DocumentData>(ref: DocumentReference<T> | null)
     const { user, loading: userLoading } = useUser();
 
     useEffect(() => {
-        let unsubscribe: () => void = () => {};
-
         if (userLoading) {
             setLoading(true);
-        } else if (!user || !ref) {
+            return;
+        }
+
+        if (!user || !ref) {
             setData(null);
             setLoading(false);
-        } else {
-            // This block only runs if !userLoading && user && ref
-            unsubscribe = onSnapshot(ref, 
-                (doc) => {
-                    if (doc.exists()) {
-                        setData({ id: doc.id, ...doc.data() } as T);
-                    } else {
-                        setData(null);
-                    }
-                    setLoading(false);
-                },
-                (error) => {
-                    const permissionError = new FirestorePermissionError({
-                        path: ref.path,
-                        operation: 'get',
-                    });
-                    errorEmitter.emit('permission-error', permissionError);
-                    setData(null);
-                    setLoading(false);
-                }
-            );
+            return;
         }
+
+        const unsubscribe = onSnapshot(ref, 
+            (doc) => {
+                if (doc.exists()) {
+                    setData({ id: doc.id, ...doc.data() } as T);
+                } else {
+                    setData(null);
+                }
+                setLoading(false);
+            },
+            (error) => {
+                const permissionError = new FirestorePermissionError({
+                    path: ref.path,
+                    operation: 'get',
+                });
+                errorEmitter.emit('permission-error', permissionError);
+                setData(null);
+                setLoading(false);
+            }
+        );
 
         return () => unsubscribe();
     }, [ref, user, userLoading]);
