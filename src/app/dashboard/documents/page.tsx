@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from "react"
@@ -37,6 +38,9 @@ This contract is effective from {{date}}.
 
 Staff Name: {{staffName}}
 Month: {{month}}
+Amount: \${{amount}}
+
+This is a summary of your payment.
 ...`,
   warning: `WARNING LETTER
 
@@ -48,12 +52,21 @@ This letter serves as a formal warning regarding...`
 
 export default function DocumentsPage() {
   const { toast } = useToast()
+  
+  // State for file upload
   const [selectedStaffId, setSelectedStaffId] = useState<string>("")
   const [documentType, setDocumentType] = useState<string>("")
   const [file, setFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
   const [documents, setDocuments] = useState(mockDocuments);
 
+  // State for template generation
+  const [templateStaffId, setTemplateStaffId] = useState<string>("")
+  const [templateDocType, setTemplateDocType] = useState<string>("")
+  const [payslipAmount, setPayslipAmount] = useState<string>("")
+  const [generating, setGenerating] = useState(false)
+
+  // State for template content
   const [contractTemplate, setContractTemplate] = useState(placeholderTemplates.contract)
   const [payslipTemplate, setPayslipTemplate] = useState(placeholderTemplates.payslip)
   const [warningTemplate, setWarningTemplate] = useState(placeholderTemplates.warning)
@@ -64,7 +77,7 @@ export default function DocumentsPage() {
     }
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleUploadSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const form = e.target as HTMLFormElement
 
@@ -78,19 +91,9 @@ export default function DocumentsPage() {
     }
 
     setUploading(true)
-
-    // In a real app, you'd handle Firebase Storage upload here
-    console.log("Uploading document:", {
-      staffId: selectedStaffId,
-      type: documentType,
-      fileName: file.name,
-    })
-
-    // Simulate upload delay
     await new Promise(resolve => setTimeout(resolve, 1500))
 
     const staffMember = mockStaff.find(s => s.id === selectedStaffId);
-
     if (staffMember) {
       const newDocument = {
         id: `DOC-${Math.random().toString(36).slice(2, 7)}`,
@@ -101,7 +104,6 @@ export default function DocumentsPage() {
       };
       setDocuments(prev => [newDocument, ...prev]);
     }
-
     setUploading(false)
     
     toast({
@@ -109,15 +111,58 @@ export default function DocumentsPage() {
       description: `${file.name} has been uploaded for ${staffMember?.name}.`,
     })
 
-    // Reset form
     setSelectedStaffId("")
     setDocumentType("")
     setFile(null)
     form.reset()
   }
 
+  const handleGenerateSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!templateStaffId || !templateDocType) {
+        toast({
+            variant: "destructive",
+            title: "Incomplete Form",
+            description: "Please select a staff member and document type.",
+        })
+        return
+    }
+    if (templateDocType === "Payslip" && !payslipAmount) {
+        toast({
+            variant: "destructive",
+            title: "Amount Required",
+            description: "Please enter an amount for the payslip.",
+        })
+        return
+    }
+    
+    setGenerating(true)
+    await new Promise(resolve => setTimeout(resolve, 1000))
+
+    const staffMember = mockStaff.find(s => s.id === templateStaffId);
+    if (staffMember) {
+        const docName = `${templateDocType.toLowerCase().replace(' ', '-')}-${staffMember.name.toLowerCase().replace(' ', '-')}.pdf`;
+        const newDocument = {
+            id: `DOC-${Math.random().toString(36).slice(2, 7)}`,
+            staffName: staffMember.name,
+            type: templateDocType,
+            fileName: docName,
+            date: new Date().toISOString().split('T')[0],
+        };
+        setDocuments(prev => [newDocument, ...prev]);
+        toast({
+            title: "Document Generated & Sent!",
+            description: `${templateDocType} for ${staffMember.name} has been sent.`,
+        });
+    }
+
+    setGenerating(false)
+    setTemplateStaffId("")
+    setTemplateDocType("")
+    setPayslipAmount("")
+  }
+
   const handleSaveTemplate = (templateType: 'contract' | 'payslip' | 'warning') => {
-    console.log(`Saving ${templateType} template...`)
     // In a real app, you'd save this to a database
     toast({
       title: "Template Saved!",
@@ -144,53 +189,105 @@ export default function DocumentsPage() {
         <TabsContent value="manage" className="mt-6">
           <div className="grid gap-6 lg:grid-cols-5">
             <div className="lg:col-span-2">
-              <form onSubmit={handleSubmit}>
-                <Card>
+              <Card>
                   <CardHeader>
-                    <CardTitle>Upload New Document</CardTitle>
+                    <CardTitle>Create & Send Document</CardTitle>
                     <CardDescription>
-                      Select a staff member, document type, and file to upload.
+                      Upload a file or use a template to send a document to staff.
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label>Staff Member</Label>
-                       <Select value={selectedStaffId} onValueChange={setSelectedStaffId} required>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a staff member" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {mockStaff.map((staff) => (
-                            <SelectItem key={staff.id} value={staff.id}>{staff.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                     <div className="space-y-2">
-                      <Label>Document Type</Label>
-                      <Select value={documentType} onValueChange={setDocumentType} required>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select document type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Payslip">Payslip</SelectItem>
-                          <SelectItem value="Warning Letter">Warning Letter</SelectItem>
-                          <SelectItem value="Contract">Contract</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="document-file">File</Label>
-                      <Input id="document-file" type="file" onChange={handleFileChange} required />
-                    </div>
-                  </CardContent>
-                  <CardFooter>
-                     <Button type="submit" disabled={uploading} className="w-full">
-                      {uploading ? "Uploading..." : "Upload & Send"}
-                    </Button>
-                  </CardFooter>
-                </Card>
-              </form>
+                  <CardContent>
+                    <Tabs defaultValue="upload" className="w-full">
+                        <TabsList className="grid w-full grid-cols-2">
+                            <TabsTrigger value="upload">Upload File</TabsTrigger>
+                            <TabsTrigger value="template">Use Template</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="upload" className="pt-6">
+                            <form onSubmit={handleUploadSubmit} className="space-y-4">
+                                <div className="space-y-2">
+                                <Label>Staff Member</Label>
+                                <Select value={selectedStaffId} onValueChange={setSelectedStaffId} required>
+                                    <SelectTrigger>
+                                    <SelectValue placeholder="Select a staff member" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                    {mockStaff.map((staff) => (
+                                        <SelectItem key={staff.id} value={staff.id}>{staff.name}</SelectItem>
+                                    ))}
+                                    </SelectContent>
+                                </Select>
+                                </div>
+                                <div className="space-y-2">
+                                <Label>Document Type</Label>
+                                <Select value={documentType} onValueChange={setDocumentType} required>
+                                    <SelectTrigger>
+                                    <SelectValue placeholder="Select document type" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                    <SelectItem value="Payslip">Payslip</SelectItem>
+                                    <SelectItem value="Warning Letter">Warning Letter</SelectItem>
+                                    <SelectItem value="Contract">Contract</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                </div>
+                                <div className="space-y-2">
+                                <Label htmlFor="document-file">File</Label>
+                                <Input id="document-file" type="file" onChange={handleFileChange} required />
+                                </div>
+                                <Button type="submit" disabled={uploading} className="w-full">
+                                    {uploading ? "Uploading..." : "Upload & Send"}
+                                </Button>
+                            </form>
+                        </TabsContent>
+                        <TabsContent value="template" className="pt-6">
+                            <form onSubmit={handleGenerateSubmit} className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label>Staff Member</Label>
+                                    <Select value={templateStaffId} onValueChange={setTemplateStaffId} required>
+                                        <SelectTrigger>
+                                        <SelectValue placeholder="Select a staff member" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                        {mockStaff.map((staff) => (
+                                            <SelectItem key={staff.id} value={staff.id}>{staff.name}</SelectItem>
+                                        ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Document Type</Label>
+                                    <Select value={templateDocType} onValueChange={setTemplateDocType} required>
+                                        <SelectTrigger>
+                                        <SelectValue placeholder="Select a template" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                        <SelectItem value="Contract">Contract</SelectItem>
+                                        <SelectItem value="Payslip">Payslip</SelectItem>
+                                        <SelectItem value="Warning Letter">Warning Letter</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                {templateDocType === 'Payslip' && (
+                                    <div className="space-y-2">
+                                        <Label htmlFor="payslip-amount">Amount</Label>
+                                        <Input
+                                            id="payslip-amount"
+                                            type="number"
+                                            value={payslipAmount}
+                                            onChange={(e) => setPayslipAmount(e.target.value)}
+                                            placeholder="e.g., 2500"
+                                            required
+                                        />
+                                    </div>
+                                )}
+                                <Button type="submit" disabled={generating} className="w-full">
+                                    {generating ? "Generating..." : "Generate & Send"}
+                                </Button>
+                            </form>
+                        </TabsContent>
+                    </Tabs>
+                </CardContent>
+              </Card>
             </div>
 
             <div className="lg:col-span-3">
@@ -296,3 +393,5 @@ export default function DocumentsPage() {
     </div>
   )
 }
+
+    
