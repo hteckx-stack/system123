@@ -3,9 +3,10 @@
 import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
 import { getAuth, type Auth } from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
+import { getStorage, type Storage } from 'firebase/storage';
 import { firebaseConfig } from './config';
 
-export { FirebaseProvider, useFirebaseApp, useAuth, useFirestore, useFirebase } from './provider';
+export { FirebaseProvider, useFirebaseApp, useAuth, useFirestore, useFirebase, useStorage } from './provider';
 export { useUser } from './auth/use-user';
 export { useCollection } from './firestore/use-collection';
 export { useDoc } from './firestore/use-doc';
@@ -15,6 +16,7 @@ export type FirebaseInstances = {
   app: FirebaseApp;
   auth: Auth;
   firestore: Firestore;
+  storage: Storage;
 };
 
 let firebaseCache: FirebaseInstances;
@@ -27,11 +29,13 @@ export function initializeFirebase(): FirebaseInstances {
   const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const firestore = getFirestore(app);
+  const storage = getStorage(app);
 
   firebaseCache = {
     app,
     auth,
     firestore,
+    storage,
   };
 
   return firebaseCache;

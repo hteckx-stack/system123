@@ -6,9 +6,11 @@ import {
   useFirestore,
   useDoc,
   useAuth,
+  useStorage,
 } from "@/firebase"
 import { doc } from "firebase/firestore"
 import { updateProfile } from "firebase/auth"
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -29,12 +31,16 @@ export default function SettingsPage() {
   const { user, loading: userLoading } = useUser()
   const auth = useAuth()
   const firestore = useFirestore()
+  const storage = useStorage()
   const { toast } = useToast()
 
   const userDocRef = useMemo(() => (user ? doc(firestore, "users", user.uid) : null), [user, firestore]);
   const { data: userProfile, loading: profileLoading } = useDoc<Staff>(userDocRef)
 
   const [formData, setFormData] = useState<Partial<Staff>>({})
+  const [photoFile, setPhotoFile] = useState<File | null>(null)
+  const [isUpdating, setIsUpdating] = useState(false)
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
 
   useEffect(() => {
     if (userProfile) {
@@ -49,62 +55,109 @@ export default function SettingsPage() {
     }
   }, [userProfile, user])
 
+  // Clean up the object URL to avoid memory leaks
+  useEffect(() => {
+    return () => {
+      if (photoPreview) {
+        URL.revokeObjectURL(photoPreview)
+      }
+    }
+  }, [photoPreview])
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0]
+      setPhotoFile(file)
+      if (photoPreview) {
+        URL.revokeObjectURL(photoPreview)
+      }
+      setPhotoPreview(URL.createObjectURL(file))
+    }
   }
 
   const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (!user || !auth.currentUser) return
 
-    const updatedFirestoreFields: Partial<Staff> = {};
-    const fieldsToCompare: (keyof Staff)[] = ['name', 'phone', 'position', 'department', 'photoUrl'];
+    setIsUpdating(true)
+
+    let newPhotoUrl = formData.photoUrl
+
+    if (photoFile) {
+      try {
+        const storageRef = ref(storage, `profile-pictures/${user.uid}`)
+        const snapshot = await uploadBytes(storageRef, photoFile)
+        newPhotoUrl = await getDownloadURL(snapshot.ref)
+        setPhotoFile(null) // Reset file input state
+      } catch (error) {
+        console.error("Error uploading photo:", error)
+        toast({
+          variant: "destructive",
+          title: "Upload Failed",
+          description: "Could not upload your new photo. Please try again.",
+        })
+        setIsUpdating(false)
+        return
+      }
+    }
+
+    const updatedFirestoreFields: Partial<Staff> = {}
+    const fieldsToCompare: (keyof Staff)[] = ['name', 'phone', 'position', 'department']
 
     fieldsToCompare.forEach(field => {
-      const currentValue = formData[field] ?? '';
-      const originalValue = userProfile?.[field] ?? '';
+      const currentValue = formData[field] ?? ''
+      const originalValue = userProfile?.[field] ?? ''
       if (currentValue !== originalValue) {
-        updatedFirestoreFields[field] = currentValue;
+        updatedFirestoreFields[field] = currentValue
       }
-    });
+    })
+
+    if (newPhotoUrl && newPhotoUrl !== userProfile?.photoUrl) {
+      updatedFirestoreFields.photoUrl = newPhotoUrl
+    }
 
     if (Object.keys(updatedFirestoreFields).length === 0) {
       toast({
         title: "No Changes",
         description: "You haven't made any changes to your profile.",
-      });
-      return;
+      })
+      setIsUpdating(false)
+      return
     }
 
     try {
-      // 1. Update Firebase Auth profile
-      const authUpdates: { displayName?: string; photoURL?: string } = {};
+      const authUpdates: { displayName?: string; photoURL?: string } = {}
       if (updatedFirestoreFields.name !== undefined) {
-        authUpdates.displayName = updatedFirestoreFields.name;
+        authUpdates.displayName = updatedFirestoreFields.name
       }
       if (updatedFirestoreFields.photoUrl !== undefined) {
-        authUpdates.photoURL = updatedFirestoreFields.photoUrl;
+        authUpdates.photoURL = updatedFirestoreFields.photoUrl
       }
 
       if (Object.keys(authUpdates).length > 0) {
-        await updateProfile(auth.currentUser, authUpdates);
+        await updateProfile(auth.currentUser, authUpdates)
       }
 
-      // 2. Update Firestore document
-      await updateUser(firestore, user.uid, updatedFirestoreFields);
+      await updateUser(firestore, user.uid, updatedFirestoreFields)
 
       toast({
         title: "Profile Updated",
         description: "Your profile details have been successfully updated.",
-      });
+      })
     } catch (error) {
-      console.error("Error updating profile:", error);
+      console.error("Error updating profile:", error)
       toast({
         variant: "destructive",
         title: "Update Failed",
         description: "Could not update your profile. Please try again.",
-      });
+      })
+    } finally {
+      setIsUpdating(false)
     }
   }
 
@@ -123,7 +176,7 @@ export default function SettingsPage() {
         <CardHeader>
           <CardTitle>Profile</CardTitle>
           <CardDescription>
-            This is how others will see you on the site. The photo must be a valid URL.
+            This is how others will see you on the site.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -160,7 +213,7 @@ export default function SettingsPage() {
               <div className="flex items-center space-x-6">
                 <Avatar className="h-24 w-24">
                   <AvatarImage
-                    src={formData.photoUrl || ""}
+                    src={photoPreview || formData.photoUrl || ""}
                     alt={formData.name || ""}
                   />
                   <AvatarFallback>
@@ -170,14 +223,15 @@ export default function SettingsPage() {
                   </AvatarFallback>
                 </Avatar>
                 <div className="w-full space-y-2">
-                   <Label htmlFor="photoUrl">Photo URL</Label>
+                   <Label htmlFor="photo">Profile Photo</Label>
                    <Input 
-                     id="photoUrl" 
-                     name="photoUrl" 
-                     value={formData.photoUrl || ""} 
-                     onChange={handleChange}
-                     placeholder="https://example.com/photo.jpg"
+                     id="photo" 
+                     name="photo" 
+                     type="file"
+                     onChange={handleFileChange}
+                     accept="image/*"
                     />
+                    <p className="text-sm text-muted-foreground">Upload a new photo to update your profile picture.</p>
                 </div>
               </div>
 
@@ -234,7 +288,9 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              <Button type="submit">Save Changes</Button>
+              <Button type="submit" disabled={isUpdating}>
+                {isUpdating ? "Saving..." : "Save Changes"}
+              </Button>
             </form>
           )}
         </CardContent>

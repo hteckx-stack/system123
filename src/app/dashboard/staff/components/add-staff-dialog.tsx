@@ -16,40 +16,91 @@ import { Label } from "@/components/ui/label"
 import { PlusCircle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import type { Staff } from "@/lib/types"
-import { useFirestore } from "@/firebase"
-import { addUser } from "@/firebase/firestore/users"
+import { useFirestore, useStorage } from "@/firebase"
+import { updateUser } from "@/firebase/firestore/users"
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage"
+import { doc, collection } from "firebase/firestore"
 
 export function AddStaffDialog() {
   const [open, setOpen] = useState(false)
   const { toast } = useToast()
   const firestore = useFirestore()
+  const storage = useStorage()
+  const [photoFile, setPhotoFile] = useState<File | null>(null)
+  const [isCreating, setIsCreating] = useState(false)
 
-  const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setPhotoFile(e.target.files[0])
+    }
+  }
+
+  const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    const formData = new FormData(event.currentTarget)
+    const form = event.currentTarget
+    const formData = new FormData(form)
 
-    const newStaffData: Omit<Staff, "id"> = {
-      name: formData.get("name") as string,
-      phone: formData.get("phone") as string,
-      email: formData.get("email") as string,
-      position: formData.get("position") as string,
-      department: formData.get("department") as string,
-      status: "active",
-      photoUrl: `https://picsum.photos/seed/${Math.random()}/100/100`,
+    const name = formData.get("name") as string
+    if (!name) {
+      toast({ variant: "destructive", title: "Name is required" })
+      return
     }
 
-    addUser(firestore, newStaffData)
+    setIsCreating(true)
 
-    toast({
-      title: "Staff Added",
-      description: `${newStaffData.name} has been added.`,
-    })
+    try {
+      const newStaffId = doc(collection(firestore, "users")).id
+      let photoUrl = `https://picsum.photos/seed/${newStaffId}/100/100`
 
-    setOpen(false)
+      if (photoFile) {
+        const storageRef = ref(storage, `profile-pictures/${newStaffId}`)
+        const snapshot = await uploadBytes(storageRef, photoFile)
+        photoUrl = await getDownloadURL(snapshot.ref)
+      }
+
+      const newStaffData: Omit<Staff, "id"> = {
+        name: name,
+        phone: formData.get("phone") as string,
+        email: formData.get("email") as string,
+        position: formData.get("position") as string,
+        department: formData.get("department") as string,
+        status: "active",
+        photoUrl: photoUrl,
+      }
+
+      await updateUser(firestore, newStaffId, newStaffData)
+
+      toast({
+        title: "Staff Added",
+        description: `${newStaffData.name} has been added.`,
+      })
+
+      setOpen(false)
+      form.reset()
+      setPhotoFile(null)
+    } catch (error) {
+      console.error("Error creating staff:", error)
+      toast({
+        variant: "destructive",
+        title: "Error adding staff",
+        description: "There was a problem creating the new staff member.",
+      })
+    } finally {
+      setIsCreating(false)
+    }
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(isOpen) => {
+        setOpen(isOpen)
+        if (!isOpen) {
+          // Reset state on close
+          setPhotoFile(null)
+        }
+      }}
+    >
       <DialogTrigger asChild>
         <Button>
           <PlusCircle className="mr-2 h-4 w-4" />
@@ -120,13 +171,20 @@ export function AddStaffDialog() {
               <Label htmlFor="photo" className="text-right">
                 Photo
               </Label>
-              <Input id="photo" type="file" className="col-span-3" />
+              <Input
+                id="photo"
+                name="photo"
+                type="file"
+                className="col-span-3"
+                onChange={handleFileChange}
+                accept="image/*"
+              />
             </div>
           </div>
         </form>
         <DialogFooter>
-          <Button type="submit" form="add-staff-form">
-            Create Staff
+          <Button type="submit" form="add-staff-form" disabled={isCreating}>
+            {isCreating ? "Creating..." : "Create Staff"}
           </Button>
         </DialogFooter>
       </DialogContent>
