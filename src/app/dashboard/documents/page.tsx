@@ -34,7 +34,9 @@ AND:
 
 This contract is effective from {{date}}.
 ...`,
-  payslip: `PAYSLIP
+  payslip: `[Company Logo]
+
+PAYSLIP
 
 Staff Name: {{staffName}}
 Month: {{month}}
@@ -344,7 +346,7 @@ export default function DocumentsPage() {
             <CardHeader>
               <CardTitle>Document Templates</CardTitle>
               <CardDescription>
-                Edit the templates for contracts, payslips, and warning letters. Use placeholders like `{'{{staffName}}'}` or `{'{{date}}'}`.
+                Edit the templates for contracts, payslips, and warning letters. Use placeholders like `{'{{staffName}}'}` or `{'{{date}}'}`. For the payslip, you can upload a logo which will replace the `[Company Logo]` placeholder.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -364,6 +366,11 @@ export default function DocumentsPage() {
                 <AccordionItem value="payslip">
                   <AccordionTrigger className="text-lg font-medium">Payslip Template</AccordionTrigger>
                   <AccordionContent className="space-y-4 pt-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="logo-upload">Company Logo</Label>
+                        <Input id="logo-upload" type="file" />
+                        <p className="text-sm text-muted-foreground">This logo will replace the `[Company Logo]` placeholder in the template.</p>
+                    </div>
                      <Textarea
                       value={payslipTemplate}
                       onChange={(e) => setPayslipTemplate(e.target.value)}
