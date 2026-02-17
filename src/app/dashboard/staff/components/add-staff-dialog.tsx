@@ -24,8 +24,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { PlusCircle, Copy } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import type { Staff } from "@/lib/types"
 
-export function AddStaffDialog() {
+export function AddStaffDialog({ onAddStaff }: { onAddStaff: (staff: Omit<Staff, 'id' | 'status' | 'photoUrl'>) => void }) {
   const [open, setOpen] = useState(false)
   const [showCredentials, setShowCredentials] = useState(false)
   const [credentials, setCredentials] = useState({ phone: "", password: "" })
@@ -36,10 +37,15 @@ export function AddStaffDialog() {
     const formData = new FormData(event.currentTarget)
     const phone = formData.get("phone") as string
     
-    // In a real app, you would:
-    // 1. Call a server action or API to create the user in Firebase Auth
-    // 2. Generate a secure temporary password
-    // 3. Save the staff record in Firestore
+    const newStaffData = {
+        name: formData.get("name") as string,
+        phone: phone,
+        email: formData.get("email") as string,
+        position: formData.get("position") as string,
+        department: formData.get("department") as string,
+    }
+    
+    onAddStaff(newStaffData)
     
     const tempPassword = `Temp@${Math.floor(1000 + Math.random() * 9000)}`
     
