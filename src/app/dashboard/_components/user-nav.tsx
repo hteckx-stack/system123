@@ -1,3 +1,4 @@
+
 "use client"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -12,7 +13,6 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { useAuth, useUser } from "@/firebase"
 import { signOut } from "firebase/auth"
-import Link from "next/link"
 import { useRouter } from "next/navigation"
 
 export function UserNav() {
@@ -53,8 +53,9 @@ export function UserNav() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem>Profile</DropdownMenuItem>
-          <DropdownMenuItem>Settings</DropdownMenuItem>
+           <DropdownMenuItem onSelect={() => router.push('/dashboard/settings')}>
+                Settings
+            </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout}>Log out</DropdownMenuItem>
