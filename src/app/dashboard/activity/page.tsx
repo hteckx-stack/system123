@@ -18,6 +18,7 @@ import {
   FileWarning,
   Receipt,
 } from "lucide-react"
+import Link from "next/link"
 
 const mockActivities = [
   {
@@ -174,42 +175,50 @@ export default function ActivityPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Contracts Sent</CardTitle>
-                <FileText className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-                <div className="text-2xl font-bold">{contractCount}</div>
-            </CardContent>
-        </Card>
-        <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Payslips Issued</CardTitle>
-                <Receipt className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-                <div className="text-2xl font-bold">{payslipCount}</div>
-            </CardContent>
-        </Card>
-        <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Warning Letters</CardTitle>
-                <FileWarning className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-                <div className="text-2xl font-bold">{warningCount}</div>
-            </CardContent>
-        </Card>
-        <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Announcements</CardTitle>
-                <Megaphone className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-                <div className="text-2xl font-bold">{announcementCount}</div>
-            </CardContent>
-        </Card>
+        <Link href="/dashboard/activity/contracts">
+          <Card className="hover:bg-muted/50 transition-colors">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Contracts Sent</CardTitle>
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                  <div className="text-2xl font-bold">{contractCount}</div>
+              </CardContent>
+          </Card>
+        </Link>
+        <Link href="/dashboard/activity/payslips">
+          <Card className="hover:bg-muted/50 transition-colors">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Payslips Issued</CardTitle>
+                  <Receipt className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                  <div className="text-2xl font-bold">{payslipCount}</div>
+              </CardContent>
+          </Card>
+        </Link>
+        <Link href="/dashboard/activity/warnings">
+          <Card className="hover:bg-muted/50 transition-colors">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Warning Letters</CardTitle>
+                  <FileWarning className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                  <div className="text-2xl font-bold">{warningCount}</div>
+              </CardContent>
+          </Card>
+        </Link>
+        <Link href="/dashboard/activity/announcements">
+          <Card className="hover:bg-muted/50 transition-colors">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Announcements</CardTitle>
+                  <Megaphone className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                  <div className="text-2xl font-bold">{announcementCount}</div>
+              </CardContent>
+          </Card>
+        </Link>
       </div>
 
       <h2 className="text-2xl font-semibold tracking-tight">Recent Activities</h2>
