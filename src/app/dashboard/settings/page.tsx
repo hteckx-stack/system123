@@ -129,7 +129,7 @@ export default function SettingsPage() {
       updatedFirestoreFields.photoUrl = newPhotoUrl
     }
 
-    if (Object.keys(updatedFirestoreFields).length === 0) {
+    if (Object.keys(updatedFirestoreFields).length === 0 && !photoFile) {
       toast({
         title: "No Changes",
         description: "You haven't made any changes to your profile.",
@@ -222,31 +222,34 @@ export default function SettingsPage() {
             </div>
           ) : (
             <form onSubmit={handleFormSubmit} className="space-y-6">
-              <div className="flex items-center space-x-6">
-                <Avatar className="h-24 w-24">
-                  <AvatarImage
-                    src={photoPreview || formData.photoUrl || ""}
-                    alt={formData.name || ""}
-                  />
-                  <AvatarFallback>
-                    {formData.name?.charAt(0).toUpperCase() ||
-                      user?.email?.charAt(0).toUpperCase() ||
-                      "A"}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="w-full space-y-2">
-                  <Label htmlFor="photo">Profile Photo</Label>
-                  <Input
-                    id="photo"
-                    name="photo"
-                    type="file"
-                    onChange={handleFileChange}
-                    accept="image/*"
-                  />
-                  <p className="text-sm text-muted-foreground">
-                    Upload a new photo to update your profile picture.
+              <div className="space-y-2">
+                <Label htmlFor="photo" className="cursor-pointer">
+                  <span className="text-sm font-medium">Profile Photo</span>
+                   <p className="text-sm text-muted-foreground">
+                    Click the image to upload a new profile picture.
                   </p>
-                </div>
+                  <div className="pt-2">
+                  <Avatar className="h-24 w-24">
+                    <AvatarImage
+                      src={photoPreview || formData.photoUrl || ""}
+                      alt={formData.name || ""}
+                    />
+                    <AvatarFallback>
+                      {formData.name?.charAt(0).toUpperCase() ||
+                        user?.email?.charAt(0).toUpperCase() ||
+                        "A"}
+                    </AvatarFallback>
+                  </Avatar>
+                  </div>
+                </Label>
+                <Input
+                  id="photo"
+                  name="photo"
+                  type="file"
+                  onChange={handleFileChange}
+                  accept="image/*"
+                  className="hidden"
+                />
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
