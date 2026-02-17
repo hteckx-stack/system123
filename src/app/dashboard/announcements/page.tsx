@@ -30,6 +30,7 @@ export default function AnnouncementsPage() {
   const [title, setTitle] = useState("")
   const [message, setMessage] = useState("")
   const [selectedStaff, setSelectedStaff] = useState<string[]>([])
+  const [isSending, setIsSending] = useState(false)
   
   const staffQuery = useMemo(() => collection(firestore, "users"), [firestore])
   const { data: staffList, loading: staffLoading } = useCollection<Staff>(staffQuery)
@@ -79,7 +80,7 @@ export default function AnnouncementsPage() {
     }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!title || !message || selectedStaff.length === 0) {
       toast({
@@ -90,23 +91,35 @@ export default function AnnouncementsPage() {
       return
     }
     
-    const newAnnouncement: Omit<Announcement, 'id' | 'sentAt'> = {
-        title,
-        message,
-        recipientIds: selectedStaff,
-        recipientCount: selectedStaff.length,
-    };
-    addAnnouncement(firestore, newAnnouncement);
-    
-    toast({
-      title: "Announcement Sent!",
-      description: `Your message "${title}" has been sent to ${selectedStaff.length} staff member(s).`,
-    })
+    setIsSending(true);
 
-    // Reset form
-    setTitle("")
-    setMessage("")
-    setSelectedStaff([])
+    try {
+        const newAnnouncement: Omit<Announcement, 'id' | 'sentAt'> = {
+            title,
+            message,
+            recipientIds: selectedStaff,
+            recipientCount: selectedStaff.length,
+        };
+        await addAnnouncement(firestore, newAnnouncement);
+        
+        toast({
+          title: "Announcement Sent!",
+          description: `Your message "${title}" has been sent to ${selectedStaff.length} staff member(s).`,
+        })
+
+        // Reset form
+        setTitle("")
+        setMessage("")
+        setSelectedStaff([])
+    } catch (error) {
+        toast({
+            variant: "destructive",
+            title: "Send Failed",
+            description: "Could not send the announcement. Please try again.",
+        })
+    } finally {
+        setIsSending(false);
+    }
   }
 
   const formatTimestamp = (timestamp: any) => {
@@ -135,7 +148,9 @@ export default function AnnouncementsPage() {
               Create and send announcements to staff members.
             </p>
           </div>
-          <Button type="submit" disabled={staffLoading}>Send Announcement</Button>
+          <Button type="submit" disabled={staffLoading || isSending}>
+            {isSending ? 'Sending...' : 'Send Announcement'}
+          </Button>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-5">

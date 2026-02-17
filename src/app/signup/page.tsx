@@ -58,7 +58,7 @@ export default function SignupPage() {
           position: "Not Assigned",
           phone: ""
       };
-      updateUser(firestore, authUser.uid, newStaffData);
+      await updateUser(firestore, authUser.uid, newStaffData);
 
       router.push('/dashboard');
     } catch (error: any) {

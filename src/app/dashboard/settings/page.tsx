@@ -140,7 +140,7 @@ export default function SettingsPage() {
             await updateProfile(auth.currentUser, authUpdates)
         }
 
-        updateUser(firestore, user.uid, updatedFirestoreFields)
+        await updateUser(firestore, user.uid, updatedFirestoreFields)
 
         toast({
             title: "Profile Updated",

@@ -96,30 +96,38 @@ export default function DocumentsPage() {
     }
 
     setUploading(true)
-    await new Promise(resolve => setTimeout(resolve, 1500))
-
-    const staffMember = staffList?.find(s => s.id === selectedStaffId);
-    if (staffMember) {
-      const newDocument: Omit<Document, 'id'> = {
-        staffId: staffMember.id,
-        staffName: staffMember.name,
-        type: documentType,
-        fileName: file.name,
-        date: new Date().toISOString().split('T')[0],
-      };
-      addDocument(firestore, newDocument);
-    }
-    setUploading(false)
     
-    toast({
-      title: "Document Uploaded!",
-      description: `${file.name} has been uploaded for ${staffMember?.name}.`,
-    })
-
-    setSelectedStaffId("")
-    setDocumentType("")
-    setFile(null)
-    form.reset()
+    try {
+        const staffMember = staffList?.find(s => s.id === selectedStaffId);
+        if (staffMember) {
+          const newDocument: Omit<Document, 'id'> = {
+            staffId: staffMember.id,
+            staffName: staffMember.name,
+            type: documentType,
+            fileName: file.name,
+            date: new Date().toISOString().split('T')[0],
+          };
+          await addDocument(firestore, newDocument);
+        }
+        
+        toast({
+          title: "Document Uploaded!",
+          description: `${file.name} has been uploaded for ${staffMember?.name}.`,
+        })
+    
+        setSelectedStaffId("")
+        setDocumentType("")
+        setFile(null)
+        form.reset()
+    } catch (error) {
+        toast({
+          variant: "destructive",
+          title: "Upload Failed",
+          description: "Could not upload the document. Please try again.",
+        })
+    } finally {
+        setUploading(false)
+    }
   }
 
   const handleGenerateSubmit = async (e: React.FormEvent) => {
@@ -142,29 +150,36 @@ export default function DocumentsPage() {
     }
     
     setGenerating(true)
-    await new Promise(resolve => setTimeout(resolve, 1000))
-
-    const staffMember = staffList?.find(s => s.id === templateStaffId);
-    if (staffMember) {
-        const docName = `${templateDocType.toLowerCase().replace(' ', '-')}-${staffMember.name.toLowerCase().split(' ').join('-')}.pdf`;
-        const newDocument: Omit<Document, 'id'> = {
-            staffId: staffMember.id,
-            staffName: staffMember.name,
-            type: templateDocType,
-            fileName: docName,
-            date: new Date().toISOString().split('T')[0],
-        };
-        addDocument(firestore, newDocument);
+    
+    try {
+        const staffMember = staffList?.find(s => s.id === templateStaffId);
+        if (staffMember) {
+            const docName = `${templateDocType.toLowerCase().replace(' ', '-')}-${staffMember.name.toLowerCase().split(' ').join('-')}.pdf`;
+            const newDocument: Omit<Document, 'id'> = {
+                staffId: staffMember.id,
+                staffName: staffMember.name,
+                type: templateDocType,
+                fileName: docName,
+                date: new Date().toISOString().split('T')[0],
+            };
+            await addDocument(firestore, newDocument);
+            toast({
+                title: "Document Generated & Sent!",
+                description: `${templateDocType} for ${staffMember.name} has been sent.`,
+            });
+        }
+        setTemplateStaffId("")
+        setTemplateDocType("")
+        setPayslipAmount("")
+    } catch (error) {
         toast({
-            title: "Document Generated & Sent!",
-            description: `${templateDocType} for ${staffMember.name} has been sent.`,
+            variant: "destructive",
+            title: "Generation Failed",
+            description: "Could not generate the document. Please try again.",
         });
+    } finally {
+        setGenerating(false)
     }
-
-    setGenerating(false)
-    setTemplateStaffId("")
-    setTemplateDocType("")
-    setPayslipAmount("")
   }
 
   const handleSaveTemplate = (templateType: 'contract' | 'payslip' | 'warning') => {

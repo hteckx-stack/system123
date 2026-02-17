@@ -68,7 +68,7 @@ export function AddStaffDialog() {
         photoUrl: photoUrl,
       }
 
-      updateUser(firestore, newStaffId, newStaffData)
+      await updateUser(firestore, newStaffId, newStaffData)
 
       toast({
         title: "Staff Added",
@@ -83,7 +83,7 @@ export function AddStaffDialog() {
       toast({
         variant: "destructive",
         title: "Error adding staff",
-        description: "Could not upload photo. Please try again.",
+        description: "Could not create staff member. Please try again.",
       })
     } finally {
       setIsCreating(false)

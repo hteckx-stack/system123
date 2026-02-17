@@ -85,7 +85,7 @@ export function StaffCard({ staff, onEdit }: StaffCardProps) {
         toast({
             variant: "destructive",
             title: "Approval Failed",
-            description: "Could not approve staff member.",
+            description: "Could not approve staff member. Please try again.",
         })
     }
   }
@@ -102,7 +102,7 @@ export function StaffCard({ staff, onEdit }: StaffCardProps) {
          toast({
             variant: "destructive",
             title: "Deactivation Failed",
-            description: "Could not deactivate staff member.",
+            description: "Could not deactivate staff member. Please try again.",
         })
     }
   }
@@ -120,7 +120,7 @@ export function StaffCard({ staff, onEdit }: StaffCardProps) {
         toast({
             variant: "destructive",
             title: "Deletion Failed",
-            description: "Could not delete staff member.",
+            description: "Could not delete staff member. Please try again.",
         })
     }
   }

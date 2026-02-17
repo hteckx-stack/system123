@@ -32,6 +32,8 @@ export function EditStaffDialog({
   const [formData, setFormData] = useState<Partial<Staff>>({})
   const firestore = useFirestore()
   const { toast } = useToast()
+  const [isSaving, setIsSaving] = useState(false);
+
 
   useEffect(() => {
     if (staff) {
@@ -46,41 +48,50 @@ export function EditStaffDialog({
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (!staff.id) return
+    setIsSaving(true)
 
-    const updatedFields: Partial<Staff> = {}
-    // We explicitly check which fields have changed.
-    const fieldsToCompare: (keyof Staff)[] = [
-      "name",
-      "phone",
-      "email",
-      "position",
-      "department",
-    ]
-    fieldsToCompare.forEach((field) => {
-      const currentValue = formData[field] ?? ""
-      const originalValue = staff[field] ?? ""
-      if (currentValue !== originalValue) {
-        updatedFields[field] = currentValue
-      }
-    })
+    try {
+        const updatedFields: Partial<Staff> = {}
+        const fieldsToCompare: (keyof Staff)[] = [
+        "name",
+        "phone",
+        "email",
+        "position",
+        "department",
+        ]
+        fieldsToCompare.forEach((field) => {
+            const currentValue = formData[field] ?? ""
+            const originalValue = staff[field] ?? ""
+            if (currentValue !== originalValue) {
+                updatedFields[field] = currentValue
+            }
+        })
 
-    if (Object.keys(updatedFields).length > 0) {
-      updateUser(firestore, staff.id, updatedFields)
-      toast({
-        title: "Staff Updated",
-        description: `${staff.name}'s details have been updated.`,
-      })
-    } else {
-      toast({
-        title: "No Changes",
-        description: "You haven't made any changes to the staff details.",
-      })
+        if (Object.keys(updatedFields).length > 0) {
+            await updateUser(firestore, staff.id, updatedFields)
+            toast({
+                title: "Staff Updated",
+                description: `${staff.name}'s details have been updated.`,
+            })
+        } else {
+            toast({
+                title: "No Changes",
+                description: "You haven't made any changes to the staff details.",
+            })
+        }
+        onOpenChange(false)
+    } catch (error) {
+        toast({
+            variant: "destructive",
+            title: "Update Failed",
+            description: "Could not update staff details. Please try again.",
+        })
+    } finally {
+        setIsSaving(false)
     }
-
-    onOpenChange(false)
   }
 
   return (
@@ -170,11 +181,12 @@ export function EditStaffDialog({
             type="button"
             variant="outline"
             onClick={() => onOpenChange(false)}
+            disabled={isSaving}
           >
             Cancel
           </Button>
-          <Button type="submit" form="edit-staff-form">
-            Save Changes
+          <Button type="submit" form="edit-staff-form" disabled={isSaving}>
+            {isSaving ? "Saving..." : "Save Changes"}
           </Button>
         </DialogFooter>
       </DialogContent>
