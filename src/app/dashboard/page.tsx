@@ -2,7 +2,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Users, FileText } from "lucide-react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useCollection, useFirestore } from "@/firebase";
@@ -10,50 +9,6 @@ import { useMemo } from "react";
 import { collection } from "firebase/firestore";
 import type { Document, Staff } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
-
-
-const recentActivities = [
-  {
-    id: "ACT-001",
-    user: "Admin",
-    userAvatar: "https://picsum.photos/seed/admin/40/40",
-    action: "STAFF_CREATE",
-    details: "Added new staff member: John Marston",
-    timestamp: "2023-11-15 10:00 AM",
-  },
-  {
-    id: "ACT-002",
-    user: "Admin",
-    userAvatar: "https://picsum.photos/seed/admin/40/40",
-    action: "DOC_UPLOAD",
-    details: "Uploaded 'contract-am.pdf' for Arthur Morgan",
-    timestamp: "2023-11-15 09:45 AM",
-  },
-  {
-    id: "ACT-003",
-    user: "Admin",
-    userAvatar: "https://picsum.photos/seed/admin/40/40",
-    action: "ANNOUNCE_SEND",
-    details: "Sent announcement: 'Team-wide meeting next week'",
-    timestamp: "2023-11-14 02:30 PM",
-  },
-  {
-    id: "ACT-004",
-    user: "Admin",
-    userAvatar: "https://picsum.photos/seed/admin/40/40",
-    action: "STAFF_UPDATE",
-    details: "Updated profile for Eleanor Vance",
-    timestamp: "2023-11-14 11:10 AM",
-  },
-  {
-    id: "ACT-005",
-    user: "Admin",
-    userAvatar: "https://picsum.photos/seed/admin/40/40",
-    action: "AUTH_RESET",
-    details: "Sent password reset for Marcus Holloway",
-    timestamp: "2023-11-13 04:00 PM",
-  },
-]
 
 export default function Dashboard() {
   const firestore = useFirestore();
@@ -101,29 +56,8 @@ export default function Dashboard() {
           <CardDescription>A log of recent actions from administrators.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-6">
-            {recentActivities.map((activity) => (
-              <div key={activity.id} className="flex items-center gap-4">
-                <Avatar className="h-9 w-9">
-                  <AvatarImage src={activity.userAvatar} alt={activity.user} />
-                  <AvatarFallback>{activity.user.charAt(0)}</AvatarFallback>
-                </Avatar>
-                <div className="grid gap-1 text-sm">
-                  <p className="font-medium leading-tight">{activity.details}</p>
-                  <p className="text-xs text-muted-foreground">
-                    by {activity.user}
-                  </p>
-                </div>
-                <div className="ml-auto text-xs text-muted-foreground whitespace-nowrap">
-                  {activity.timestamp}
-                </div>
-              </div>
-            ))}
-             {recentActivities.length === 0 && (
-                <div className="py-12 text-center text-muted-foreground">
-                  <p>No recent activity.</p>
-                </div>
-             )}
+          <div className="py-12 text-center text-muted-foreground">
+              <p>Activity feed is not yet connected.</p>
           </div>
         </CardContent>
         <CardFooter>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -8,47 +8,60 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
-import { mockStaff } from "@/lib/placeholder-data"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import type { Staff } from "@/lib/types"
+import type { Staff, Announcement } from "@/lib/types"
+import { useCollection, useFirestore } from "@/firebase"
+import { collection, query, where, getDocs, orderBy } from "firebase/firestore"
+import { addAnnouncement } from "@/firebase/firestore/announcements"
+import { Skeleton } from "@/components/ui/skeleton"
 
-type SentAnnouncement = {
-  id: string;
-  title: string;
-  message: string;
+type SentAnnouncement = Announcement & {
   recipients: Staff[];
   sentAt: string;
 };
 
-const initialAnnouncements: SentAnnouncement[] = [
-  {
-    id: "ANN-001",
-    title: "Team-wide meeting next week",
-    message: "Just a reminder that we have our quarterly team-wide meeting next week on Tuesday. Please be prepared to discuss your progress.",
-    recipients: mockStaff.filter(s => ["STF-001", "STF-002", "STF-003"].includes(s.id)),
-    sentAt: "November 14, 2023 at 2:30 PM",
-  },
-  {
-    id: "ANN-002",
-    title: "Holiday schedule update",
-    message: "Hi team, please find the updated holiday schedule for the upcoming season attached. Let us know if you have any questions.",
-    recipients: mockStaff,
-    sentAt: "November 14, 2023 at 10:00 AM",
-  },
-];
-
-
 export default function AnnouncementsPage() {
   const { toast } = useToast()
+  const firestore = useFirestore()
   const [title, setTitle] = useState("")
   const [message, setMessage] = useState("")
   const [selectedStaff, setSelectedStaff] = useState<string[]>([])
-  const [sentAnnouncements, setSentAnnouncements] = useState<SentAnnouncement[]>(initialAnnouncements)
-  const [viewingAnnouncement, setViewingAnnouncement] = useState<SentAnnouncement | null>(null)
+  
+  const staffQuery = useMemo(() => collection(firestore, "users"), [firestore])
+  const { data: staffList, loading: staffLoading } = useCollection<Staff>(staffQuery)
+
+  const announcementsQuery = useMemo(() => query(collection(firestore, "announcements"), orderBy("sentAt", "desc")), [firestore]);
+  const { data: sentAnnouncements, loading: announcementsLoading } = useCollection<Announcement>(announcementsQuery);
+
+  const [viewingAnnouncement, setViewingAnnouncement] = useState<Announcement | null>(null)
+  const [detailedRecipients, setDetailedRecipients] = useState<Staff[]>([])
+  const [recipientsLoading, setRecipientsLoading] = useState(false)
+
+  useEffect(() => {
+    if (viewingAnnouncement && viewingAnnouncement.recipientIds.length > 0) {
+      const fetchRecipients = async () => {
+        setRecipientsLoading(true);
+        const recipients: Staff[] = [];
+        // Firestore 'in' query is limited to 30 elements.
+        // For larger lists, you'd need to fetch in batches.
+        const ids = viewingAnnouncement.recipientIds.slice(0, 30);
+        const q = query(collection(firestore, "users"), where("__name__", "in", ids));
+        const querySnapshot = await getDocs(q);
+        querySnapshot.forEach((doc) => {
+          recipients.push({ id: doc.id, ...doc.data() } as Staff);
+        });
+        setDetailedRecipients(recipients);
+        setRecipientsLoading(false);
+      };
+      fetchRecipients();
+    } else {
+      setDetailedRecipients([]);
+    }
+  }, [viewingAnnouncement, firestore]);
 
   const handleSelectStaff = (staffId: string) => {
     setSelectedStaff((prev) =>
@@ -60,7 +73,7 @@ export default function AnnouncementsPage() {
 
   const handleSelectAll = (checked: boolean | "indeterminate") => {
     if (checked === true) {
-      setSelectedStaff(mockStaff.map((staff) => staff.id))
+      setSelectedStaff(staffList?.map((staff) => staff.id) || [])
     } else {
       setSelectedStaff([])
     }
@@ -77,21 +90,13 @@ export default function AnnouncementsPage() {
       return
     }
     
-    const newAnnouncement: SentAnnouncement = {
-        id: `ANN-${Math.random().toString(36).slice(2, 7)}`,
+    const newAnnouncement: Omit<Announcement, 'id' | 'sentAt'> = {
         title,
         message,
-        recipients: mockStaff.filter(s => selectedStaff.includes(s.id)),
-        sentAt: new Date().toLocaleString('en-US', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            hour: 'numeric',
-            minute: '2-digit',
-            hour12: true,
-        }),
+        recipientIds: selectedStaff,
+        recipientCount: selectedStaff.length,
     };
-    setSentAnnouncements(prev => [newAnnouncement, ...prev]);
+    addAnnouncement(firestore, newAnnouncement);
     
     toast({
       title: "Announcement Sent!",
@@ -103,8 +108,21 @@ export default function AnnouncementsPage() {
     setMessage("")
     setSelectedStaff([])
   }
+
+  const formatTimestamp = (timestamp: any) => {
+    if (!timestamp) return 'Date not available';
+    const date = timestamp.toDate();
+    return date.toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+    });
+  };
   
-  const isAllSelected = mockStaff.length > 0 && selectedStaff.length === mockStaff.length;
+  const isAllSelected = (staffList?.length ?? 0) > 0 && selectedStaff.length === staffList?.length;
   const isIndeterminate = selectedStaff.length > 0 && !isAllSelected;
 
   return (
@@ -117,7 +135,7 @@ export default function AnnouncementsPage() {
               Create and send announcements to staff members.
             </p>
           </div>
-          <Button type="submit">Send Announcement</Button>
+          <Button type="submit" disabled={staffLoading}>Send Announcement</Button>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-5">
@@ -166,6 +184,7 @@ export default function AnnouncementsPage() {
                             id="select-all-staff" 
                             checked={isIndeterminate ? 'indeterminate' : isAllSelected}
                             onCheckedChange={handleSelectAll}
+                            disabled={staffLoading}
                         />
                         <Label htmlFor="select-all-staff" className="font-medium cursor-pointer">
                             Select All Staff
@@ -173,7 +192,18 @@ export default function AnnouncementsPage() {
                     </div>
                   <ScrollArea className="h-72">
                     <div className="space-y-3 pr-4">
-                        {mockStaff.map((staff) => (
+                        {staffLoading ? (
+                            Array.from({ length: 5 }).map((_, i) => (
+                                <div key={i} className="flex items-center space-x-3 p-2">
+                                    <Skeleton className="h-4 w-4" />
+                                    <div className="w-full space-y-2">
+                                        <Skeleton className="h-4 w-3/4" />
+                                        <Skeleton className="h-3 w-1/2" />
+                                    </div>
+                                </div>
+                            ))
+                        ) : (
+                          staffList?.map((staff) => (
                             <div key={staff.id} className="flex items-center space-x-3 rounded-md p-2 hover:bg-muted/50">
                                 <Checkbox
                                 id={`select-${staff.id}`}
@@ -187,13 +217,13 @@ export default function AnnouncementsPage() {
                                   </div>
                                 </Label>
                             </div>
-                        ))}
+                        )))}
                     </div>
                   </ScrollArea>
                 </CardContent>
                 <CardFooter>
                     <p className="text-sm text-muted-foreground">
-                        {selectedStaff.length} of {mockStaff.length} staff selected.
+                        {selectedStaff.length} of {staffList?.length || 0} staff selected.
                     </p>
                 </CardFooter>
             </Card>
@@ -208,19 +238,36 @@ export default function AnnouncementsPage() {
             A history of all announcements that have been sent. Click a card to view details.
         </p>
 
-        {sentAnnouncements.length > 0 ? (
+        {announcementsLoading ? (
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {Array.from({length: 3}).map((_, i) => (
+                    <Card key={i}>
+                        <CardHeader>
+                            <Skeleton className="h-5 w-3/4" />
+                            <Skeleton className="h-4 w-1/2" />
+                        </CardHeader>
+                        <CardContent>
+                           <Skeleton className="h-8 w-full" />
+                        </CardContent>
+                        <CardFooter>
+                            <Skeleton className="h-6 w-24" />
+                        </CardFooter>
+                    </Card>
+                ))}
+            </div>
+        ) : sentAnnouncements && sentAnnouncements.length > 0 ? (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {sentAnnouncements.map((announcement) => (
               <Card key={announcement.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setViewingAnnouncement(announcement)}>
                 <CardHeader>
                   <CardTitle className="text-lg">{announcement.title}</CardTitle>
-                  <CardDescription>{announcement.sentAt}</CardDescription>
+                  <CardDescription>{formatTimestamp(announcement.sentAt)}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground line-clamp-2">{announcement.message}</p>
                 </CardContent>
                 <CardFooter>
-                  <Badge variant="outline">{announcement.recipients.length} Recipient(s)</Badge>
+                  <Badge variant="outline">{announcement.recipientCount} Recipient(s)</Badge>
                 </CardFooter>
               </Card>
             ))}
@@ -242,7 +289,7 @@ export default function AnnouncementsPage() {
             <DialogHeader>
               <DialogTitle>{viewingAnnouncement.title}</DialogTitle>
               <DialogDescription>
-                Sent on {viewingAnnouncement.sentAt}
+                Sent on {formatTimestamp(viewingAnnouncement.sentAt)}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
@@ -251,10 +298,20 @@ export default function AnnouncementsPage() {
                     <p className="text-sm text-muted-foreground rounded-md border p-4 bg-muted/50">{viewingAnnouncement.message}</p>
                 </div>
                 <div>
-                    <h3 className="mb-2 font-medium">Recipients ({viewingAnnouncement.recipients.length})</h3>
+                    <h3 className="mb-2 font-medium">Recipients ({viewingAnnouncement.recipientCount})</h3>
                     <ScrollArea className="h-48">
                         <div className="space-y-2 pr-4">
-                        {viewingAnnouncement.recipients.map(staff => (
+                        {recipientsLoading ? (
+                             Array.from({ length: 3 }).map((_, i) => (
+                                <div key={i} className="flex items-center gap-3 rounded-md border p-2">
+                                    <Skeleton className="h-8 w-8 rounded-full" />
+                                    <div className="space-y-1">
+                                        <Skeleton className="h-4 w-24" />
+                                        <Skeleton className="h-3 w-20" />
+                                    </div>
+                                </div>
+                            ))
+                        ) : detailedRecipients.map(staff => (
                             <div key={staff.id} className="flex items-center gap-3 rounded-md border p-2">
                                 <Avatar className="h-8 w-8">
                                     <AvatarImage src={staff.photoUrl} alt={staff.name} />

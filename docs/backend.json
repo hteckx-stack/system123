@@ -83,6 +83,44 @@
         "fileName",
         "date"
       ]
+    },
+    "Announcement": {
+      "title": "Announcement",
+      "description": "Represents an announcement sent to staff members.",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "The title of the announcement."
+        },
+        "message": {
+          "type": "string",
+          "description": "The content of the announcement."
+        },
+        "recipientIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "An array of staff user IDs who received the announcement."
+        },
+        "recipientCount": {
+          "type": "number",
+          "description": "The number of recipients."
+        },
+        "sentAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp when the announcement was sent."
+        }
+      },
+      "required": [
+        "title",
+        "message",
+        "recipientIds",
+        "recipientCount",
+        "sentAt"
+      ]
     }
   },
   "auth": {
@@ -102,6 +140,12 @@
         "$ref": "#/entities/Document"
       },
       "description": "Stores documents associated with staff members."
+    },
+    "/announcements/{announcementId}": {
+      "schema": {
+        "$ref": "#/entities/Announcement"
+      },
+      "description": "Stores all announcements sent to staff."
     }
   }
 }

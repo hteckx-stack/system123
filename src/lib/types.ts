@@ -1,4 +1,5 @@
 import type { LucideIcon } from "lucide-react";
+import type { Timestamp } from "firebase/firestore";
 
 export type Staff = {
   id: string;
@@ -18,6 +19,15 @@ export type Document = {
   type: string;
   fileName: string;
   date: string;
+};
+
+export type Announcement = {
+  id: string;
+  title: string;
+  message: string;
+  recipientIds: string[];
+  recipientCount: number;
+  sentAt: Timestamp;
 };
 
 export type NavItem = {
