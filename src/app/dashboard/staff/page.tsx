@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { AddStaffDialog } from "./components/add-staff-dialog"
 import { EditStaffDialog } from "./components/edit-staff-dialog"
 import type { Staff } from "@/lib/types"
 import { StaffCard } from "./components/staff-card"
@@ -9,7 +8,7 @@ import { useCollection, useFirestore } from "@/firebase"
 import { collection } from "firebase/firestore"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function StaffPage() {
   const firestore = useFirestore()
@@ -43,10 +42,9 @@ export default function StaffPage() {
             Staff Management
           </h1>
           <p className="text-muted-foreground">
-            Manage all staff members in your organization.
+            Manage all staff members in your organization. New staff can sign up and will appear here for approval.
           </p>
         </div>
-        <AddStaffDialog />
       </div>
 
       <Tabs value={filter} onValueChange={setFilter}>
@@ -91,7 +89,7 @@ export default function StaffPage() {
                 No staff members found for this filter
               </h3>
               <p className="text-sm text-muted-foreground">
-                Try a different filter or add a new staff member.
+                Try a different filter.
               </p>
             </div>
           )}
