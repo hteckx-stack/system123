@@ -247,7 +247,7 @@ export default function DocumentsPage() {
             <CardHeader>
               <CardTitle>Document Templates</CardTitle>
               <CardDescription>
-                Edit the templates for contracts, payslips, and warning letters. Use placeholders like `{{'{{staffName}}'}}` or `{{'{{date}}'}}`.
+                Edit the templates for contracts, payslips, and warning letters. Use placeholders like `{'{{staffName}}'}` or `{'{{date}}'}`.
               </CardDescription>
             </CardHeader>
             <CardContent>
