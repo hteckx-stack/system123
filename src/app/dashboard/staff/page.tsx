@@ -2,11 +2,10 @@
 
 import { useState } from "react";
 import { mockStaff } from "@/lib/placeholder-data";
-import { StaffTable } from "./components/staff-table";
-import { getColumns } from "./components/columns";
 import { AddStaffDialog } from "./components/add-staff-dialog";
 import { EditStaffDialog } from "./components/edit-staff-dialog";
 import type { Staff } from "@/lib/types";
+import { StaffCard } from "./components/staff-card";
 
 export default function StaffPage() {
   const [staffList, setStaffList] = useState<Staff[]>(mockStaff);
@@ -30,8 +29,6 @@ export default function StaffPage() {
     setStaffList(staffList.map(s => s.id === updatedStaff.id ? updatedStaff : s));
     setEditingStaff(null);
   };
-  
-  const columns = getColumns(handleEdit);
 
   return (
     <div className="space-y-4">
@@ -44,7 +41,19 @@ export default function StaffPage() {
         </div>
         <AddStaffDialog onAddStaff={handleAddStaff} />
       </div>
-      <StaffTable columns={columns} data={staffList} />
+      
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {staffList.map((staff) => (
+          <StaffCard key={staff.id} staff={staff} onEdit={handleEdit} />
+        ))}
+        {staffList.length === 0 && (
+          <div className="col-span-full rounded-lg border-2 border-dashed border-muted-foreground/30 py-12 text-center">
+            <h3 className="text-lg font-medium text-muted-foreground">No staff members found</h3>
+            <p className="text-sm text-muted-foreground">Add a new staff member to get started.</p>
+          </div>
+        )}
+      </div>
+
       <EditStaffDialog
         staff={editingStaff}
         onUpdateStaff={handleUpdateStaff}
