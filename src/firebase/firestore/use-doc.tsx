@@ -13,8 +13,13 @@ export function useDoc<T extends DocumentData>(ref: DocumentReference<T> | null)
     useEffect(() => {
         let unsubscribe: () => void = () => {};
 
-        if (!userLoading && user && ref) {
-             // Auth has loaded, user is present, and we have a ref.
+        if (userLoading) {
+            setLoading(true);
+        } else if (!user || !ref) {
+            setData(null);
+            setLoading(false);
+        } else {
+            // This block only runs if !userLoading && user && ref
             unsubscribe = onSnapshot(ref, 
                 (doc) => {
                     if (doc.exists()) {
@@ -34,12 +39,7 @@ export function useDoc<T extends DocumentData>(ref: DocumentReference<T> | null)
                     setLoading(false);
                 }
             );
-        } else if (!userLoading) {
-            // Auth has loaded, but there's no user or no ref.
-            setData(null);
-            setLoading(false);
         }
-        // If userLoading is true, we do nothing and just wait. The `loading` state remains true.
 
         return () => unsubscribe();
     }, [ref, user, userLoading]);

@@ -13,8 +13,13 @@ export function useCollection<T extends DocumentData>(query: Query<T> | null) {
     useEffect(() => {
         let unsubscribe: () => void = () => {};
 
-        if (!userLoading && user && query) {
-            // Auth has loaded, user is present, and we have a query.
+        if (userLoading) {
+            setLoading(true);
+        } else if (!user || !query) {
+            setData(null);
+            setLoading(false);
+        } else {
+            // This block only runs if !userLoading && user && query
             unsubscribe = onSnapshot(query, 
                 (snapshot) => {
                     const result: T[] = [];
@@ -38,12 +43,7 @@ export function useCollection<T extends DocumentData>(query: Query<T> | null) {
                     setLoading(false);
                 }
             );
-        } else if (!userLoading) {
-            // Auth has loaded, but there's no user or no query.
-            setData(null);
-            setLoading(false);
         }
-        // If userLoading is true, we do nothing and just wait. The `loading` state remains true.
 
         // Cleanup subscription on unmount or when dependencies change.
         return () => unsubscribe();
