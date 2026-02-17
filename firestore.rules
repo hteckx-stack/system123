@@ -1,14 +1,28 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Users
     match /users/{userId} {
-      allow read, write: if request.auth != null;
+      allow get, write: if request.auth != null;
     }
+    match /users {
+      allow list: if request.auth != null;
+    }
+
+    // Documents
     match /documents/{documentId} {
-      allow read, write: if request.auth != null;
+      allow get, write: if request.auth != null;
     }
+     match /documents {
+      allow list: if request.auth != null;
+    }
+
+    // Announcements
     match /announcements/{announcementId} {
-      allow read, write: if request.auth != null;
+      allow get, write: if request.auth != null;
+    }
+    match /announcements {
+      allow list: if request.auth != null;
     }
   }
 }
