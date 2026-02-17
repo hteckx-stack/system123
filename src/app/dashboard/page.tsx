@@ -32,39 +32,23 @@ export default function Dashboard() {
 
   const loading = staffLoading || documentsLoading || pendingStaffLoading || activityLoading;
 
-  const handleApprove = async (staff: Staff) => {
+  const handleApprove = (staff: Staff) => {
     if (!staff.id) return;
-    try {
-      await updateUser(firestore, staff.id, { status: "active" });
-      toast({
-        title: "Staff Approved",
-        description: `${staff.name} is now an active staff member.`,
-      });
-    } catch (error) {
-       toast({
-        variant: "destructive",
-        title: "Approval Failed",
-        description: `Could not approve ${staff.name}. Please try again.`,
-      });
-    }
+    updateUser(firestore, staff.id, { status: "active" });
+    toast({
+      title: "Staff Approved",
+      description: `${staff.name} is now an active staff member.`,
+    });
   };
 
-  const handleDelete = async (staff: Staff) => {
+  const handleDelete = (staff: Staff) => {
     if (!staff.id) return;
-    try {
-      await deleteUser(firestore, staff.id);
-      toast({
-        variant: "destructive",
-        title: "Staff Account Denied",
-        description: `${staff.name}'s account has been deleted.`,
-      });
-    } catch (error) {
-       toast({
-        variant: "destructive",
-        title: "Deletion Failed",
-        description: `Could not deny ${staff.name}. Please try again.`,
-      });
-    }
+    deleteUser(firestore, staff.id);
+    toast({
+      variant: "destructive",
+      title: "Staff Account Denied",
+      description: `${staff.name}'s account has been deleted.`,
+    });
   };
 
   return (

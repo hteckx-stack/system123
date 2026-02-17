@@ -89,87 +89,73 @@ export default function SettingsPage() {
 
     setIsUpdating(true)
 
-    let newPhotoUrl = formData.photoUrl
-
-    if (photoFile) {
-      try {
-        const storageRef = ref(storage, `profile-pictures/${user.uid}`)
-        const snapshot = await uploadBytes(storageRef, photoFile)
-        newPhotoUrl = await getDownloadURL(snapshot.ref)
-        setPhotoFile(null) // Reset file input state
-      } catch (error) {
-        console.error("Error uploading photo:", error)
-        toast({
-          variant: "destructive",
-          title: "Upload Failed",
-          description: "Could not upload your new photo. Please try again.",
-        })
-        setIsUpdating(false)
-        return
-      }
-    }
-
-    const updatedFirestoreFields: Partial<Staff> = {}
-    const fieldsToCompare: (keyof Staff)[] = [
-      "name",
-      "phone",
-      "position",
-      "department",
-    ]
-
-    fieldsToCompare.forEach((field) => {
-      const currentValue = formData[field] ?? ""
-      const originalValue = userProfile?.[field] ?? ""
-      if (currentValue !== originalValue) {
-        updatedFirestoreFields[field] = currentValue
-      }
-    })
-
-    if (newPhotoUrl && newPhotoUrl !== userProfile?.photoUrl) {
-      updatedFirestoreFields.photoUrl = newPhotoUrl
-    }
-
-    if (Object.keys(updatedFirestoreFields).length === 0 && !photoFile) {
-      toast({
-        title: "No Changes",
-        description: "You haven't made any changes to your profile.",
-      })
-      setIsUpdating(false)
-      return
-    }
-
     try {
-      const authUpdates: { displayName?: string; photoURL?: string } = {}
-      if (updatedFirestoreFields.name !== undefined) {
-        authUpdates.displayName = updatedFirestoreFields.name
-      }
-      if (updatedFirestoreFields.photoUrl !== undefined) {
-        authUpdates.photoURL = updatedFirestoreFields.photoUrl
-      }
+        let newPhotoUrl = formData.photoUrl
 
-      const updatePromises: Promise<any>[] = []
+        if (photoFile) {
+            const storageRef = ref(storage, `profile-pictures/${user.uid}`)
+            const snapshot = await uploadBytes(storageRef, photoFile)
+            newPhotoUrl = await getDownloadURL(snapshot.ref)
+            setPhotoFile(null) // Reset file input state
+        }
 
-      if (Object.keys(authUpdates).length > 0) {
-        updatePromises.push(updateProfile(auth.currentUser, authUpdates))
-      }
+        const updatedFirestoreFields: Partial<Staff> = {}
+        const fieldsToCompare: (keyof Staff)[] = [
+            "name",
+            "phone",
+            "position",
+            "department",
+        ]
 
-      updatePromises.push(updateUser(firestore, user.uid, updatedFirestoreFields))
+        fieldsToCompare.forEach((field) => {
+            const currentValue = formData[field] ?? ""
+            const originalValue = userProfile?.[field] ?? ""
+            if (currentValue !== originalValue) {
+            updatedFirestoreFields[field] = currentValue
+            }
+        })
 
-      await Promise.all(updatePromises)
+        if (newPhotoUrl && newPhotoUrl !== userProfile?.photoUrl) {
+            updatedFirestoreFields.photoUrl = newPhotoUrl
+        }
 
-      toast({
-        title: "Profile Updated",
-        description: "Your profile details have been successfully updated.",
-      })
+        if (Object.keys(updatedFirestoreFields).length === 0 && !photoFile) {
+            toast({
+                title: "No Changes",
+                description: "You haven't made any changes to your profile.",
+            })
+            setIsUpdating(false)
+            return
+        }
+        
+        const authUpdates: { displayName?: string; photoURL?: string } = {}
+        if (updatedFirestoreFields.name !== undefined) {
+            authUpdates.displayName = updatedFirestoreFields.name
+        }
+        if (updatedFirestoreFields.photoUrl !== undefined) {
+            authUpdates.photoURL = updatedFirestoreFields.photoUrl
+        }
+
+        if (auth.currentUser && Object.keys(authUpdates).length > 0) {
+            await updateProfile(auth.currentUser, authUpdates)
+        }
+
+        updateUser(firestore, user.uid, updatedFirestoreFields)
+
+        toast({
+            title: "Profile Updated",
+            description: "Your profile details have been successfully updated.",
+        })
+
     } catch (error) {
-      console.error("Error updating profile:", error)
-      toast({
-        variant: "destructive",
-        title: "Update Failed",
-        description: "Could not update your profile. Please try again.",
-      })
+        console.error("Error updating profile:", error)
+        toast({
+            variant: "destructive",
+            title: "Update Failed",
+            description: "Could not update your profile. Please try again.",
+        })
     } finally {
-      setIsUpdating(false)
+        setIsUpdating(false)
     }
   }
 

@@ -59,56 +59,32 @@ export function DataTableRowActions<TData extends Staff>({
     }
   }
 
-  const handleApprove = async () => {
+  const handleApprove = () => {
     if (!staff.id) return
-    try {
-        await updateUser(firestore, staff.id, { status: "active" })
-        toast({
-          title: "Staff Approved",
-          description: `${staff.name} is now an active staff member.`,
-        })
-    } catch (error) {
-        toast({
-            variant: "destructive",
-            title: "Approval Failed",
-            description: "Could not approve staff member.",
-        })
-    }
+    updateUser(firestore, staff.id, { status: "active" })
+    toast({
+      title: "Staff Approved",
+      description: `${staff.name} is now an active staff member.`,
+    })
   }
 
-  const handleDeactivate = async () => {
+  const handleDeactivate = () => {
     if (!staff.id) return
-    try {
-        await updateUser(firestore, staff.id, { status: "inactive" })
-        toast({
-          title: "Staff Deactivated",
-          description: `${staff.name} has been marked as inactive.`,
-        })
-    } catch (error) {
-        toast({
-            variant: "destructive",
-            title: "Deactivation Failed",
-            description: "Could not deactivate staff member.",
-        })
-    }
+    updateUser(firestore, staff.id, { status: "inactive" })
+    toast({
+      title: "Staff Deactivated",
+      description: `${staff.name} has been marked as inactive.`,
+    })
   }
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!staff.id) return
-    try {
-        await deleteUser(firestore, staff.id)
-        toast({
-          variant: "destructive",
-          title: "Staff Deleted",
-          description: `${staff.name} has been deleted from the database.`,
-        })
-    } catch (error) {
-        toast({
-            variant: "destructive",
-            title: "Deletion Failed",
-            description: "Could not delete staff member.",
-        })
-    }
+    deleteUser(firestore, staff.id)
+    toast({
+      variant: "destructive",
+      title: "Staff Deleted",
+      description: `${staff.name} has been deleted from the database.`,
+    })
   }
 
   return (

@@ -46,7 +46,7 @@ export function EditStaffDialog({
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (!staff.id) return
 
@@ -68,20 +68,11 @@ export function EditStaffDialog({
     })
 
     if (Object.keys(updatedFields).length > 0) {
-      try {
-        await updateUser(firestore, staff.id, updatedFields)
-        toast({
-          title: "Staff Updated",
-          description: `${staff.name}'s details have been updated.`,
-        })
-      } catch (error) {
-        console.error("Error updating staff:", error)
-        toast({
-          variant: "destructive",
-          title: "Update Failed",
-          description: "Could not update staff details. Please try again.",
-        })
-      }
+      updateUser(firestore, staff.id, updatedFields)
+      toast({
+        title: "Staff Updated",
+        description: `${staff.name}'s details have been updated.`,
+      })
     } else {
       toast({
         title: "No Changes",
