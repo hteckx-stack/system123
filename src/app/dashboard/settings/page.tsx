@@ -34,7 +34,10 @@ export default function SettingsPage() {
   const storage = useStorage()
   const { toast } = useToast()
 
-  const userDocRef = useMemo(() => (user ? doc(firestore, "users", user.uid) : null), [user, firestore]);
+  const userDocRef = useMemo(
+    () => (user ? doc(firestore, "users", user.uid) : null),
+    [user, firestore]
+  )
   const { data: userProfile, loading: profileLoading } = useDoc<Staff>(userDocRef)
 
   const [formData, setFormData] = useState<Partial<Staff>>({})
@@ -107,11 +110,16 @@ export default function SettingsPage() {
     }
 
     const updatedFirestoreFields: Partial<Staff> = {}
-    const fieldsToCompare: (keyof Staff)[] = ['name', 'phone', 'position', 'department']
+    const fieldsToCompare: (keyof Staff)[] = [
+      "name",
+      "phone",
+      "position",
+      "department",
+    ]
 
-    fieldsToCompare.forEach(field => {
-      const currentValue = formData[field] ?? ''
-      const originalValue = userProfile?.[field] ?? ''
+    fieldsToCompare.forEach((field) => {
+      const currentValue = formData[field] ?? ""
+      const originalValue = userProfile?.[field] ?? ""
       if (currentValue !== originalValue) {
         updatedFirestoreFields[field] = currentValue
       }
@@ -139,11 +147,15 @@ export default function SettingsPage() {
         authUpdates.photoURL = updatedFirestoreFields.photoUrl
       }
 
+      const updatePromises: Promise<any>[] = []
+
       if (Object.keys(authUpdates).length > 0) {
-        await updateProfile(auth.currentUser, authUpdates)
+        updatePromises.push(updateProfile(auth.currentUser, authUpdates))
       }
 
-      await updateUser(firestore, user.uid, updatedFirestoreFields)
+      updatePromises.push(updateUser(firestore, user.uid, updatedFirestoreFields))
+
+      await Promise.all(updatePromises)
 
       toast({
         title: "Profile Updated",
@@ -191,20 +203,20 @@ export default function SettingsPage() {
               </div>
               <div className="grid gap-4 sm:grid-cols-2 mt-6">
                 <div className="space-y-2">
-                    <Skeleton className="h-4 w-20" />
-                    <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-10 w-full" />
                 </div>
                 <div className="space-y-2">
-                    <Skeleton className="h-4 w-20" />
-                    <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-10 w-full" />
                 </div>
                 <div className="space-y-2">
-                    <Skeleton className="h-4 w-20" />
-                    <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-10 w-full" />
                 </div>
-                 <div className="space-y-2">
-                    <Skeleton className="h-4 w-20" />
-                    <Skeleton className="h-10 w-full" />
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-10 w-full" />
                 </div>
               </div>
             </div>
@@ -223,15 +235,17 @@ export default function SettingsPage() {
                   </AvatarFallback>
                 </Avatar>
                 <div className="w-full space-y-2">
-                   <Label htmlFor="photo">Profile Photo</Label>
-                   <Input 
-                     id="photo" 
-                     name="photo" 
-                     type="file"
-                     onChange={handleFileChange}
-                     accept="image/*"
-                    />
-                    <p className="text-sm text-muted-foreground">Upload a new photo to update your profile picture.</p>
+                  <Label htmlFor="photo">Profile Photo</Label>
+                  <Input
+                    id="photo"
+                    name="photo"
+                    type="file"
+                    onChange={handleFileChange}
+                    accept="image/*"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Upload a new photo to update your profile picture.
+                  </p>
                 </div>
               </div>
 
@@ -261,9 +275,12 @@ export default function SettingsPage() {
                   <Input
                     id="phone"
                     name="phone"
+                    type="tel"
                     value={formData.phone || ""}
                     onChange={handleChange}
-                    placeholder="e.g. +1-202-555-0184"
+                    placeholder="+260977123456"
+                    pattern="^\+260\d{9}$"
+                    title="Enter a valid Zambian phone number (e.g. +260977123456)"
                   />
                 </div>
                 <div className="space-y-2">

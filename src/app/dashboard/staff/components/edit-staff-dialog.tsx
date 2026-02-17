@@ -52,35 +52,41 @@ export function EditStaffDialog({
 
     const updatedFields: Partial<Staff> = {}
     // We explicitly check which fields have changed.
-    const fieldsToCompare: (keyof Staff)[] = ['name', 'phone', 'email', 'position', 'department'];
-    fieldsToCompare.forEach(field => {
-      const currentValue = formData[field] ?? '';
-      const originalValue = staff[field] ?? '';
+    const fieldsToCompare: (keyof Staff)[] = [
+      "name",
+      "phone",
+      "email",
+      "position",
+      "department",
+    ]
+    fieldsToCompare.forEach((field) => {
+      const currentValue = formData[field] ?? ""
+      const originalValue = staff[field] ?? ""
       if (currentValue !== originalValue) {
-        updatedFields[field] = currentValue;
+        updatedFields[field] = currentValue
       }
-    });
+    })
 
     if (Object.keys(updatedFields).length > 0) {
-       try {
+      try {
         await updateUser(firestore, staff.id, updatedFields)
         toast({
           title: "Staff Updated",
           description: `${staff.name}'s details have been updated.`,
         })
       } catch (error) {
-        console.error("Error updating staff:", error);
+        console.error("Error updating staff:", error)
         toast({
           variant: "destructive",
           title: "Update Failed",
           description: "Could not update staff details. Please try again.",
-        });
+        })
       }
     } else {
-        toast({
-            title: "No Changes",
-            description: "You haven't made any changes to the staff details.",
-        });
+      toast({
+        title: "No Changes",
+        description: "You haven't made any changes to the staff details.",
+      })
     }
 
     onOpenChange(false)
@@ -122,6 +128,9 @@ export function EditStaffDialog({
                 onChange={handleChange}
                 className="col-span-3"
                 required
+                placeholder="+260977123456"
+                pattern="^\+260\d{9}$"
+                title="Enter a valid Zambian phone number (e.g. +260977123456)"
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">

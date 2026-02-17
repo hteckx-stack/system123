@@ -132,6 +132,9 @@ export function AddStaffDialog() {
                 type="tel"
                 className="col-span-3"
                 required
+                placeholder="+260977123456"
+                pattern="^\+260\d{9}$"
+                title="Enter a valid Zambian phone number (e.g. +260977123456)"
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
