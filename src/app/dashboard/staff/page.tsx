@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react"
 import { EditStaffDialog } from "./components/edit-staff-dialog"
+import { AddStaffDialog } from "./components/add-staff-dialog"
 import type { Staff } from "@/lib/types"
 import { StaffCard } from "./components/staff-card"
 import { useCollection, useFirestore } from "@/firebase"
@@ -9,6 +10,7 @@ import { collection } from "firebase/firestore"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Button } from "@/components/ui/button"
 
 export default function StaffPage() {
   const firestore = useFirestore()
@@ -16,6 +18,7 @@ export default function StaffPage() {
   const { data: staffList, loading } = useCollection<Staff>(staffQuery)
 
   const [editingStaff, setEditingStaff] = useState<Staff | null>(null)
+  const [isAddStaffDialogOpen, setIsAddStaffDialogOpen] = useState(false)
   const [filter, setFilter] = useState<string>("all")
 
   const handleEdit = (staff: Staff) => {
@@ -45,6 +48,7 @@ export default function StaffPage() {
             Manage all staff members in your organization. New staff can sign up and will appear here for approval.
           </p>
         </div>
+        <Button onClick={() => setIsAddStaffDialogOpen(true)}>Add Staff</Button>
       </div>
 
       <Tabs value={filter} onValueChange={setFilter}>
@@ -95,6 +99,11 @@ export default function StaffPage() {
           )}
         </div>
       )}
+
+      <AddStaffDialog
+        open={isAddStaffDialogOpen}
+        onOpenChange={setIsAddStaffDialogOpen}
+      />
 
       <EditStaffDialog
         staff={editingStaff}
