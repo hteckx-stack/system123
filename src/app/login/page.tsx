@@ -8,16 +8,73 @@ import { AtSign, KeyRound } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { PlaceHolderImages } from "@/lib/placeholder-images";
+import { useAuth } from '@/firebase';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { useToast } from '@/hooks/use-toast';
+import { useState, useEffect } from 'react';
+import { useUser } from '@/firebase';
 
 
 export default function LoginPage() {
   const router = useRouter();
+  const auth = useAuth();
+  const { toast } = useToast();
+  const { user, loading } = useUser();
+  const [email, setEmail] = useState('admin@bluelink.com');
+  const [password, setPassword] = useState('password123');
+  
   const loginImage = PlaceHolderImages.find(p => p.id === 'login-splash');
 
-  const handleLogin = (event: React.FormEvent) => {
+  // Redirect if user is already logged in
+  useEffect(() => {
+    if (!loading && user) {
+      router.push('/dashboard');
+    }
+  }, [user, loading, router]);
+
+
+  const handleLogin = async (event: React.FormEvent) => {
     event.preventDefault();
-    router.push('/dashboard');
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      router.push('/dashboard');
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Login Failed',
+        description: "Invalid email or password.",
+      });
+    }
   };
+
+  if (loading || (!loading && user)) {
+      return (
+        <div className="flex h-screen items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <svg
+            width="48"
+            height="48"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            className="animate-pulse-subtle text-primary"
+          >
+            <path
+              d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"
+              fill="currentColor"
+            />
+            <path
+              d="M12.5 12.5H17v-1h-4.5V7H11v5.5H7v1h4V17h1.5v-4.5z"
+              fill="currentColor"
+            />
+          </svg>
+          <p className="text-lg font-medium text-muted-foreground">
+            Loading...
+          </p>
+        </div>
+      </div>
+      )
+  }
 
   return (
     <div className="w-full lg:grid lg:min-h-screen lg:grid-cols-2">
@@ -59,7 +116,8 @@ export default function LoginPage() {
                     placeholder="admin@example.com"
                     required
                     className="pl-10"
-                    defaultValue="admin@bluelink.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                   />
                 </div>
             </div>
@@ -80,7 +138,8 @@ export default function LoginPage() {
                   type="password"
                   required
                   className="pl-10"
-                  defaultValue="password123"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                 />
               </div>
             </div>

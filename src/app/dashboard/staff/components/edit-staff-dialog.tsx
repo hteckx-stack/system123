@@ -13,33 +13,58 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import type { Staff } from "@/lib/types"
+import { useFirestore } from "@/firebase"
+import { updateUser } from "@/firebase/firestore/users"
+import { useToast } from "@/hooks/use-toast"
 
 interface EditStaffDialogProps {
   staff: Staff | null
-  onUpdateStaff: (staff: Staff) => void
   open: boolean
   onOpenChange: (open: boolean) => void
+  onUpdateStaff: (staff: Staff) => void
 }
 
-export function EditStaffDialog({ staff, onUpdateStaff, open, onOpenChange }: EditStaffDialogProps) {
-  const [formData, setFormData] = useState<Partial<Staff>>({});
+export function EditStaffDialog({
+  staff,
+  open,
+  onOpenChange,
+}: EditStaffDialogProps) {
+  const [formData, setFormData] = useState<Partial<Staff>>({})
+  const firestore = useFirestore()
+  const { toast } = useToast()
 
   useEffect(() => {
     if (staff) {
       setFormData(staff)
     }
   }, [staff])
-  
-  if (!staff) return null;
+
+  if (!staff) return null
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
+    setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
   const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    onUpdateStaff(formData as Staff)
+    if (!staff.id) return
+
+    const updatedFields: Partial<Staff> = {}
+    for (const key in formData) {
+      if (formData[key as keyof Staff] !== staff[key as keyof Staff]) {
+        updatedFields[key as keyof Staff] = formData[key as keyof Staff]
+      }
+    }
+
+    if (Object.keys(updatedFields).length > 0) {
+      updateUser(firestore, staff.id, updatedFields)
+      toast({
+        title: "Staff Updated",
+        description: `${staff.name}'s details have been updated.`,
+      })
+    }
+
     onOpenChange(false)
   }
 
@@ -55,30 +80,84 @@ export function EditStaffDialog({ staff, onUpdateStaff, open, onOpenChange }: Ed
         <form id="edit-staff-form" onSubmit={handleFormSubmit}>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">Name</Label>
-              <Input id="name" name="name" value={formData.name || ''} onChange={handleChange} className="col-span-3" required />
+              <Label htmlFor="name" className="text-right">
+                Name
+              </Label>
+              <Input
+                id="name"
+                name="name"
+                value={formData.name || ""}
+                onChange={handleChange}
+                className="col-span-3"
+                required
+              />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="phone" className="text-right">Phone</Label>
-              <Input id="phone" name="phone" type="tel" value={formData.phone || ''} onChange={handleChange} className="col-span-3" required />
+              <Label htmlFor="phone" className="text-right">
+                Phone
+              </Label>
+              <Input
+                id="phone"
+                name="phone"
+                type="tel"
+                value={formData.phone || ""}
+                onChange={handleChange}
+                className="col-span-3"
+                required
+              />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="email" className="text-right">Email</Label>
-              <Input id="email" name="email" type="email" value={formData.email || ''} onChange={handleChange} className="col-span-3" />
+              <Label htmlFor="email" className="text-right">
+                Email
+              </Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                value={formData.email || ""}
+                onChange={handleChange}
+                className="col-span-3"
+              />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="position" className="text-right">Position</Label>
-              <Input id="position" name="position" value={formData.position || ''} onChange={handleChange} className="col-span-3" required />
+              <Label htmlFor="position" className="text-right">
+                Position
+              </Label>
+              <Input
+                id="position"
+                name="position"
+                value={formData.position || ""}
+                onChange={handleChange}
+                className="col-span-3"
+                required
+              />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="department" className="text-right">Department</Label>
-              <Input id="department" name="department" value={formData.department || ''} onChange={handleChange} className="col-span-3" required />
+              <Label htmlFor="department" className="text-right">
+                Department
+              </Label>
+              <Input
+                id="department"
+                name="department"
+                value={formData.department || ""}
+                onChange={handleChange}
+                className="col-span-3"
+                required
+              />
             </div>
           </div>
         </form>
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button type="submit" form="edit-staff-form">Save Changes</Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+          >
+            Cancel
+          </Button>
+          <Button type="submit" form="edit-staff-form">
+            Save Changes
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
