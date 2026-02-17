@@ -46,7 +46,14 @@ export const getColumns = (onEdit: (staff: Staff) => void): ColumnDef<Staff>[] =
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => {
-      const status = row.original.status
+      const status = row.original.status;
+      if (status === "pending") {
+        return (
+          <Badge variant="outline" className="border-yellow-500/50 text-yellow-700 bg-yellow-50 dark:text-yellow-400 dark:bg-yellow-900/30">
+            pending
+          </Badge>
+        )
+      }
       return (
         <Badge variant={status === "active" ? "secondary" : "destructive"} className={status === "active" ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" : ""}>
           {status}

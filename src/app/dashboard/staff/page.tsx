@@ -9,6 +9,7 @@ import { useCollection, useFirestore } from "@/firebase"
 import { collection } from "firebase/firestore"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function StaffPage() {
   const firestore = useFirestore()
@@ -16,6 +17,7 @@ export default function StaffPage() {
   const { data: staffList, loading } = useCollection<Staff>(staffQuery)
 
   const [editingStaff, setEditingStaff] = useState<Staff | null>(null)
+  const [filter, setFilter] = useState<string>("all")
 
   const handleEdit = (staff: Staff) => {
     setEditingStaff(staff)
@@ -25,6 +27,13 @@ export default function StaffPage() {
     // onSnapshot will handle the update
     setEditingStaff(null)
   }
+
+  const filteredStaffList = useMemo(() => {
+    if (!staffList) return []
+    if (filter === "all") return staffList
+    return staffList.filter((staff) => staff.status === filter)
+  }, [staffList, filter])
+
 
   return (
     <div className="space-y-4">
@@ -39,6 +48,15 @@ export default function StaffPage() {
         </div>
         <AddStaffDialog />
       </div>
+
+      <Tabs value={filter} onValueChange={setFilter}>
+        <TabsList>
+          <TabsTrigger value="all">All</TabsTrigger>
+          <TabsTrigger value="pending">Pending</TabsTrigger>
+          <TabsTrigger value="active">Active</TabsTrigger>
+          <TabsTrigger value="inactive">Inactive</TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       {loading ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -63,17 +81,17 @@ export default function StaffPage() {
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {staffList &&
-            staffList.map((staff) => (
+          {filteredStaffList &&
+            filteredStaffList.map((staff) => (
               <StaffCard key={staff.id} staff={staff} onEdit={handleEdit} />
             ))}
-          {(!staffList || staffList.length === 0) && (
+          {(!filteredStaffList || filteredStaffList.length === 0) && (
             <div className="col-span-full rounded-lg border-2 border-dashed border-muted-foreground/30 py-12 text-center">
               <h3 className="text-lg font-medium text-muted-foreground">
-                No staff members found
+                No staff members found for this filter
               </h3>
               <p className="text-sm text-muted-foreground">
-                Add a new staff member to get started.
+                Try a different filter or add a new staff member.
               </p>
             </div>
           )}

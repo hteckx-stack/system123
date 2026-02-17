@@ -34,6 +34,7 @@
         "status": {
           "type": "string",
           "enum": [
+            "pending",
             "active",
             "inactive"
           ],
@@ -43,10 +44,7 @@
       "required": [
         "name",
         "email",
-        "status",
-        "position",
-        "department",
-        "phone"
+        "status"
       ]
     },
     "Document": {

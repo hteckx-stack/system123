@@ -9,12 +9,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { MoreHorizontal, Edit, UserX, Send } from "lucide-react"
+import { MoreHorizontal, Edit, UserX, Send, Trash2, UserCheck } from "lucide-react"
 import { Staff } from "@/lib/types"
 import { useAuth, useFirestore } from "@/firebase"
 import { sendPasswordResetEmail } from "firebase/auth"
 import { useToast } from "@/hooks/use-toast"
-import { updateUser } from "@/firebase/firestore/users"
+import { updateUser, deleteUser } from "@/firebase/firestore/users"
 
 interface DataTableRowActionsProps<TData extends Staff> {
   row: Row<TData>
@@ -59,12 +59,31 @@ export function DataTableRowActions<TData extends Staff>({
     }
   }
 
+  const handleApprove = () => {
+    if (!staff.id) return
+    updateUser(firestore, staff.id, { status: "active" })
+    toast({
+      title: "Staff Approved",
+      description: `${staff.name} is now an active staff member.`,
+    })
+  }
+
   const handleDeactivate = () => {
     if (!staff.id) return
     updateUser(firestore, staff.id, { status: "inactive" })
     toast({
       title: "Staff Deactivated",
       description: `${staff.name} has been marked as inactive.`,
+    })
+  }
+
+  const handleDelete = () => {
+    if (!staff.id) return
+    deleteUser(firestore, staff.id)
+    toast({
+      variant: "destructive",
+      title: "Staff Deleted",
+      description: `${staff.name} has been deleted from the database.`,
     })
   }
 
@@ -80,18 +99,39 @@ export function DataTableRowActions<TData extends Staff>({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-[160px]">
-        <DropdownMenuItem onSelect={() => onEdit(row.original)}>
-          <Edit className="mr-2 h-4 w-4" />
-          Edit
-        </DropdownMenuItem>
-        <DropdownMenuItem onSelect={handleDeactivate}>
-          <UserX className="mr-2 h-4 w-4" />
-          Deactivate
-        </DropdownMenuItem>
+        {staff.status === 'pending' && (
+          <DropdownMenuItem onSelect={handleApprove}>
+            <UserCheck className="mr-2 h-4 w-4" />
+            Approve
+          </DropdownMenuItem>
+        )}
+        {staff.status === 'active' && (
+          <DropdownMenuItem onSelect={() => onEdit(row.original)}>
+            <Edit className="mr-2 h-4 w-4" />
+            Edit
+          </DropdownMenuItem>
+        )}
+        {staff.status === 'active' && (
+          <DropdownMenuItem onSelect={handleDeactivate}>
+            <UserX className="mr-2 h-4 w-4" />
+            Deactivate
+          </DropdownMenuItem>
+        )}
+        {staff.status === 'inactive' && (
+          <DropdownMenuItem onSelect={handleApprove}>
+            <UserCheck className="mr-2 h-4 w-4" />
+            Reactivate
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={handleResetPassword}>
           <Send className="mr-2 h-4 w-4" />
           Send Login Reset
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onSelect={handleDelete} className="text-destructive focus:text-destructive focus:bg-destructive/10">
+            <Trash2 className="mr-2 h-4 w-4" />
+            Delete
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

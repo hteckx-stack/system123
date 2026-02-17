@@ -1,4 +1,4 @@
-import { collection, addDoc, doc, setDoc, type Firestore } from 'firebase/firestore';
+import { collection, addDoc, doc, setDoc, deleteDoc, type Firestore } from 'firebase/firestore';
 import type { Staff } from '@/lib/types';
 import { errorEmitter } from '../error-emitter';
 import { FirestorePermissionError } from '../errors';
@@ -22,6 +22,17 @@ export function updateUser(db: Firestore, staffId: string, staffData: Partial<St
           path: userDocRef.path,
           operation: 'update',
           requestResourceData: staffData
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
+}
+
+export function deleteUser(db: Firestore, staffId: string) {
+    const userDocRef = doc(db, 'users', staffId);
+    deleteDoc(userDocRef).catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: userDocRef.path,
+          operation: 'delete',
         });
         errorEmitter.emit('permission-error', permissionError);
       });

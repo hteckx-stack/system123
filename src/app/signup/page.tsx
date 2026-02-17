@@ -52,7 +52,7 @@ export default function SignupPage() {
       const newStaffData = {
           name,
           email,
-          status: 'active' as const,
+          status: 'pending' as const,
           photoUrl,
           department: "Not Assigned",
           position: "Not Assigned",

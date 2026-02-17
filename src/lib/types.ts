@@ -9,7 +9,7 @@ export type Staff = {
   position: string;
   department: string;
   photoUrl: string;
-  status: 'active' | 'inactive';
+  status: 'pending' | 'active' | 'inactive';
 };
 
 export type Document = {
