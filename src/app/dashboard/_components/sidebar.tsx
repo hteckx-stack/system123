@@ -16,7 +16,6 @@ import type { NavItem } from "@/lib/types"
 import { 
   LayoutDashboard, 
   Users, 
-  ClipboardList, 
   FileText, 
   Megaphone, 
   History, 
@@ -26,7 +25,6 @@ import {
 const navItems: NavItem[] = [
   { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard, variant: "default" },
   { title: "Staff", href: "/dashboard/staff", icon: Users, variant: "ghost" },
-  { title: "Tasks", href: "/dashboard/tasks", icon: ClipboardList, variant: "ghost" },
   { title: "Documents", href: "/dashboard/documents", icon: FileText, variant: "ghost" },
   { title: "Announcements", href: "/dashboard/announcements", icon: Megaphone, variant: "ghost" },
   { title: "Activity", href: "/dashboard/activity", icon: History, variant: "ghost" },
