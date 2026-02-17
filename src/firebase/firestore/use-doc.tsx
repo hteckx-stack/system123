@@ -11,17 +11,20 @@ export function useDoc<T extends DocumentData>(ref: DocumentReference<T> | null)
     const { user, loading: userLoading } = useUser();
 
     useEffect(() => {
+        // We are loading until the user is definitively authenticated or not.
         if (userLoading) {
             setLoading(true);
             return;
         }
 
+        // If there's no user or no ref, we're not fetching data.
         if (!user || !ref) {
             setData(null);
             setLoading(false);
             return;
         }
-
+        
+        setLoading(true); // Start loading while we fetch
         const unsubscribe = onSnapshot(ref, 
             (doc) => {
                 if (doc.exists()) {

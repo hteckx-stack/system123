@@ -11,17 +11,20 @@ export function useCollection<T extends DocumentData>(query: Query<T> | null) {
     const { user, loading: userLoading } = useUser();
 
     useEffect(() => {
+        // We are loading until the user is definitively authenticated or not.
         if (userLoading) {
             setLoading(true);
             return;
         }
 
+        // If there's no user or no query, we're not fetching data.
         if (!user || !query) {
             setData(null);
             setLoading(false);
             return;
         }
         
+        setLoading(true); // Start loading while we fetch
         const unsubscribe = onSnapshot(query, 
             (snapshot) => {
                 const result: T[] = [];
