@@ -10,6 +10,9 @@ import { useToast } from "@/hooks/use-toast"
 import { mockStaff } from "@/lib/placeholder-data"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Download } from "lucide-react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { Textarea } from "@/components/ui/textarea"
 
 // Mock data for uploaded documents
 const mockDocuments = [
@@ -18,6 +21,31 @@ const mockDocuments = [
   { id: "DOC-003", staffName: "Arthur Morgan", type: "Warning Letter", fileName: "warning-am.pdf", date: "2023-11-02" },
 ]
 
+// Placeholder templates
+const placeholderTemplates = {
+  contract: `CONTRACT OF EMPLOYMENT
+
+BETWEEN:
+[Company Name]
+
+AND:
+{{staffName}}
+
+This contract is effective from {{date}}.
+...`,
+  payslip: `PAYSLIP
+
+Staff Name: {{staffName}}
+Month: {{month}}
+...`,
+  warning: `WARNING LETTER
+
+Date: {{date}}
+To: {{staffName}}
+
+This letter serves as a formal warning regarding...`
+}
+
 export default function DocumentsPage() {
   const { toast } = useToast()
   const [selectedStaffId, setSelectedStaffId] = useState<string>("")
@@ -25,6 +53,10 @@ export default function DocumentsPage() {
   const [file, setFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
   const [documents, setDocuments] = useState(mockDocuments);
+
+  const [contractTemplate, setContractTemplate] = useState(placeholderTemplates.contract)
+  const [payslipTemplate, setPayslipTemplate] = useState(placeholderTemplates.payslip)
+  const [warningTemplate, setWarningTemplate] = useState(placeholderTemplates.warning)
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -84,116 +116,183 @@ export default function DocumentsPage() {
     form.reset()
   }
 
+  const handleSaveTemplate = (templateType: 'contract' | 'payslip' | 'warning') => {
+    console.log(`Saving ${templateType} template...`)
+    // In a real app, you'd save this to a database
+    toast({
+      title: "Template Saved!",
+      description: `The ${templateType} template has been updated.`,
+    })
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Document Management</h1>
           <p className="text-muted-foreground">
-            Upload and manage documents for staff members.
+            Upload, manage, and create templates for staff documents.
           </p>
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-5">
-        <div className="lg:col-span-2">
-          <form onSubmit={handleSubmit}>
-            <Card>
-              <CardHeader>
-                <CardTitle>Upload New Document</CardTitle>
-                <CardDescription>
-                  Select a staff member, document type, and file to upload.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Staff Member</Label>
-                   <Select value={selectedStaffId} onValueChange={setSelectedStaffId} required>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a staff member" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {mockStaff.map((staff) => (
-                        <SelectItem key={staff.id} value={staff.id}>{staff.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                 <div className="space-y-2">
-                  <Label>Document Type</Label>
-                  <Select value={documentType} onValueChange={setDocumentType} required>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select document type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Payslip">Payslip</SelectItem>
-                      <SelectItem value="Warning Letter">Warning Letter</SelectItem>
-                      <SelectItem value="Contract">Contract</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="document-file">File</Label>
-                  <Input id="document-file" type="file" onChange={handleFileChange} required />
-                </div>
-              </CardContent>
-              <CardFooter>
-                 <Button type="submit" disabled={uploading} className="w-full">
-                  {uploading ? "Uploading..." : "Upload & Send"}
-                </Button>
-              </CardFooter>
-            </Card>
-          </form>
-        </div>
+      <Tabs defaultValue="manage" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="manage">Manage Documents</TabsTrigger>
+          <TabsTrigger value="templates">Document Templates</TabsTrigger>
+        </TabsList>
+        <TabsContent value="manage" className="mt-6">
+          <div className="grid gap-6 lg:grid-cols-5">
+            <div className="lg:col-span-2">
+              <form onSubmit={handleSubmit}>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Upload New Document</CardTitle>
+                    <CardDescription>
+                      Select a staff member, document type, and file to upload.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Staff Member</Label>
+                       <Select value={selectedStaffId} onValueChange={setSelectedStaffId} required>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a staff member" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {mockStaff.map((staff) => (
+                            <SelectItem key={staff.id} value={staff.id}>{staff.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                     <div className="space-y-2">
+                      <Label>Document Type</Label>
+                      <Select value={documentType} onValueChange={setDocumentType} required>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select document type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Payslip">Payslip</SelectItem>
+                          <SelectItem value="Warning Letter">Warning Letter</SelectItem>
+                          <SelectItem value="Contract">Contract</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="document-file">File</Label>
+                      <Input id="document-file" type="file" onChange={handleFileChange} required />
+                    </div>
+                  </CardContent>
+                  <CardFooter>
+                     <Button type="submit" disabled={uploading} className="w-full">
+                      {uploading ? "Uploading..." : "Upload & Send"}
+                    </Button>
+                  </CardFooter>
+                </Card>
+              </form>
+            </div>
 
-        <div className="lg:col-span-3">
+            <div className="lg:col-span-3">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Uploaded Documents</CardTitle>
+                  <CardDescription>
+                    View and manage recently uploaded documents.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Staff Member</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>File Name</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead><span className="sr-only">Actions</span></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {documents.length > 0 ? (
+                        documents.map((doc) => (
+                          <TableRow key={doc.id}>
+                            <TableCell className="font-medium">{doc.staffName}</TableCell>
+                            <TableCell>{doc.type}</TableCell>
+                            <TableCell>{doc.fileName}</TableCell>
+                            <TableCell>{doc.date}</TableCell>
+                            <TableCell className="text-right">
+                               <Button variant="ghost" size="icon">
+                                  <Download className="h-4 w-4" />
+                                  <span className="sr-only">Download</span>
+                                </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={5} className="h-24 text-center">
+                            No documents found.
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </TabsContent>
+        <TabsContent value="templates" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Uploaded Documents</CardTitle>
+              <CardTitle>Document Templates</CardTitle>
               <CardDescription>
-                View and manage recently uploaded documents.
+                Edit the templates for contracts, payslips, and warning letters. Use placeholders like `{{'{{staffName}}'}}` or `{{'{{date}}'}}`.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Staff Member</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>File Name</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead><span className="sr-only">Actions</span></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {documents.length > 0 ? (
-                    documents.map((doc) => (
-                      <TableRow key={doc.id}>
-                        <TableCell className="font-medium">{doc.staffName}</TableCell>
-                        <TableCell>{doc.type}</TableCell>
-                        <TableCell>{doc.fileName}</TableCell>
-                        <TableCell>{doc.date}</TableCell>
-                        <TableCell className="text-right">
-                           <Button variant="ghost" size="icon">
-                              <Download className="h-4 w-4" />
-                              <span className="sr-only">Download</span>
-                            </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={5} className="h-24 text-center">
-                        No documents found.
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+              <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="contract">
+                  <AccordionTrigger className="text-lg font-medium">Contract Template</AccordionTrigger>
+                  <AccordionContent className="space-y-4 pt-4">
+                    <Textarea
+                      value={contractTemplate}
+                      onChange={(e) => setContractTemplate(e.target.value)}
+                      rows={15}
+                      placeholder="Enter contract template here..."
+                    />
+                    <Button onClick={() => handleSaveTemplate('contract')}>Save Contract Template</Button>
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="payslip">
+                  <AccordionTrigger className="text-lg font-medium">Payslip Template</AccordionTrigger>
+                  <AccordionContent className="space-y-4 pt-4">
+                     <Textarea
+                      value={payslipTemplate}
+                      onChange={(e) => setPayslipTemplate(e.target.value)}
+                      rows={15}
+                      placeholder="Enter payslip template here..."
+                    />
+                    <Button onClick={() => handleSaveTemplate('payslip')}>Save Payslip Template</Button>
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="warning-letter">
+                  <AccordionTrigger className="text-lg font-medium">Warning Letter Template</AccordionTrigger>
+                  <AccordionContent className="space-y-4 pt-4">
+                     <Textarea
+                      value={warningTemplate}
+                      onChange={(e) => setWarningTemplate(e.target.value)}
+                      rows={15}
+                      placeholder="Enter warning letter template here..."
+                    />
+                    <Button onClick={() => handleSaveTemplate('warning')}>Save Warning Letter Template</Button>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
             </CardContent>
           </Card>
-        </div>
-      </div>
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }
