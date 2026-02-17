@@ -59,32 +59,56 @@ export function DataTableRowActions<TData extends Staff>({
     }
   }
 
-  const handleApprove = () => {
+  const handleApprove = async () => {
     if (!staff.id) return
-    updateUser(firestore, staff.id, { status: "active" })
-    toast({
-      title: "Staff Approved",
-      description: `${staff.name} is now an active staff member.`,
-    })
+    try {
+        await updateUser(firestore, staff.id, { status: "active" })
+        toast({
+          title: "Staff Approved",
+          description: `${staff.name} is now an active staff member.`,
+        })
+    } catch (error) {
+        toast({
+            variant: "destructive",
+            title: "Approval Failed",
+            description: "Could not approve staff member.",
+        })
+    }
   }
 
-  const handleDeactivate = () => {
+  const handleDeactivate = async () => {
     if (!staff.id) return
-    updateUser(firestore, staff.id, { status: "inactive" })
-    toast({
-      title: "Staff Deactivated",
-      description: `${staff.name} has been marked as inactive.`,
-    })
+    try {
+        await updateUser(firestore, staff.id, { status: "inactive" })
+        toast({
+          title: "Staff Deactivated",
+          description: `${staff.name} has been marked as inactive.`,
+        })
+    } catch (error) {
+        toast({
+            variant: "destructive",
+            title: "Deactivation Failed",
+            description: "Could not deactivate staff member.",
+        })
+    }
   }
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!staff.id) return
-    deleteUser(firestore, staff.id)
-    toast({
-      variant: "destructive",
-      title: "Staff Deleted",
-      description: `${staff.name} has been deleted from the database.`,
-    })
+    try {
+        await deleteUser(firestore, staff.id)
+        toast({
+          variant: "destructive",
+          title: "Staff Deleted",
+          description: `${staff.name} has been deleted from the database.`,
+        })
+    } catch (error) {
+        toast({
+            variant: "destructive",
+            title: "Deletion Failed",
+            description: "Could not delete staff member.",
+        })
+    }
   }
 
   return (

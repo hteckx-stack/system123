@@ -41,10 +41,11 @@ export default function SettingsPage() {
     if (userProfile) {
       setFormData(userProfile)
     } else if (user) {
-      // Pre-fill with auth data if no profile exists
+      // Pre-fill with auth data if no profile exists yet
       setFormData({
         name: user.displayName || "",
         email: user.email || "",
+        photoUrl: user.photoURL || "",
       })
     }
   }, [userProfile, user])
@@ -58,43 +59,53 @@ export default function SettingsPage() {
     event.preventDefault()
     if (!user || !auth.currentUser) return
 
-    const updatedFields: Partial<Staff> = {}
-    // Compare form data with the initial profile data to find changes
-    Object.keys(formData).forEach((key) => {
-      const formValue = formData[key as keyof Staff]
-      const profileValue = userProfile ? userProfile[key as keyof Staff] : undefined
-      if (formValue !== profileValue && (formValue || profileValue !== undefined)) {
-        updatedFields[key as keyof Staff] = formValue
+    const updatedFirestoreFields: Partial<Staff> = {};
+    const fieldsToCompare: (keyof Staff)[] = ['name', 'phone', 'position', 'department', 'photoUrl'];
+
+    fieldsToCompare.forEach(field => {
+      const currentValue = formData[field] ?? '';
+      const originalValue = userProfile?.[field] ?? '';
+      if (currentValue !== originalValue) {
+        updatedFirestoreFields[field] = currentValue;
       }
     });
 
-    if (Object.keys(updatedFields).length > 0) {
-      // 1. Update Firestore document
-      updateUser(firestore, user.uid, updatedFields)
+    if (Object.keys(updatedFirestoreFields).length === 0) {
+      toast({
+        title: "No Changes",
+        description: "You haven't made any changes to your profile.",
+      });
+      return;
+    }
 
-      // 2. Update Firebase Auth profile
-      const authUpdates: { displayName?: string; photoURL?: string } = {}
-      if (updatedFields.name) {
-        authUpdates.displayName = updatedFields.name
+    try {
+      // 1. Update Firebase Auth profile
+      const authUpdates: { displayName?: string; photoURL?: string } = {};
+      if (updatedFirestoreFields.name !== undefined) {
+        authUpdates.displayName = updatedFirestoreFields.name;
       }
-      if (updatedFields.photoUrl) {
-        authUpdates.photoURL = updatedFields.photoUrl
+      if (updatedFirestoreFields.photoUrl !== undefined) {
+        authUpdates.photoURL = updatedFirestoreFields.photoUrl;
       }
 
       if (Object.keys(authUpdates).length > 0) {
-        await updateProfile(auth.currentUser, authUpdates)
+        await updateProfile(auth.currentUser, authUpdates);
       }
+
+      // 2. Update Firestore document
+      await updateUser(firestore, user.uid, updatedFirestoreFields);
 
       toast({
         title: "Profile Updated",
         description: "Your profile details have been successfully updated.",
-      })
-    } else {
+      });
+    } catch (error) {
+      console.error("Error updating profile:", error);
       toast({
-        title: "No Changes",
-        description: "You haven't made any changes to your profile.",
-        variant: "default",
-      })
+        variant: "destructive",
+        title: "Update Failed",
+        description: "Could not update your profile. Please try again.",
+      });
     }
   }
 
@@ -113,7 +124,7 @@ export default function SettingsPage() {
         <CardHeader>
           <CardTitle>Profile</CardTitle>
           <CardDescription>
-            This is how others will see you on the site.
+            This is how others will see you on the site. The photo must be a valid URL.
           </CardDescription>
         </CardHeader>
         <CardContent>

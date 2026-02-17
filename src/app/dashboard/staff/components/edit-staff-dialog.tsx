@@ -46,23 +46,41 @@ export function EditStaffDialog({
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (!staff.id) return
 
     const updatedFields: Partial<Staff> = {}
-    for (const key in formData) {
-      if (formData[key as keyof Staff] !== staff[key as keyof Staff]) {
-        updatedFields[key as keyof Staff] = formData[key as keyof Staff]
+    // We explicitly check which fields have changed.
+    const fieldsToCompare: (keyof Staff)[] = ['name', 'phone', 'email', 'position', 'department'];
+    fieldsToCompare.forEach(field => {
+      const currentValue = formData[field] ?? '';
+      const originalValue = staff[field] ?? '';
+      if (currentValue !== originalValue) {
+        updatedFields[field] = currentValue;
       }
-    }
+    });
 
     if (Object.keys(updatedFields).length > 0) {
-      updateUser(firestore, staff.id, updatedFields)
-      toast({
-        title: "Staff Updated",
-        description: `${staff.name}'s details have been updated.`,
-      })
+       try {
+        await updateUser(firestore, staff.id, updatedFields)
+        toast({
+          title: "Staff Updated",
+          description: `${staff.name}'s details have been updated.`,
+        })
+      } catch (error) {
+        console.error("Error updating staff:", error);
+        toast({
+          variant: "destructive",
+          title: "Update Failed",
+          description: "Could not update staff details. Please try again.",
+        });
+      }
+    } else {
+        toast({
+            title: "No Changes",
+            description: "You haven't made any changes to the staff details.",
+        });
     }
 
     onOpenChange(false)
