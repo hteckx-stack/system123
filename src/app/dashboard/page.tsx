@@ -186,16 +186,13 @@ export default function Dashboard() {
                 ))
             ) : recentActivity && recentActivity.length > 0 ? (
                 recentActivity.map(activity => {
-                    const Icon = activity.type === 'announcement' ? Megaphone : FileUp;
-                    const activityText = activity.type === 'announcement' 
-                        ? <>sent the announcement <strong>{activity.title}</strong></>
-                        : <>uploaded the document <strong>{activity.fileName}</strong></>
+                    const activityText = <>sent the announcement <strong>{activity.title}</strong></>;
 
                     return (
                         <div className="flex items-center gap-4" key={activity.id}>
                             <Avatar className="hidden h-10 w-10 sm:flex">
                                 <AvatarFallback>
-                                    <Icon className="h-5 w-5 text-muted-foreground" />
+                                    <Megaphone className="h-5 w-5 text-muted-foreground" />
                                 </AvatarFallback>
                             </Avatar>
                             <div className="grid gap-1">
