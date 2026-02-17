@@ -16,6 +16,8 @@ import { cn } from "@/lib/utils"
 import {
   Sheet,
   SheetContent,
+  SheetHeader,
+  SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
@@ -85,7 +87,10 @@ export function AppHeader() {
           </Button>
         </SheetTrigger>
         <SheetContent side="left">
-          <nav className="grid gap-6 text-lg font-medium">
+          <SheetHeader>
+            <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+          </SheetHeader>
+          <nav className="grid gap-6 text-lg font-medium pt-4">
             <Link
               href="#"
               className="flex items-center gap-2 text-lg font-semibold"
