@@ -15,6 +15,8 @@ import {
   Megaphone,
   KeyRound,
   ShieldAlert,
+  FileWarning,
+  Receipt,
 } from "lucide-react"
 
 const mockActivities = [
@@ -31,8 +33,24 @@ const mockActivities = [
     user: "Admin",
     userAvatar: "https://picsum.photos/seed/admin/40/40",
     action: "DOC_UPLOAD",
-    details: "Uploaded 'contract-am.pdf' for Arthur Morgan",
+    details: "Uploaded 'contract-am.pdf' (Contract) for Arthur Morgan",
     timestamp: "2023-11-15 09:45 AM",
+  },
+  {
+    id: "ACT-006",
+    user: "Admin",
+    userAvatar: "https://picsum.photos/seed/admin/40/40",
+    action: "DOC_UPLOAD",
+    details: "Uploaded 'payslip-ev.pdf' (Payslip) for Eleanor Vance",
+    timestamp: "2023-11-15 09:40 AM",
+  },
+  {
+    id: "ACT-007",
+    user: "Admin",
+    userAvatar: "https://picsum.photos/seed/admin/40/40",
+    action: "DOC_UPLOAD",
+    details: "Uploaded 'warning-mh.pdf' (Warning Letter) for Marcus Holloway",
+    timestamp: "2023-11-15 09:35 AM",
   },
   {
     id: "ACT-003",
@@ -41,6 +59,14 @@ const mockActivities = [
     action: "ANNOUNCE_SEND",
     details: "Sent announcement: 'Team-wide meeting next week'",
     timestamp: "2023-11-14 02:30 PM",
+  },
+  {
+    id: "ACT-008",
+    user: "Admin",
+    userAvatar: "https://picsum.photos/seed/admin/40/40",
+    action: "ANNOUNCE_SEND",
+    details: "Sent announcement: 'Holiday schedule update'",
+    timestamp: "2023-11-14 10:00 AM",
   },
   {
     id: "ACT-004",
@@ -133,6 +159,11 @@ const getActionMetaData = (action: string) => {
 }
 
 export default function ActivityPage() {
+  const contractCount = mockActivities.filter(a => a.action === 'DOC_UPLOAD' && a.details.includes('Contract')).length;
+  const payslipCount = mockActivities.filter(a => a.action === 'DOC_UPLOAD' && a.details.includes('Payslip')).length;
+  const warningCount = mockActivities.filter(a => a.action === 'DOC_UPLOAD' && a.details.includes('Warning Letter')).length;
+  const announcementCount = mockActivities.filter(a => a.action === 'ANNOUNCE_SEND').length;
+
   return (
     <div className="space-y-6">
       <div>
@@ -141,6 +172,47 @@ export default function ActivityPage() {
           A log of important actions performed by administrators.
         </p>
       </div>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Contracts Sent</CardTitle>
+                <FileText className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+                <div className="text-2xl font-bold">{contractCount}</div>
+            </CardContent>
+        </Card>
+        <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Payslips Issued</CardTitle>
+                <Receipt className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+                <div className="text-2xl font-bold">{payslipCount}</div>
+            </CardContent>
+        </Card>
+        <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Warning Letters</CardTitle>
+                <FileWarning className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+                <div className="text-2xl font-bold">{warningCount}</div>
+            </CardContent>
+        </Card>
+        <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Announcements</CardTitle>
+                <Megaphone className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+                <div className="text-2xl font-bold">{announcementCount}</div>
+            </CardContent>
+        </Card>
+      </div>
+
+      <h2 className="text-2xl font-semibold tracking-tight">Recent Activities</h2>
 
       <div className="space-y-4">
         {mockActivities.map((activity) => {
