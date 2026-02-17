@@ -1,8 +1,16 @@
+"use client";
+
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Users, FileText } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { useCollection, useFirestore } from "@/firebase";
+import { useMemo } from "react";
+import { collection } from "firebase/firestore";
+import type { Document, Staff } from "@/lib/types";
+import { Skeleton } from "@/components/ui/skeleton";
+
 
 const recentActivities = [
   {
@@ -48,6 +56,16 @@ const recentActivities = [
 ]
 
 export default function Dashboard() {
+  const firestore = useFirestore();
+
+  const staffQuery = useMemo(() => collection(firestore, "users"), [firestore]);
+  const { data: staffList, loading: staffLoading } = useCollection<Staff>(staffQuery);
+
+  const documentsQuery = useMemo(() => collection(firestore, "documents"), [firestore]);
+  const { data: documents, loading: documentsLoading } = useCollection<Document>(documentsQuery);
+
+  const loading = staffLoading || documentsLoading;
+
   return (
     <div className="space-y-4">
       <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
@@ -58,9 +76,9 @@ export default function Dashboard() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">6</div>
+            {loading ? <Skeleton className="h-8 w-10" /> : <div className="text-2xl font-bold">{staffList?.length ?? 0}</div>}
             <p className="text-xs text-muted-foreground">
-              +2 since last month
+              Currently managed staff members.
             </p>
           </CardContent>
         </Card>
@@ -70,9 +88,9 @@ export default function Dashboard() {
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">34</div>
+          {loading ? <Skeleton className="h-8 w-10" /> : <div className="text-2xl font-bold">{documents?.length ?? 0}</div>}
             <p className="text-xs text-muted-foreground">
-              +5 uploaded this month
+              Total documents stored.
             </p>
           </CardContent>
         </Card>

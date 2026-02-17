@@ -11,6 +11,15 @@ export type Staff = {
   status: 'active' | 'inactive';
 };
 
+export type Document = {
+  id: string;
+  staffName: string;
+  staffId: string;
+  type: string;
+  fileName: string;
+  date: string;
+};
+
 export type NavItem = {
   title: string;
   href: string;

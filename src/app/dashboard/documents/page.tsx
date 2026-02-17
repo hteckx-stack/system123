@@ -1,26 +1,23 @@
 
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
-import { mockStaff } from "@/lib/placeholder-data"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Download } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Textarea } from "@/components/ui/textarea"
-
-// Mock data for uploaded documents
-const mockDocuments = [
-  { id: "DOC-001", staffName: "Eleanor Vance", type: "Contract", fileName: "contract-ev.pdf", date: "2023-10-15" },
-  { id: "DOC-002", staffName: "Marcus Holloway", type: "Payslip", fileName: "payslip-mh-oct.pdf", date: "2023-10-30" },
-  { id: "DOC-003", staffName: "Arthur Morgan", type: "Warning Letter", fileName: "warning-am.pdf", date: "2023-11-02" },
-]
+import { useCollection, useFirestore } from "@/firebase"
+import { collection } from "firebase/firestore"
+import type { Document, Staff } from "@/lib/types"
+import { addDocument } from "@/firebase/firestore/documents"
+import { Skeleton } from "@/components/ui/skeleton"
 
 // Placeholder templates
 const placeholderTemplates = {
@@ -54,14 +51,20 @@ This letter serves as a formal warning regarding...`
 
 export default function DocumentsPage() {
   const { toast } = useToast()
+  const firestore = useFirestore()
+
+  const staffQuery = useMemo(() => collection(firestore, "users"), [firestore])
+  const { data: staffList, loading: staffLoading } = useCollection<Staff>(staffQuery)
+
+  const documentsQuery = useMemo(() => collection(firestore, "documents"), [firestore])
+  const { data: documents, loading: documentsLoading } = useCollection<Document>(documentsQuery)
   
   // State for file upload
   const [selectedStaffId, setSelectedStaffId] = useState<string>("")
   const [documentType, setDocumentType] = useState<string>("")
   const [file, setFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
-  const [documents, setDocuments] = useState(mockDocuments);
-
+  
   // State for template generation
   const [templateStaffId, setTemplateStaffId] = useState<string>("")
   const [templateDocType, setTemplateDocType] = useState<string>("")
@@ -95,16 +98,16 @@ export default function DocumentsPage() {
     setUploading(true)
     await new Promise(resolve => setTimeout(resolve, 1500))
 
-    const staffMember = mockStaff.find(s => s.id === selectedStaffId);
+    const staffMember = staffList?.find(s => s.id === selectedStaffId);
     if (staffMember) {
-      const newDocument = {
-        id: `DOC-${Math.random().toString(36).slice(2, 7)}`,
+      const newDocument: Omit<Document, 'id'> = {
+        staffId: staffMember.id,
         staffName: staffMember.name,
         type: documentType,
         fileName: file.name,
         date: new Date().toISOString().split('T')[0],
       };
-      setDocuments(prev => [newDocument, ...prev]);
+      addDocument(firestore, newDocument);
     }
     setUploading(false)
     
@@ -141,17 +144,17 @@ export default function DocumentsPage() {
     setGenerating(true)
     await new Promise(resolve => setTimeout(resolve, 1000))
 
-    const staffMember = mockStaff.find(s => s.id === templateStaffId);
+    const staffMember = staffList?.find(s => s.id === templateStaffId);
     if (staffMember) {
-        const docName = `${templateDocType.toLowerCase().replace(' ', '-')}-${staffMember.name.toLowerCase().replace(' ', '-')}.pdf`;
-        const newDocument = {
-            id: `DOC-${Math.random().toString(36).slice(2, 7)}`,
+        const docName = `${templateDocType.toLowerCase().replace(' ', '-')}-${staffMember.name.toLowerCase().split(' ').join('-')}.pdf`;
+        const newDocument: Omit<Document, 'id'> = {
+            staffId: staffMember.id,
             staffName: staffMember.name,
             type: templateDocType,
             fileName: docName,
             date: new Date().toISOString().split('T')[0],
         };
-        setDocuments(prev => [newDocument, ...prev]);
+        addDocument(firestore, newDocument);
         toast({
             title: "Document Generated & Sent!",
             description: `${templateDocType} for ${staffMember.name} has been sent.`,
@@ -201,19 +204,19 @@ export default function DocumentsPage() {
                   <CardContent>
                     <Tabs defaultValue="upload" className="w-full">
                         <TabsList className="grid w-full grid-cols-2">
-                            <TabsTrigger value="upload">Upload File</TabsTrigger>
-                            <TabsTrigger value="template">Use Template</TabsTrigger>
+                            <TabsTrigger value="upload" disabled={staffLoading}>Upload File</TabsTrigger>
+                            <TabsTrigger value="template" disabled={staffLoading}>Use Template</TabsTrigger>
                         </TabsList>
                         <TabsContent value="upload" className="pt-6">
                             <form onSubmit={handleUploadSubmit} className="space-y-4">
                                 <div className="space-y-2">
                                 <Label>Staff Member</Label>
-                                <Select value={selectedStaffId} onValueChange={setSelectedStaffId} required>
+                                <Select value={selectedStaffId} onValueChange={setSelectedStaffId} required disabled={staffLoading}>
                                     <SelectTrigger>
                                     <SelectValue placeholder="Select a staff member" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                    {mockStaff.map((staff) => (
+                                    {staffList?.map((staff) => (
                                         <SelectItem key={staff.id} value={staff.id}>{staff.name}</SelectItem>
                                     ))}
                                     </SelectContent>
@@ -236,7 +239,7 @@ export default function DocumentsPage() {
                                 <Label htmlFor="document-file">File</Label>
                                 <Input id="document-file" type="file" onChange={handleFileChange} required />
                                 </div>
-                                <Button type="submit" disabled={uploading} className="w-full">
+                                <Button type="submit" disabled={uploading || staffLoading} className="w-full">
                                     {uploading ? "Uploading..." : "Upload & Send"}
                                 </Button>
                             </form>
@@ -245,12 +248,12 @@ export default function DocumentsPage() {
                             <form onSubmit={handleGenerateSubmit} className="space-y-4">
                                 <div className="space-y-2">
                                     <Label>Staff Member</Label>
-                                    <Select value={templateStaffId} onValueChange={setTemplateStaffId} required>
+                                    <Select value={templateStaffId} onValueChange={setTemplateStaffId} required disabled={staffLoading}>
                                         <SelectTrigger>
                                         <SelectValue placeholder="Select a staff member" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                        {mockStaff.map((staff) => (
+                                        {staffList?.map((staff) => (
                                             <SelectItem key={staff.id} value={staff.id}>{staff.name}</SelectItem>
                                         ))}
                                         </SelectContent>
@@ -282,7 +285,7 @@ export default function DocumentsPage() {
                                         />
                                     </div>
                                 )}
-                                <Button type="submit" disabled={generating} className="w-full">
+                                <Button type="submit" disabled={generating || staffLoading} className="w-full">
                                     {generating ? "Generating..." : "Generate & Send"}
                                 </Button>
                             </form>
@@ -312,7 +315,17 @@ export default function DocumentsPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {documents.length > 0 ? (
+                      {documentsLoading ? (
+                        Array.from({ length: 3 }).map((_, i) => (
+                            <TableRow key={i}>
+                                <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                                <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+                                <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                                <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+                                <TableCell><Skeleton className="h-8 w-8" /></TableCell>
+                            </TableRow>
+                        ))
+                      ) : documents && documents.length > 0 ? (
                         documents.map((doc) => (
                           <TableRow key={doc.id}>
                             <TableCell className="font-medium">{doc.staffName}</TableCell>
@@ -400,5 +413,3 @@ export default function DocumentsPage() {
     </div>
   )
 }
-
-    

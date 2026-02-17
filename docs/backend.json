@@ -48,6 +48,41 @@
         "department",
         "phone"
       ]
+    },
+    "Document": {
+      "title": "Document",
+      "description": "Represents a document uploaded or generated for a staff member.",
+      "type": "object",
+      "properties": {
+        "staffName": {
+          "type": "string",
+          "description": "Name of the staff member the document belongs to."
+        },
+        "staffId": {
+          "type": "string",
+          "description": "ID of the staff member."
+        },
+        "type": {
+          "type": "string",
+          "description": "Type of the document (e.g., Contract, Payslip)."
+        },
+        "fileName": {
+          "type": "string",
+          "description": "The name of the document file."
+        },
+        "date": {
+          "type": "string",
+          "format": "date",
+          "description": "The date the document was created/uploaded."
+        }
+      },
+      "required": [
+        "staffName",
+        "staffId",
+        "type",
+        "fileName",
+        "date"
+      ]
     }
   },
   "auth": {
@@ -61,6 +96,12 @@
         "$ref": "#/entities/UserProfile"
       },
       "description": "Stores user profile information, keyed by user ID."
+    },
+    "/documents/{documentId}": {
+      "schema": {
+        "$ref": "#/entities/Document"
+      },
+      "description": "Stores documents associated with staff members."
     }
   }
 }
