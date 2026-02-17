@@ -11,14 +11,22 @@ export function useCollection<T extends DocumentData>(query: Query<T> | null) {
     const { user, loading: userLoading } = useUser();
 
     useEffect(() => {
-        // Don't run query if no query, user is loading, or user is not logged in.
-        if (!query || userLoading || !user) {
+        if (!query || userLoading) {
+            // If there's no query or the user is still loading, we just wait.
+            // The loading state remains true.
+            return;
+        }
+
+        if (!user) {
+            // The user has finished loading, and they are not logged in.
+            // We can stop loading and show no data.
             setLoading(false);
             setData(null);
             return;
         }
         
-        setLoading(true);
+        // At this point, we have a query and an authenticated user.
+        // The loading state is still true from its initial value.
 
         const unsubscribe = onSnapshot(query, 
             (snapshot) => {
@@ -40,8 +48,8 @@ export function useCollection<T extends DocumentData>(query: Query<T> | null) {
                     operation: 'list',
                 });
                 errorEmitter.emit('permission-error', permissionError);
-                setLoading(false);
                 setData(null);
+                setLoading(false);
             }
         );
 

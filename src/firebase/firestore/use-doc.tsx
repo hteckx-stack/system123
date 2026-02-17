@@ -11,14 +11,22 @@ export function useDoc<T extends DocumentData>(ref: DocumentReference<T> | null)
     const { user, loading: userLoading } = useUser();
 
     useEffect(() => {
-        // Don't run query if no ref, user is loading, or user is not logged in.
-        if (!ref || userLoading || !user) {
+        if (!ref || userLoading) {
+            // If there's no ref or the user is still loading, just wait.
+            // The loading state remains true.
+            return;
+        }
+
+        if (!user) {
+            // The user has finished loading, and they are not logged in.
+            // We can stop loading and show no data.
             setLoading(false);
             setData(null);
             return;
         }
 
-        setLoading(true);
+        // At this point, we have a ref and an authenticated user.
+        // The loading state is still true from its initial value.
 
         const unsubscribe = onSnapshot(ref, 
             (doc) => {
@@ -35,8 +43,8 @@ export function useDoc<T extends DocumentData>(ref: DocumentReference<T> | null)
                     operation: 'get',
                 });
                 errorEmitter.emit('permission-error', permissionError);
-                setLoading(false);
                 setData(null);
+                setLoading(false);
             }
         );
 
