@@ -11,50 +11,43 @@ export function useCollection<T extends DocumentData>(query: Query<T> | null) {
     const { user, loading: userLoading } = useUser();
 
     useEffect(() => {
-        if (!query || userLoading) {
-            // If there's no query or the user is still loading, we just wait.
-            // The loading state remains true.
-            return;
-        }
+        let unsubscribe: () => void = () => {};
 
-        if (!user) {
-            // The user has finished loading, and they are not logged in.
-            // We can stop loading and show no data.
-            setLoading(false);
-            setData(null);
-            return;
-        }
-        
-        // At this point, we have a query and an authenticated user.
-        // The loading state is still true from its initial value.
-
-        const unsubscribe = onSnapshot(query, 
-            (snapshot) => {
-                const result: T[] = [];
-                snapshot.forEach((doc) => {
-                    result.push({ id: doc.id, ...doc.data() } as T);
-                });
-                setData(result);
-                setLoading(false);
-            }, 
-            (error) => {
-                let path = 'unknown collection';
-                // This is a workaround to get the path from a query object, as the public API does not expose it.
-                if (query && (query as any)._query?.path?.segments) {
-                    path = (query as any)._query.path.segments.join('/');
+        if (!userLoading && user && query) {
+            // Auth has loaded, user is present, and we have a query.
+            unsubscribe = onSnapshot(query, 
+                (snapshot) => {
+                    const result: T[] = [];
+                    snapshot.forEach((doc) => {
+                        result.push({ id: doc.id, ...doc.data() } as T);
+                    });
+                    setData(result);
+                    setLoading(false);
+                }, 
+                (error) => {
+                    let path = 'unknown collection';
+                    if (query && (query as any)._query?.path?.segments) {
+                        path = (query as any)._query.path.segments.join('/');
+                    }
+                    const permissionError = new FirestorePermissionError({
+                        path: path, 
+                        operation: 'list',
+                    });
+                    errorEmitter.emit('permission-error', permissionError);
+                    setData(null);
+                    setLoading(false);
                 }
-                const permissionError = new FirestorePermissionError({
-                    path: path, 
-                    operation: 'list',
-                });
-                errorEmitter.emit('permission-error', permissionError);
-                setData(null);
-                setLoading(false);
-            }
-        );
+            );
+        } else if (!userLoading) {
+            // Auth has loaded, but there's no user or no query.
+            setData(null);
+            setLoading(false);
+        }
+        // If userLoading is true, we do nothing and just wait. The `loading` state remains true.
 
+        // Cleanup subscription on unmount or when dependencies change.
         return () => unsubscribe();
-    }, [query, userLoading, user]);
+    }, [query, user, userLoading]);
 
     return { data, loading };
 }
