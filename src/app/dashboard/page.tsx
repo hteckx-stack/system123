@@ -14,6 +14,7 @@ import { updateUser, deleteUser } from "@/firebase/firestore/users";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 export default function Dashboard() {
   const firestore = useFirestore();
