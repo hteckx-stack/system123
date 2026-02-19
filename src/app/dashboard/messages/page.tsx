@@ -29,15 +29,26 @@ export default function MessagesPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   // Fetch Conversations
+  // Note: We avoid combining 'where' and 'orderBy' in the same query to bypass index requirements
   const convQuery = useMemo(() => {
-    let q = query(collection(firestore, "conversations"), orderBy("timestamp", "desc"))
     if (topicFilter !== "all") {
-      q = query(q, where("topic", "==", topicFilter))
+      return query(collection(firestore, "conversations"), where("topic", "==", topicFilter))
     }
-    return q
+    return query(collection(firestore, "conversations"), orderBy("timestamp", "desc"))
   }, [firestore, topicFilter])
 
-  const { data: conversations, loading: convsLoading } = useCollection<Conversation>(convQuery)
+  const { data: rawConversations, loading: convsLoading } = useCollection<Conversation>(convQuery)
+
+  // Sort conversations client-side if a filter is applied (since we removed server-side orderBy)
+  const conversations = useMemo(() => {
+    if (!rawConversations) return null;
+    if (topicFilter === "all") return rawConversations;
+    return [...rawConversations].sort((a, b) => {
+      const tA = a.timestamp?.toMillis() || 0;
+      const tB = b.timestamp?.toMillis() || 0;
+      return tB - tA;
+    });
+  }, [rawConversations, topicFilter]);
 
   const selectedConv = useMemo(() => 
     conversations?.find(c => c.id === selectedConvId), 
@@ -52,14 +63,22 @@ export default function MessagesPage() {
     }
 
     setMessagesLoading(true)
+    // Filter by conversation_id only to avoid composite index requirement for prototype
     const q = query(
       collection(firestore, "messages"),
-      where("conversation_id", "==", selectedConvId),
-      orderBy("timestamp", "asc")
+      where("conversation_id", "==", selectedConvId)
     )
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Message))
+      
+      // Client-side sort to ensure correct order without requiring a Firestore index
+      msgs.sort((a, b) => {
+        const tA = a.timestamp?.toMillis() || 0;
+        const tB = b.timestamp?.toMillis() || 0;
+        return tA - tB;
+      });
+
       setMessages(msgs)
       setMessagesLoading(false)
       // Scroll to bottom
