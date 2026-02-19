@@ -38,6 +38,7 @@ import { updateUser, deleteUser } from "@/firebase/firestore/users"
 import { useRouter } from "next/navigation"
 import { getOrCreateConversation } from "@/firebase/firestore/messages"
 import { useState } from "react"
+import { cn } from "@/lib/utils"
 
 interface StaffCardProps {
   staff: Staff
