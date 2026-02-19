@@ -1,9 +1,9 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
-import { Users, FileText, UserPlus, Megaphone, Clock, CalendarDays, ShieldCheck, ArrowUpRight } from "lucide-react"
+import { Users, FileText, UserPlus, Megaphone, Clock, CalendarDays, ShieldCheck, ArrowUpRight, History } from "lucide-react"
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/button';
 import { useCollection, useFirestore } from "@/firebase";
 import { useMemo } from "react";
 import { collection, query, where, orderBy, limit } from "firebase/firestore";
