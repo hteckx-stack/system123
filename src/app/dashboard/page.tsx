@@ -1,8 +1,7 @@
-
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
-import { Users, FileText, UserPlus, Megaphone, Clock, CalendarDays, ShieldCheck } from "lucide-react"
+import { Users, FileText, UserPlus, Megaphone, Clock, CalendarDays, ShieldCheck, ArrowUpRight } from "lucide-react"
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useCollection, useFirestore } from "@/firebase";
@@ -29,7 +28,6 @@ export default function Dashboard() {
   const pendingLeavesQuery = useMemo(() => query(collection(firestore, "leave_requests"), where("status", "==", "pending")), [firestore]);
   const { data: pendingLeaves, loading: leavesLoading } = useCollection<LeaveRequest>(pendingLeavesQuery);
 
-  // New Sign Ups should focus on staff awaiting approval
   const pendingStaffQuery = useMemo(() => query(
     collection(firestore, "users"), 
     where("status", "==", "pending"),
@@ -78,62 +76,52 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold tracking-tight">System Overview</h1>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Staff</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {loading ? <Skeleton className="h-8 w-10" /> : <div className="text-2xl font-bold">{staffList?.length ?? 0}</div>}
-            <p className="text-xs text-muted-foreground">Registered users</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Check-ins</CardTitle>
-            <Clock className="h-4 w-4 text-orange-500" />
-          </CardHeader>
-          <CardContent>
-            {loading ? <Skeleton className="h-8 w-10" /> : <div className="text-2xl font-bold">{pendingCheckIns?.length ?? 0}</div>}
-            <p className="text-xs text-muted-foreground">Awaiting approval</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Leave Requests</CardTitle>
-            <CalendarDays className="h-4 w-4 text-blue-500" />
-          </CardHeader>
-          <CardContent>
-            {loading ? <Skeleton className="h-8 w-10" /> : <div className="text-2xl font-bold">{pendingLeaves?.length ?? 0}</div>}
-            <p className="text-xs text-muted-foreground">Pending review</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Staff Sign Ups</CardTitle>
-            <UserPlus className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {loading ? <Skeleton className="h-8 w-10" /> : <div className="text-2xl font-bold">{pendingStaff?.length ?? 0}</div>}
-            <p className="text-xs text-muted-foreground">New accounts</p>
-          </CardContent>
-        </Card>
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="flex flex-col gap-1">
+        <h1 className="text-3xl font-bold tracking-tight text-[#1A1A1A]">System Overview</h1>
+        <p className="text-[#6B7280]">Welcome back, administrator. Here's what's happening today.</p>
       </div>
 
-       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="lg:col-span-4">
-            <CardHeader>
-                <CardTitle>New Staff Sign Ups</CardTitle>
-                <CardDescription>Review and approve new staff members waiting for access.</CardDescription>
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        {[
+          { title: "Total Staff", val: staffList?.length, icon: Users, color: "text-blue-600", bg: "bg-blue-50", desc: "Registered users" },
+          { title: "Pending Check-ins", val: pendingCheckIns?.length, icon: Clock, color: "text-orange-600", bg: "bg-orange-50", desc: "Arrivals today" },
+          { title: "Leave Requests", val: pendingLeaves?.length, icon: CalendarDays, color: "text-green-600", bg: "bg-green-50", desc: "Awaiting review" },
+          { title: "Pending Approvals", val: pendingStaff?.length, icon: UserPlus, color: "text-purple-600", bg: "bg-purple-50", desc: "New registrations" },
+        ].map((item, idx) => (
+          <Card key={idx} className="border-none shadow-soft overflow-hidden">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-semibold uppercase tracking-wider text-[#6B7280]">{item.title}</CardTitle>
+              <div className={cn("p-2 rounded-lg", item.bg)}>
+                <item.icon className={cn("h-4 w-4", item.color)} />
+              </div>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent>
+              {loading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-bold text-[#1A1A1A]">{item.val ?? 0}</div>}
+              <p className="text-xs text-[#6B7280] mt-1">{item.desc}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+       <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-7">
+        <Card className="lg:col-span-4 border-none shadow-soft">
+            <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="text-xl">Staff Onboarding</CardTitle>
+                  <CardDescription>Review new staff members waiting for system access.</CardDescription>
+                </div>
+                <Link href="/dashboard/staff">
+                  <Button variant="ghost" size="sm" className="text-accent hover:bg-accent/5 gap-1">
+                    Manage All <ArrowUpRight className="h-4 w-4" />
+                  </Button>
+                </Link>
+            </CardHeader>
+            <CardContent className="space-y-4 pt-2">
                 {pendingStaffLoading ? (
                     <div className="space-y-4">
-                        {Array.from({length: 2}).map((_, i) => (
-                            <div key={i} className="flex items-center justify-between">
+                        {Array.from({length: 3}).map((_, i) => (
+                            <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-muted/30">
                                 <div className="flex items-center gap-4">
                                     <Skeleton className="h-10 w-10 rounded-full" />
                                     <div className="space-y-1">
@@ -142,52 +130,48 @@ export default function Dashboard() {
                                     </div>
                                 </div>
                                 <div className="flex gap-2">
-                                    <Skeleton className="h-9 w-20" />
-                                    <Skeleton className="h-9 w-20" />
+                                    <Skeleton className="h-9 w-20 rounded-lg" />
+                                    <Skeleton className="h-9 w-20 rounded-lg" />
                                 </div>
                             </div>
                         ))}
                     </div>
                 ) : pendingStaff && pendingStaff.length > 0 ? (
-                    pendingStaff.map((staff) => (
-                        <div key={staff.id} className="flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                                <Avatar className="h-10 w-10">
-                                    <AvatarImage src={staff.photoUrl} alt={staff.name} />
-                                    <AvatarFallback>{staff.name?.charAt(0)}</AvatarFallback>
-                                </Avatar>
-                                <div>
-                                    <p className="font-medium">{staff.name}</p>
-                                    <p className="text-sm text-muted-foreground">{staff.email}</p>
-                                </div>
-                            </div>
-                            <div className="flex gap-2">
-                                <Button size="sm" variant="outline" onClick={() => handleApprove(staff)}>Approve</Button>
-                                <Button size="sm" variant="destructive" onClick={() => handleDelete(staff)}>Deny</Button>
-                            </div>
-                        </div>
-                    ))
+                    <div className="space-y-3">
+                      {pendingStaff.map((staff) => (
+                          <div key={staff.id} className="flex items-center justify-between p-4 rounded-xl border border-slate-50 bg-white hover:border-accent/20 transition-all shadow-sm">
+                              <div className="flex items-center gap-4">
+                                  <Avatar className="h-11 w-11 border-2 border-slate-100 shadow-sm">
+                                      <AvatarImage src={staff.photoUrl} alt={staff.name} />
+                                      <AvatarFallback className="bg-primary/10 text-primary font-bold">{staff.name?.charAt(0)}</AvatarFallback>
+                                  </Avatar>
+                                  <div>
+                                      <p className="font-semibold text-[#1A1A1A]">{staff.name}</p>
+                                      <p className="text-xs text-[#6B7280]">{staff.email}</p>
+                                  </div>
+                              </div>
+                              <div className="flex gap-2">
+                                  <Button size="sm" className="bg-[#22C55E] hover:bg-[#1ea34d] shadow-sm" onClick={() => handleApprove(staff)}>Approve</Button>
+                                  <Button size="sm" variant="ghost" className="text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => handleDelete(staff)}>Deny</Button>
+                              </div>
+                          </div>
+                      ))}
+                    </div>
                 ) : (
-                    <div className="py-12 text-center text-muted-foreground">
-                        <p>No new sign ups waiting for approval.</p>
+                    <div className="py-20 text-center flex flex-col items-center justify-center gap-3 bg-slate-50/50 rounded-2xl border-2 border-dashed border-slate-200">
+                        <UserPlus className="h-10 w-10 text-slate-300" />
+                        <p className="text-slate-400 font-medium">No new sign ups waiting for approval.</p>
                     </div>
                 )}
             </CardContent>
-            <CardFooter>
-                <Link href="/dashboard/staff" className="w-full">
-                    <Button variant="outline" className="w-full">
-                        Manage All Staff
-                    </Button>
-                </Link>
-            </CardFooter>
         </Card>
 
-        <Card className="lg:col-span-3">
+        <Card className="lg:col-span-3 border-none shadow-soft">
           <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-            <CardDescription>A log of recent actions from administrators.</CardDescription>
+            <CardTitle className="text-xl">Recent Activity</CardTitle>
+            <CardDescription>Audit trail of recent system broadcasts.</CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-6">
+          <CardContent className="space-y-6 pt-2">
             {activityLoading ? (
                 Array.from({length: 4}).map((_, i) => (
                    <div className="flex items-center gap-4" key={i}>
@@ -199,36 +183,33 @@ export default function Dashboard() {
                     </div>
                 ))
             ) : recentActivity && recentActivity.length > 0 ? (
-                recentActivity.map(activity => {
-                    const activityText = <>sent the announcement <strong>{activity.title}</strong></>;
-
-                    return (
-                        <div className="flex items-center gap-4" key={activity.id}>
-                            <Avatar className="hidden h-10 w-10 sm:flex">
-                                <AvatarFallback>
-                                    <Megaphone className="h-5 w-5 text-muted-foreground" />
-                                </AvatarFallback>
-                            </Avatar>
-                            <div className="grid gap-1">
-                                <p className="text-sm text-muted-foreground">
-                                    <span className="font-semibold text-foreground">Admin</span> {activityText}
-                                </p>
-                                <time className="text-xs text-muted-foreground">
-                                    {formatDistanceToNow(activity.sentAt.toDate(), { addSuffix: true })}
-                                </time>
-                            </div>
+                recentActivity.map(activity => (
+                    <div className="flex items-start gap-4 relative group" key={activity.id}>
+                        <div className="h-10 w-10 rounded-full bg-accent/10 flex items-center justify-center shrink-0 border border-accent/20">
+                            <Megaphone className="h-5 w-5 text-accent" />
                         </div>
-                    )
-                })
+                        <div className="grid gap-1 border-b border-slate-50 pb-4 w-full last:border-0">
+                            <p className="text-sm leading-tight">
+                                <span className="font-semibold text-[#1A1A1A]">Admin</span> sent 
+                                <span className="text-accent font-medium mx-1">{activity.title}</span>
+                            </p>
+                            <span className="text-xs text-[#6B7280] flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                {formatDistanceToNow(activity.sentAt.toDate(), { addSuffix: true })}
+                            </span>
+                        </div>
+                    </div>
+                ))
             ) : (
-                <div className="py-12 text-center text-muted-foreground">
-                    <p>No recent activity.</p>
+                <div className="py-20 text-center text-slate-400 flex flex-col items-center gap-3">
+                    <History className="h-10 w-10 text-slate-200" />
+                    <p>No recent system activity found.</p>
                 </div>
             )}
           </CardContent>
-          <CardFooter>
+          <CardFooter className="pt-2">
             <Link href="/dashboard/activity" className="w-full">
-              <Button variant="outline" className="w-full">
+              <Button variant="outline" className="w-full border-slate-200 text-[#1A1A1A] hover:bg-slate-50 font-semibold shadow-sm">
                 View All Activity
               </Button>
             </Link>

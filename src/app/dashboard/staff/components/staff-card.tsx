@@ -1,4 +1,3 @@
-
 "use client"
 
 import type { Staff } from "@/lib/types"
@@ -30,6 +29,7 @@ import {
   Trash2,
   UserCheck,
   MessageSquare,
+  Building2,
 } from "lucide-react"
 import { useAuth, useFirestore } from "@/firebase"
 import { sendPasswordResetEmail } from "firebase/auth"
@@ -54,30 +54,14 @@ export function StaffCard({ staff, onEdit }: StaffCardProps) {
 
   const handleResetPassword = async () => {
     if (!staff.email) {
-      toast({
-        variant: "destructive",
-        title: "Missing Email",
-        description: "This staff member does not have an email address on file.",
-      })
+      toast({ variant: "destructive", title: "Missing Email", description: "This staff member does not have an email." })
       return
     }
     try {
       await sendPasswordResetEmail(auth, staff.email)
-      toast({
-        title: "Password Reset Email Sent",
-        description: `An email has been sent to ${staff.email} with instructions.`,
-      })
-    } catch (error: any) {
-      let description = "An unexpected error occurred."
-      if (error.code === "auth/user-not-found") {
-        description =
-          "There is no user corresponding to this email address. The user may have been deleted or not signed up yet."
-      }
-      toast({
-        variant: "destructive",
-        title: "Error Sending Email",
-        description,
-      })
+      toast({ title: "Reset Sent", description: `An email has been sent to ${staff.email}.` })
+    } catch {
+      toast({ variant: "destructive", title: "Error", description: "Failed to send reset email." })
     }
   }
 
@@ -85,16 +69,9 @@ export function StaffCard({ staff, onEdit }: StaffCardProps) {
     if (!staff.id) return
     try {
         await updateUser(firestore, staff.id, { status: "active" })
-        toast({
-          title: "Staff Approved",
-          description: `${staff.name} is now an active staff member.`,
-        })
-    } catch (error) {
-        toast({
-            variant: "destructive",
-            title: "Approval Failed",
-            description: "Could not approve staff member. Please try again.",
-        })
+        toast({ title: "Verified", description: `${staff.name} is now an active member.` })
+    } catch {
+        toast({ variant: "destructive", title: "Error", description: "Failed to approve staff member." })
     }
   }
 
@@ -102,16 +79,9 @@ export function StaffCard({ staff, onEdit }: StaffCardProps) {
     if (!staff.id) return
     try {
         await updateUser(firestore, staff.id, { status: "inactive" })
-        toast({
-          title: "Staff Deactivated",
-          description: `${staff.name} has been marked as inactive.`,
-        })
-    } catch(error) {
-         toast({
-            variant: "destructive",
-            title: "Deactivation Failed",
-            description: "Could not deactivate staff member. Please try again.",
-        })
+        toast({ title: "Inactive", description: `${staff.name} has been deactivated.` })
+    } catch {
+         toast({ variant: "destructive", title: "Error", description: "Failed to deactivate." })
     }
   }
 
@@ -119,17 +89,9 @@ export function StaffCard({ staff, onEdit }: StaffCardProps) {
     if (!staff.id) return
     try {
         await deleteUser(firestore, staff.id)
-        toast({
-          variant: "destructive",
-          title: "Staff Deleted",
-          description: `${staff.name} has been deleted from the database.`,
-        })
-    } catch(error) {
-        toast({
-            variant: "destructive",
-            title: "Deletion Failed",
-            description: "Could not delete staff member. Please try again.",
-        })
+        toast({ variant: "destructive", title: "Account Deleted", description: "Data has been removed permanently." })
+    } catch {
+        toast({ variant: "destructive", title: "Error", description: "Failed to delete account." })
     }
   }
 
@@ -139,104 +101,96 @@ export function StaffCard({ staff, onEdit }: StaffCardProps) {
     try {
       await getOrCreateConversation(firestore, staff.id, staff.name)
       router.push("/dashboard/messages")
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Chat Error",
-        description: "Could not open conversation. Please try again.",
-      })
+    } catch {
+      toast({ variant: "destructive", title: "Chat Error", description: "Could not open secure thread." })
     } finally {
       setIsMessaging(false)
     }
   }
 
   return (
-    <Card className="border-primary/20 hover:shadow-md transition-shadow">
-      <CardHeader>
+    <Card className="border-none shadow-soft hover:shadow-xl transition-all duration-300 rounded-2xl group overflow-hidden bg-white">
+      <CardHeader className="pb-4">
         <div className="flex items-start justify-between">
-          <div className="flex items-center gap-4">
-            <Avatar className="h-12 w-12 border-2 border-primary/10">
-              <AvatarImage src={staff.photoUrl} alt={staff.name} />
-              <AvatarFallback className="bg-primary/5 text-primary font-bold">
-                {staff.name.charAt(0)}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <CardTitle className="text-lg text-primary">{staff.name}</CardTitle>
-              <CardDescription className="text-xs">{staff.position}</CardDescription>
-            </div>
-          </div>
+          <Avatar className="h-16 w-16 border-2 border-slate-100 shadow-sm group-hover:scale-105 transition-transform duration-300">
+            <AvatarImage src={staff.photoUrl} alt={staff.name} />
+            <AvatarFallback className="bg-primary/5 text-primary font-bold text-xl">
+              {staff.name.charAt(0)}
+            </AvatarFallback>
+          </Avatar>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
-              >
-                <MoreHorizontal className="h-4 w-4" />
-                <span className="sr-only">Open menu</span>
+              <Button variant="ghost" className="h-8 w-8 p-0 rounded-lg hover:bg-slate-100">
+                <MoreHorizontal className="h-5 w-5 text-slate-400" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[160px]">
+            <DropdownMenuContent align="end" className="w-[180px] rounded-xl border-none shadow-xl">
                {staff.status === 'pending' && (
-                <DropdownMenuItem onSelect={handleApprove}>
+                <DropdownMenuItem onSelect={handleApprove} className="rounded-lg">
                   <UserCheck className="mr-2 h-4 w-4" />
-                  Approve
+                  Approve Account
                 </DropdownMenuItem>
               )}
               {staff.status === 'active' && (
                 <>
-                  <DropdownMenuItem onSelect={() => onEdit(staff)}>
+                  <DropdownMenuItem onSelect={() => onEdit(staff)} className="rounded-lg">
                     <Edit className="mr-2 h-4 w-4" />
-                    Edit
+                    Edit Profile
                   </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={handleDeactivate}>
+                  <DropdownMenuItem onSelect={handleDeactivate} className="rounded-lg text-orange-600 focus:text-orange-600">
                     <UserX className="mr-2 h-4 w-4" />
                     Deactivate
                   </DropdownMenuItem>
                 </>
               )}
               {staff.status === 'inactive' && (
-                <DropdownMenuItem onSelect={handleApprove}>
+                <DropdownMenuItem onSelect={handleApprove} className="rounded-lg">
                   <UserCheck className="mr-2 h-4 w-4" />
                   Reactivate
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator />
-              <DropdownMenuItem onSelect={handleResetPassword}>
+              <DropdownMenuItem onSelect={handleResetPassword} className="rounded-lg">
                 <Send className="mr-2 h-4 w-4" />
-                Send Login Reset
+                Login Recovery
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onSelect={handleDelete} className="text-destructive focus:text-destructive focus:bg-destructive/10">
+              <DropdownMenuItem onSelect={handleDelete} className="text-red-600 focus:text-red-600 focus:bg-red-50 rounded-lg font-semibold">
                 <Trash2 className="mr-2 h-4 w-4" />
-                Delete
+                Delete Account
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+        <div className="pt-2">
+          <CardTitle className="text-xl font-bold text-[#1A1A1A]">{staff.name}</CardTitle>
+          <CardDescription className="text-xs font-bold text-accent uppercase tracking-widest mt-0.5">{staff.position}</CardDescription>
+        </div>
       </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="text-sm font-semibold text-primary/80">
+      <CardContent className="space-y-4 pt-0">
+        <div className="flex items-center gap-2 text-xs font-bold text-slate-500 bg-slate-50 p-2 rounded-lg">
+          <Building2 className="h-3.5 w-3.5" />
           {staff.department}
         </div>
-        <div className="space-y-1">
-          <div className="flex items-center text-xs text-muted-foreground">
-            <Phone className="mr-2 h-3 w-3" />
-            <span>{staff.phone || "No phone"}</span>
+        <div className="space-y-2.5">
+          <div className="flex items-center text-[13px] text-[#6B7280]">
+            <Phone className="mr-2.5 h-3.5 w-3.5 text-slate-300" />
+            <span className="font-medium">{staff.phone || "---"}</span>
           </div>
-          <div className="flex items-center text-xs text-muted-foreground">
-            <Mail className="mr-2 h-3 w-3" />
-            <span className="truncate">{staff.email}</span>
+          <div className="flex items-center text-[13px] text-[#6B7280]">
+            <Mail className="mr-2.5 h-3.5 w-3.5 text-slate-300" />
+            <span className="truncate font-medium">{staff.email}</span>
           </div>
         </div>
       </CardContent>
-      <CardFooter className="flex justify-between items-center gap-2">
+      <CardFooter className="flex justify-between items-center gap-2 pt-0 border-t border-slate-50 bg-slate-50/30 p-4">
         <Badge
-          variant={staff.status === "active" ? "secondary" : staff.status === "pending" ? "outline" : "destructive"}
+          variant="outline"
           className={cn(
-            "capitalize",
-            staff.status === "active" && "bg-green-100 text-green-800 hover:bg-green-100",
-            staff.status === "pending" && "border-yellow-500/50 text-yellow-700 bg-yellow-50 hover:bg-yellow-50"
+            "capitalize px-3 py-0.5 border-none font-bold text-[10px] tracking-widest",
+            staff.status === "active" && "bg-[#22C55E]/10 text-[#22C55E]",
+            staff.status === "pending" && "bg-[#F59E0B]/10 text-[#F59E0B]",
+            staff.status === "inactive" && "bg-red-50 text-red-600"
           )}
         >
           {staff.status}
@@ -244,12 +198,12 @@ export function StaffCard({ staff, onEdit }: StaffCardProps) {
         <Button 
           variant="ghost" 
           size="sm" 
-          className="h-8 text-primary hover:text-primary hover:bg-primary/10 gap-2"
+          className="h-9 text-primary hover:text-primary hover:bg-white font-bold gap-2 bg-white/50 rounded-xl"
           onClick={handleMessageStaff}
           disabled={isMessaging}
         >
           <MessageSquare className="h-4 w-4" />
-          Message
+          Chat
         </Button>
       </CardFooter>
     </Card>

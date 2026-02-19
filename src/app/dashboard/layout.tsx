@@ -1,4 +1,5 @@
-import { AppHeader } from "./_components/header"
+import { Sidebar } from "./_components/sidebar"
+import { Topbar } from "./_components/topbar"
 import { AuthGuard } from "./_components/auth-guard"
 
 export default function DashboardLayout({
@@ -8,9 +9,16 @@ export default function DashboardLayout({
 }) {
   return (
     <AuthGuard>
-      <div className="flex min-h-screen w-full flex-col">
-        <AppHeader />
-        <main className="flex-1 p-4 sm:p-6">{children}</main>
+      <div className="flex min-h-screen w-full bg-background">
+        <Sidebar />
+        <div className="flex flex-1 flex-col overflow-hidden">
+          <Topbar />
+          <main className="flex-1 overflow-y-auto p-4 md:p-8">
+            <div className="mx-auto max-w-7xl">
+              {children}
+            </div>
+          </main>
+        </div>
       </div>
     </AuthGuard>
   )

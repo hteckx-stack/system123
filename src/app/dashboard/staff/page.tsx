@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useMemo } from "react"
@@ -12,11 +11,13 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
+import { UserPlus, Search, Users, Filter } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { cn } from "@/lib/utils"
 
 export default function StaffPage() {
   const firestore = useFirestore()
   
-  // Filter for staff only in management page
   const staffQuery = useMemo(() => query(
     collection(firestore, "users"), 
     where("role", "==", "staff")
@@ -27,81 +28,113 @@ export default function StaffPage() {
   const [editingStaff, setEditingStaff] = useState<Staff | null>(null)
   const [isAddStaffDialogOpen, setIsAddStaffDialogOpen] = useState(false)
   const [filter, setFilter] = useState<string>("all")
-
-  const handleEdit = (staff: Staff) => {
-    setEditingStaff(staff)
-  }
-
-  const handleUpdateStaff = (updatedStaff: Staff) => {
-    // onSnapshot will handle the update
-    setEditingStaff(null)
-  }
+  const [searchQuery, setSearchQuery] = useState("")
 
   const filteredStaffList = useMemo(() => {
     if (!staffList) return []
-    if (filter === "all") return staffList
-    return staffList.filter((staff) => staff.status === filter)
-  }, [staffList, filter])
+    let result = [...staffList]
+    
+    if (filter !== "all") {
+      result = result.filter((staff) => staff.status === filter)
+    }
 
+    if (searchQuery) {
+      result = result.filter((staff) => 
+        staff.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        staff.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        staff.position.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        staff.department.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    }
+
+    return result
+  }, [staffList, filter, searchQuery])
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-primary">
-            Staff Management
-          </h1>
-          <p className="text-muted-foreground">
-            Manage all staff members. Admins sign up separately; staff accounts are managed here.
-          </p>
+    <div className="space-y-10 animate-in fade-in duration-500">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-3xl font-bold tracking-tight text-[#1A1A1A]">Staff Directory</h1>
+          <p className="text-[#6B7280]">Centralized management of employee profiles and access permissions.</p>
         </div>
-        <Button onClick={() => setIsAddStaffDialogOpen(true)}>Add Staff</Button>
+        <Button onClick={() => setIsAddStaffDialogOpen(true)} className="rounded-xl h-11 px-6 font-bold shadow-lg shadow-primary/20 gap-2">
+          <UserPlus className="h-5 w-5" />
+          Add Staff Member
+        </Button>
       </div>
 
-      <Tabs value={filter} onValueChange={setFilter}>
-        <TabsList className="bg-primary/5 border border-primary/10">
-          <TabsTrigger value="all" className="data-[state=active]:bg-primary data-[state=active]:text-white">All</TabsTrigger>
-          <TabsTrigger value="pending" className="data-[state=active]:bg-primary data-[state=active]:text-white">Pending</TabsTrigger>
-          <TabsTrigger value="active" className="data-[state=active]:bg-primary data-[state=active]:text-white">Active</TabsTrigger>
-          <TabsTrigger value="inactive" className="data-[state=active]:bg-primary data-[state=active]:text-white">Inactive</TabsTrigger>
-        </TabsList>
-      </Tabs>
+      <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white p-2 rounded-2xl shadow-soft border border-slate-50">
+        <div className="flex-1 w-full relative">
+          <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Input 
+            placeholder="Search by name, role, or department..." 
+            className="pl-12 h-12 rounded-xl border-none bg-slate-50/50 focus-visible:ring-accent/10 font-medium"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        <div className="h-10 w-px bg-slate-100 hidden md:block"></div>
+        <div className="flex items-center gap-2 pr-2">
+           <Tabs value={filter} onValueChange={setFilter} className="w-auto">
+            <TabsList className="bg-transparent h-auto p-0 gap-1">
+              {[
+                { val: "all", label: "All Members" },
+                { val: "active", label: "Active" },
+                { val: "pending", label: "Pending" },
+                { val: "inactive", label: "Inactive" },
+              ].map((t) => (
+                <TabsTrigger 
+                  key={t.val} 
+                  value={t.val}
+                  className={cn(
+                    "rounded-xl h-10 px-6 font-bold text-sm transition-all border border-transparent",
+                    filter === t.val 
+                      ? "bg-primary text-white shadow-md shadow-primary/20" 
+                      : "text-slate-500 hover:bg-slate-50"
+                  )}
+                >
+                  {t.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+        </div>
+      </div>
 
       {loading ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {Array.from({ length: 8 }).map((_, i) => (
-            <Card key={i}>
-              <CardHeader className="flex flex-row items-center gap-4">
-                <Skeleton className="h-12 w-12 rounded-full" />
+            <Card key={i} className="border-none shadow-soft rounded-2xl overflow-hidden">
+              <CardHeader className="flex flex-col items-center gap-4 text-center">
+                <Skeleton className="h-20 w-20 rounded-full" />
                 <div className="space-y-2">
-                  <Skeleton className="h-4 w-[150px]" />
-                  <Skeleton className="h-4 w-[100px]" />
+                  <Skeleton className="h-5 w-32 mx-auto" />
+                  <Skeleton className="h-4 w-24 mx-auto" />
                 </div>
               </CardHeader>
-              <CardContent className="space-y-2">
+              <CardContent className="space-y-4 pt-4">
                 <Skeleton className="h-4 w-full" />
                 <Skeleton className="h-4 w-full" />
               </CardContent>
-              <CardFooter>
-                <Skeleton className="h-6 w-16" />
-              </CardFooter>
             </Card>
           ))}
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filteredStaffList &&
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 pb-10">
+          {filteredStaffList.length > 0 ? (
             filteredStaffList.map((staff) => (
-              <StaffCard key={staff.id} staff={staff} onEdit={handleEdit} />
-            ))}
-          {(!filteredStaffList || filteredStaffList.length === 0) && (
-            <div className="col-span-full rounded-lg border-2 border-dashed border-muted-foreground/30 py-12 text-center">
-              <h3 className="text-lg font-medium text-muted-foreground">
-                No staff members found for this filter
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                Try a different filter.
-              </p>
+              <StaffCard key={staff.id} staff={staff} onEdit={(s) => setEditingStaff(s)} />
+            ))
+          ) : (
+            <div className="col-span-full py-32 text-center bg-white rounded-3xl border-2 border-dashed border-slate-100 shadow-soft flex flex-col items-center justify-center gap-4">
+              <Users className="h-16 w-16 text-slate-100" />
+              <div className="space-y-1">
+                <h3 className="text-xl font-bold text-[#1A1A1A]">No Results Found</h3>
+                <p className="text-slate-400">Try adjusting your filters or search terms.</p>
+              </div>
+              <Button variant="outline" onClick={() => {setFilter("all"); setSearchQuery("");}} className="rounded-xl px-6 mt-4">
+                Clear Filters
+              </Button>
             </div>
           )}
         </div>
@@ -114,13 +147,9 @@ export default function StaffPage() {
 
       <EditStaffDialog
         staff={editingStaff}
-        onUpdateStaff={handleUpdateStaff}
+        onUpdateStaff={() => setEditingStaff(null)}
         open={!!editingStaff}
-        onOpenChange={(open) => {
-          if (!open) {
-            setEditingStaff(null)
-          }
-        }}
+        onOpenChange={(open) => !open && setEditingStaff(null)}
       />
     </div>
   )
