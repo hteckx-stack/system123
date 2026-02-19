@@ -11,20 +11,20 @@ export function useDoc<T extends DocumentData>(ref: DocumentReference<T> | null)
     const { user, loading: userLoading } = useUser();
 
     useEffect(() => {
-        // We are loading until the user is definitively authenticated or not.
+        // Wait until user loading is definitely finished
         if (userLoading) {
             setLoading(true);
             return;
         }
 
-        // If there's no user or no ref, we're not fetching data.
+        // Do not attempt document fetch if user is not authenticated or ref is missing
         if (!user || !ref) {
             setData(null);
             setLoading(false);
             return;
         }
         
-        setLoading(true); // Start loading while we fetch
+        setLoading(true);
         const unsubscribe = onSnapshot(ref, 
             (doc) => {
                 if (doc.exists()) {
@@ -35,11 +35,14 @@ export function useDoc<T extends DocumentData>(ref: DocumentReference<T> | null)
                 setLoading(false);
             },
             (error) => {
-                const permissionError = new FirestorePermissionError({
-                    path: ref.path,
-                    operation: 'get',
-                });
-                errorEmitter.emit('permission-error', permissionError);
+                // If it's a permission error, use the specialized emitter
+                if (error.code === 'permission-denied') {
+                    const permissionError = new FirestorePermissionError({
+                        path: ref.path,
+                        operation: 'get',
+                    });
+                    errorEmitter.emit('permission-error', permissionError);
+                }
                 setData(null);
                 setLoading(false);
             }

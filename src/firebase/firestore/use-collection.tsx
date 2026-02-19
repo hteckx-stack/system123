@@ -11,20 +11,20 @@ export function useCollection<T extends DocumentData>(query: Query<T> | null) {
     const { user, loading: userLoading } = useUser();
 
     useEffect(() => {
-        // We are loading until the user is definitively authenticated or not.
+        // Wait until user loading is definitely finished
         if (userLoading) {
             setLoading(true);
             return;
         }
 
-        // If there's no user or no query, we're not fetching data.
+        // Do not attempt query if user is not authenticated or query is not provided
         if (!user || !query) {
             setData(null);
             setLoading(false);
             return;
         }
         
-        setLoading(true); // Start loading while we fetch
+        setLoading(true);
         const unsubscribe = onSnapshot(query, 
             (snapshot) => {
                 const result: T[] = [];
@@ -35,15 +35,23 @@ export function useCollection<T extends DocumentData>(query: Query<T> | null) {
                 setLoading(false);
             }, 
             (error) => {
-                let path = 'unknown collection';
-                if (query && (query as any)._query?.path?.segments) {
-                    path = (query as any)._query.path.segments.join('/');
+                // If it's a permission error, use the specialized emitter
+                if (error.code === 'permission-denied') {
+                    // Safely attempt to extract path for better debugging
+                    let path = 'unknown collection';
+                    try {
+                        // Accessing internal path for debugging purposes in dev
+                        path = (query as any)._query?.path?.segments?.join('/') || 'unknown';
+                    } catch (e) {
+                        path = 'collection';
+                    }
+
+                    const permissionError = new FirestorePermissionError({
+                        path: path, 
+                        operation: 'list',
+                    });
+                    errorEmitter.emit('permission-error', permissionError);
                 }
-                const permissionError = new FirestorePermissionError({
-                    path: path, 
-                    operation: 'list',
-                });
-                errorEmitter.emit('permission-error', permissionError);
                 setData(null);
                 setLoading(false);
             }
