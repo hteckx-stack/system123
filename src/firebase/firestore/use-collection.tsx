@@ -26,10 +26,12 @@ export function useCollection<T extends DocumentData>(query: Query<T> | null) {
         
         setLoading(true);
 
+        let unsubscribe: (() => void) | undefined;
+
         // Small delay to ensure the backend has fully registered the auth state
         // before the first request is sent. This prevents permission race conditions.
         const timeoutId = setTimeout(() => {
-            const unsubscribe = onSnapshot(query, 
+            unsubscribe = onSnapshot(query, 
                 (snapshot) => {
                     const result: T[] = [];
                     snapshot.forEach((doc) => {
@@ -48,7 +50,7 @@ export function useCollection<T extends DocumentData>(query: Query<T> | null) {
                                 path = internalQuery.path.segments.join('/');
                             }
                         } catch (e) {
-                            path = 'users'; // Fallback
+                            path = 'unknown';
                         }
 
                         const permissionError = new FirestorePermissionError({
@@ -61,11 +63,12 @@ export function useCollection<T extends DocumentData>(query: Query<T> | null) {
                     setLoading(false);
                 }
             );
+        }, 100);
 
-            return () => unsubscribe();
-        }, 50);
-
-        return () => clearTimeout(timeoutId);
+        return () => {
+            clearTimeout(timeoutId);
+            if (unsubscribe) unsubscribe();
+        };
     }, [query, user, userLoading]);
 
     return { data, loading };

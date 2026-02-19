@@ -26,10 +26,12 @@ export function useDoc<T extends DocumentData>(ref: DocumentReference<T> | null)
         
         setLoading(true);
 
+        let unsubscribe: (() => void) | undefined;
+
         // Small delay to ensure the backend has fully registered the auth state
         // before the first request is sent. This prevents permission race conditions.
         const timeoutId = setTimeout(() => {
-            const unsubscribe = onSnapshot(ref, 
+            unsubscribe = onSnapshot(ref, 
                 (doc) => {
                     if (doc.exists()) {
                         setData({ id: doc.id, ...doc.data() } as T);
@@ -50,11 +52,12 @@ export function useDoc<T extends DocumentData>(ref: DocumentReference<T> | null)
                     setLoading(false);
                 }
             );
+        }, 100);
 
-            return () => unsubscribe();
-        }, 50);
-
-        return () => clearTimeout(timeoutId);
+        return () => {
+            clearTimeout(timeoutId);
+            if (unsubscribe) unsubscribe();
+        };
     }, [ref, user, userLoading]);
 
     return { data, loading };
