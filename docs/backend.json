@@ -137,6 +137,19 @@
       },
       "required": ["staff_id", "name", "start_date", "end_date", "reason", "type", "status", "created_at"]
     },
+    "CheckIn": {
+      "title": "Check In",
+      "description": "Represents a staff member's morning check-in.",
+      "type": "object",
+      "properties": {
+        "staff_id": { "type": "string" },
+        "staff_name": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "location": { "type": "string" }
+      },
+      "required": ["staff_id", "staff_name", "timestamp", "status"]
+    },
     "Conversation": {
       "title": "Conversation",
       "description": "A conversation between an admin and a staff member.",
@@ -206,6 +219,12 @@
         "$ref": "#/entities/LeaveRequest"
       },
       "description": "Stores leave requests."
+    },
+    "/check_ins/{checkInId}": {
+      "schema": {
+        "$ref": "#/entities/CheckIn"
+      },
+      "description": "Stores morning check-ins."
     },
     "/conversations/{conversationId}": {
       "schema": {

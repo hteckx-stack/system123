@@ -43,6 +43,15 @@ export type LeaveRequest = {
   created_at: Timestamp;
 };
 
+export type CheckIn = {
+  id: string;
+  staff_id: string;
+  staff_name: string;
+  timestamp: Timestamp;
+  status: 'pending' | 'approved' | 'rejected';
+  location?: string;
+};
+
 export type TopicType = 'Contract' | 'Payslip' | 'Leave' | 'Announcement' | 'General';
 
 export type Conversation = {

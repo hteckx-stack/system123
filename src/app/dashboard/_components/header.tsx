@@ -14,6 +14,7 @@ import {
   Menu,
   CalendarDays,
   MessageSquare,
+  Clock,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
@@ -27,6 +28,7 @@ import { Button } from "@/components/ui/button"
 
 const navItems: NavItem[] = [
   { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard, variant: "ghost" },
+  { title: "Check-ins", href: "/dashboard/check-ins", icon: Clock, variant: "ghost" },
   { title: "Staff", href: "/dashboard/staff", icon: Users, variant: "ghost" },
   { title: "Leave Requests", href: "/dashboard/leave-requests", icon: CalendarDays, variant: "ghost" },
   { title: "Messages", href: "/dashboard/messages", icon: MessageSquare, variant: "ghost" },
@@ -55,7 +57,7 @@ export function AppHeader() {
             key={item.href}
             href={item.href}
             className={cn(
-              "transition-colors hover:text-white/80 font-medium px-2 py-1 rounded-md",
+              "transition-colors hover:text-white/80 font-medium px-2 py-1 rounded-md whitespace-nowrap",
               pathname === item.href
                 ? "bg-white/10 text-white"
                 : "text-white/70"

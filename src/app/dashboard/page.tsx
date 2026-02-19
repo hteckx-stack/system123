@@ -1,13 +1,14 @@
+
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
-import { Users, FileText, UserPlus, FileUp, Megaphone } from "lucide-react"
+import { Users, FileText, UserPlus, Megaphone, Clock, CalendarDays } from "lucide-react"
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useCollection, useFirestore } from "@/firebase";
 import { useMemo } from "react";
 import { collection, query, where, orderBy, limit } from "firebase/firestore";
-import type { Document, Staff, Announcement } from "@/lib/types";
+import type { Document, Staff, Announcement, CheckIn, LeaveRequest } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { updateUser, deleteUser } from "@/firebase/firestore/users";
@@ -21,8 +22,11 @@ export default function Dashboard() {
   const staffQuery = useMemo(() => collection(firestore, "users"), [firestore]);
   const { data: staffList, loading: staffLoading } = useCollection<Staff>(staffQuery);
 
-  const documentsQuery = useMemo(() => collection(firestore, "documents"), [firestore]);
-  const { data: documents, loading: documentsLoading } = useCollection<Document>(documentsQuery);
+  const pendingCheckInsQuery = useMemo(() => query(collection(firestore, "check_ins"), where("status", "==", "pending")), [firestore]);
+  const { data: pendingCheckIns, loading: checkInsLoading } = useCollection<CheckIn>(pendingCheckInsQuery);
+
+  const pendingLeavesQuery = useMemo(() => query(collection(firestore, "leave_requests"), where("status", "==", "pending")), [firestore]);
+  const { data: pendingLeaves, loading: leavesLoading } = useCollection<LeaveRequest>(pendingLeavesQuery);
 
   const pendingStaffQuery = useMemo(() => query(collection(firestore, "users"), where("status", "==", "pending")), [firestore]);
   const { data: pendingStaff, loading: pendingStaffLoading } = useCollection<Staff>(pendingStaffQuery);
@@ -30,7 +34,7 @@ export default function Dashboard() {
   const recentActivityQuery = useMemo(() => query(collection(firestore, "announcements"), orderBy("sentAt", "desc"), limit(5)), [firestore]);
   const { data: recentActivity, loading: activityLoading } = useCollection<Announcement>(recentActivityQuery);
 
-  const loading = staffLoading || documentsLoading || pendingStaffLoading || activityLoading;
+  const loading = staffLoading || checkInsLoading || leavesLoading || pendingStaffLoading || activityLoading;
 
   const handleApprove = async (staff: Staff) => {
     if (!staff.id) return;
@@ -69,8 +73,8 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <h1 className="text-3xl font-bold tracking-tight">System Overview</h1>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Staff</CardTitle>
@@ -78,21 +82,27 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             {loading ? <Skeleton className="h-8 w-10" /> : <div className="text-2xl font-bold">{staffList?.length ?? 0}</div>}
-            <p className="text-xs text-muted-foreground">
-              +2 since last month
-            </p>
+            <p className="text-xs text-muted-foreground">Registered users</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Documents</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Pending Check-ins</CardTitle>
+            <Clock className="h-4 w-4 text-orange-500" />
           </CardHeader>
           <CardContent>
-            {loading ? <Skeleton className="h-8 w-10" /> : <div className="text-2xl font-bold">{documents?.length ?? 0}</div>}
-            <p className="text-xs text-muted-foreground">
-              +5 uploaded this month
-            </p>
+            {loading ? <Skeleton className="h-8 w-10" /> : <div className="text-2xl font-bold">{pendingCheckIns?.length ?? 0}</div>}
+            <p className="text-xs text-muted-foreground">Awaiting approval</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Leave Requests</CardTitle>
+            <CalendarDays className="h-4 w-4 text-blue-500" />
+          </CardHeader>
+          <CardContent>
+            {loading ? <Skeleton className="h-8 w-10" /> : <div className="text-2xl font-bold">{pendingLeaves?.length ?? 0}</div>}
+            <p className="text-xs text-muted-foreground">Pending review</p>
           </CardContent>
         </Card>
         <Card>
@@ -102,9 +112,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             {loading ? <Skeleton className="h-8 w-10" /> : <div className="text-2xl font-bold">{pendingStaff?.length ?? 0}</div>}
-            <p className="text-xs text-muted-foreground">
-              New users awaiting approval.
-            </p>
+            <p className="text-xs text-muted-foreground">New accounts</p>
           </CardContent>
         </Card>
       </div>
