@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "UserProfile": {
@@ -119,6 +120,61 @@
         "recipientCount",
         "sentAt"
       ]
+    },
+    "LeaveRequest": {
+      "title": "Leave Request",
+      "description": "Represents a staff member's request for leave.",
+      "type": "object",
+      "properties": {
+        "staff_id": { "type": "string" },
+        "name": { "type": "string" },
+        "start_date": { "type": "string", "format": "date" },
+        "end_date": { "type": "string", "format": "date" },
+        "reason": { "type": "string" },
+        "type": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["staff_id", "name", "start_date", "end_date", "reason", "type", "status", "created_at"]
+    },
+    "Conversation": {
+      "title": "Conversation",
+      "description": "A conversation between an admin and a staff member.",
+      "type": "object",
+      "properties": {
+        "staff_id": { "type": "string" },
+        "staff_name": { "type": "string" },
+        "topic": { "type": "string", "enum": ["Contract", "Payslip", "Leave", "Announcement", "General"] },
+        "last_message": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["staff_id", "staff_name", "topic", "last_message", "timestamp"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "An individual message within a conversation.",
+      "type": "object",
+      "properties": {
+        "conversation_id": { "type": "string" },
+        "sender_id": { "type": "string" },
+        "sender_role": { "type": "string", "enum": ["admin", "staff"] },
+        "message": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["conversation_id", "sender_id", "sender_role", "message", "timestamp"]
+    },
+    "ActivityLog": {
+      "title": "Activity Log",
+      "description": "A log of important system actions.",
+      "type": "object",
+      "properties": {
+        "action": { "type": "string" },
+        "details": { "type": "string" },
+        "user_id": { "type": "string" },
+        "user_name": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["action", "details", "user_id", "timestamp"]
     }
   },
   "auth": {
@@ -131,7 +187,7 @@
       "schema": {
         "$ref": "#/entities/UserProfile"
       },
-      "description": "Stores user profile information, keyed by user ID."
+      "description": "Stores user profile information."
     },
     "/documents/{documentId}": {
       "schema": {
@@ -144,6 +200,30 @@
         "$ref": "#/entities/Announcement"
       },
       "description": "Stores all announcements sent to staff."
+    },
+    "/leave_requests/{requestId}": {
+      "schema": {
+        "$ref": "#/entities/LeaveRequest"
+      },
+      "description": "Stores leave requests."
+    },
+    "/conversations/{conversationId}": {
+      "schema": {
+        "$ref": "#/entities/Conversation"
+      },
+      "description": "Stores conversation metadata."
+    },
+    "/messages/{messageId}": {
+      "schema": {
+        "$ref": "#/entities/Message"
+      },
+      "description": "Stores chat messages."
+    },
+    "/activity_logs/{logId}": {
+      "schema": {
+        "$ref": "#/entities/ActivityLog"
+      },
+      "description": "Stores audit logs."
     }
   }
 }

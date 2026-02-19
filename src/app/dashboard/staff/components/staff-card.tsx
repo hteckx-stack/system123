@@ -1,3 +1,4 @@
+
 "use client"
 
 import type { Staff } from "@/lib/types"
@@ -28,11 +29,15 @@ import {
   Mail,
   Trash2,
   UserCheck,
+  MessageSquare,
 } from "lucide-react"
 import { useAuth, useFirestore } from "@/firebase"
 import { sendPasswordResetEmail } from "firebase/auth"
 import { useToast } from "@/hooks/use-toast"
 import { updateUser, deleteUser } from "@/firebase/firestore/users"
+import { useRouter } from "next/navigation"
+import { getOrCreateConversation } from "@/firebase/firestore/messages"
+import { useState } from "react"
 
 interface StaffCardProps {
   staff: Staff
@@ -43,6 +48,8 @@ export function StaffCard({ staff, onEdit }: StaffCardProps) {
   const auth = useAuth()
   const firestore = useFirestore()
   const { toast } = useToast()
+  const router = useRouter()
+  const [isMessaging, setIsMessaging] = useState(false)
 
   const handleResetPassword = async () => {
     if (!staff.email) {
@@ -125,18 +132,37 @@ export function StaffCard({ staff, onEdit }: StaffCardProps) {
     }
   }
 
+  const handleMessageStaff = async () => {
+    if (!staff.id) return
+    setIsMessaging(true)
+    try {
+      await getOrCreateConversation(firestore, staff.id, staff.name)
+      router.push("/dashboard/messages")
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Chat Error",
+        description: "Could not open conversation. Please try again.",
+      })
+    } finally {
+      setIsMessaging(false)
+    }
+  }
+
   return (
-    <Card>
+    <Card className="border-primary/20 hover:shadow-md transition-shadow">
       <CardHeader>
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-4">
-            <Avatar className="h-12 w-12">
+            <Avatar className="h-12 w-12 border-2 border-primary/10">
               <AvatarImage src={staff.photoUrl} alt={staff.name} />
-              <AvatarFallback>{staff.name.charAt(0)}</AvatarFallback>
+              <AvatarFallback className="bg-primary/5 text-primary font-bold">
+                {staff.name.charAt(0)}
+              </AvatarFallback>
             </Avatar>
             <div>
-              <CardTitle>{staff.name}</CardTitle>
-              <CardDescription>{staff.position}</CardDescription>
+              <CardTitle className="text-lg text-primary">{staff.name}</CardTitle>
+              <CardDescription className="text-xs">{staff.position}</CardDescription>
             </div>
           </div>
           <DropdownMenu>
@@ -188,30 +214,42 @@ export function StaffCard({ staff, onEdit }: StaffCardProps) {
           </DropdownMenu>
         </div>
       </CardHeader>
-      <CardContent className="space-y-2">
-        <div className="text-sm text-muted-foreground">
-          <p className="font-medium text-foreground">{staff.department}</p>
+      <CardContent className="space-y-3">
+        <div className="text-sm font-semibold text-primary/80">
+          {staff.department}
         </div>
-        <div className="flex items-center text-sm">
-          <Phone className="mr-2 h-4 w-4 text-muted-foreground" />
-          <span>{staff.phone}</span>
-        </div>
-        <div className="flex items-center text-sm">
-          <Mail className="mr-2 h-4 w-4 text-muted-foreground" />
-          <span>{staff.email}</span>
+        <div className="space-y-1">
+          <div className="flex items-center text-xs text-muted-foreground">
+            <Phone className="mr-2 h-3 w-3" />
+            <span>{staff.phone || "No phone"}</span>
+          </div>
+          <div className="flex items-center text-xs text-muted-foreground">
+            <Mail className="mr-2 h-3 w-3" />
+            <span className="truncate">{staff.email}</span>
+          </div>
         </div>
       </CardContent>
-      <CardFooter>
+      <CardFooter className="flex justify-between items-center gap-2">
         <Badge
           variant={staff.status === "active" ? "secondary" : staff.status === "pending" ? "outline" : "destructive"}
-          className={
-            staff.status === "active"
-              ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-              : staff.status === "pending" ? "border-yellow-500/50 text-yellow-700 bg-yellow-50 dark:text-yellow-400 dark:bg-yellow-900/30" : ""
-          }
+          className={cn(
+            "capitalize",
+            staff.status === "active" && "bg-green-100 text-green-800 hover:bg-green-100",
+            staff.status === "pending" && "border-yellow-500/50 text-yellow-700 bg-yellow-50 hover:bg-yellow-50"
+          )}
         >
           {staff.status}
         </Badge>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="h-8 text-primary hover:text-primary hover:bg-primary/10 gap-2"
+          onClick={handleMessageStaff}
+          disabled={isMessaging}
+        >
+          <MessageSquare className="h-4 w-4" />
+          Message
+        </Button>
       </CardFooter>
     </Card>
   )

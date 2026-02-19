@@ -1,3 +1,4 @@
+
 "use client"
 
 import Link from "next/link"
@@ -11,6 +12,8 @@ import {
   Megaphone,
   History,
   Menu,
+  CalendarDays,
+  MessageSquare,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
@@ -23,8 +26,10 @@ import {
 import { Button } from "@/components/ui/button"
 
 const navItems: NavItem[] = [
-  { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard, variant: "default" },
+  { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard, variant: "ghost" },
   { title: "Staff", href: "/dashboard/staff", icon: Users, variant: "ghost" },
+  { title: "Leave Requests", href: "/dashboard/leave-requests", icon: CalendarDays, variant: "ghost" },
+  { title: "Messages", href: "/dashboard/messages", icon: MessageSquare, variant: "ghost" },
   { title: "Documents", href: "/dashboard/documents", icon: FileText, variant: "ghost" },
   { title: "Announcements", href: "/dashboard/announcements", icon: Megaphone, variant: "ghost" },
   { title: "Activity", href: "/dashboard/activity", icon: History, variant: "ghost" },
@@ -34,40 +39,26 @@ export function AppHeader() {
   const pathname = usePathname()
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6">
+    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-primary px-4 md:px-6 text-white shadow-md">
       <nav className="hidden flex-col gap-6 text-lg font-medium md:flex md:flex-row md:items-center md:gap-5 md:text-sm lg:gap-6">
         <Link
           href="/dashboard"
-          className="flex items-center gap-2 text-lg font-semibold md:text-base"
+          className="flex items-center gap-2 text-lg font-bold md:text-xl text-white mr-4"
         >
-          <svg
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            className="text-primary"
-          >
-            <path
-              d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"
-              fill="currentColor"
-            />
-            <path
-              d="M12.5 12.5H17v-1h-4.5V7H11v5.5H7v1h4V17h1.5v-4.5z"
-              fill="currentColor"
-            />
-          </svg>
-          <span className="sr-only">BlueLink</span>
+          <div className="bg-white text-primary p-1 rounded-md shadow-sm">
+            <LayoutDashboard className="h-6 w-6" />
+          </div>
+          <span>BlueLink</span>
         </Link>
         {navItems.map((item) => (
           <Link
             key={item.href}
             href={item.href}
             className={cn(
-              "transition-colors hover:text-foreground",
+              "transition-colors hover:text-white/80 font-medium px-2 py-1 rounded-md",
               pathname === item.href
-                ? "text-foreground"
-                : "text-muted-foreground"
+                ? "bg-white/10 text-white"
+                : "text-white/70"
             )}
           >
             {item.title}
@@ -78,53 +69,31 @@ export function AppHeader() {
       <Sheet>
         <SheetTrigger asChild>
           <Button
-            variant="outline"
+            variant="ghost"
             size="icon"
-            className="shrink-0 md:hidden"
+            className="shrink-0 md:hidden text-white hover:bg-white/10"
           >
             <Menu className="h-5 w-5" />
             <span className="sr-only">Toggle navigation menu</span>
           </Button>
         </SheetTrigger>
-        <SheetContent side="left">
+        <SheetContent side="left" className="bg-primary border-r-white/10 text-white">
           <SheetHeader>
-            <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+            <SheetTitle className="text-white text-left font-bold text-2xl mb-4">BlueLink</SheetTitle>
           </SheetHeader>
-          <nav className="grid gap-6 text-lg font-medium pt-4">
-            <Link
-              href="#"
-              className="flex items-center gap-2 text-lg font-semibold"
-            >
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6 text-primary"
-              >
-                <path
-                  d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"
-                  fill="currentColor"
-                />
-                <path
-                  d="M12.5 12.5H17v-1h-4.5V7H11v5.5H7v1h4V17h1.5v-4.5z"
-                  fill="currentColor"
-                />
-              </svg>
-              <span>BlueLink</span>
-            </Link>
+          <nav className="grid gap-4 text-lg font-medium">
             {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "transition-colors hover:text-foreground",
+                  "flex items-center gap-3 transition-colors hover:text-white px-3 py-2 rounded-md",
                   pathname === item.href
-                    ? "text-foreground"
-                    : "text-muted-foreground"
+                    ? "bg-white/20 text-white"
+                    : "text-white/60"
                 )}
               >
+                <item.icon className="h-5 w-5" />
                 {item.title}
               </Link>
             ))}
