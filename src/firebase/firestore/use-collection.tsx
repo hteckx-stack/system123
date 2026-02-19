@@ -11,13 +11,13 @@ export function useCollection<T extends DocumentData>(query: Query<T> | null) {
     const { user, loading: userLoading } = useUser();
 
     useEffect(() => {
-        // Wait until user loading is definitely finished
+        // If auth state is still loading, wait.
         if (userLoading) {
             setLoading(true);
             return;
         }
 
-        // Do not attempt query if user is not authenticated or query is not provided
+        // If no user or no query, stop.
         if (!user || !query) {
             setData(null);
             setLoading(false);
@@ -44,7 +44,6 @@ export function useCollection<T extends DocumentData>(query: Query<T> | null) {
                     if (error.code === 'permission-denied') {
                         let path = 'collection';
                         try {
-                            // Extract path safely for debugging
                             const internalQuery = (query as any)._query;
                             if (internalQuery && internalQuery.path) {
                                 path = internalQuery.path.segments.join('/');
@@ -63,7 +62,7 @@ export function useCollection<T extends DocumentData>(query: Query<T> | null) {
                     setLoading(false);
                 }
             );
-        }, 100);
+        }, 150); // Slightly increased delay for stability
 
         return () => {
             clearTimeout(timeoutId);

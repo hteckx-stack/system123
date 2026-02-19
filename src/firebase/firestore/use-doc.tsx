@@ -11,13 +11,11 @@ export function useDoc<T extends DocumentData>(ref: DocumentReference<T> | null)
     const { user, loading: userLoading } = useUser();
 
     useEffect(() => {
-        // Wait until user loading is definitely finished
         if (userLoading) {
             setLoading(true);
             return;
         }
 
-        // Do not attempt document fetch if user is not authenticated or ref is missing
         if (!user || !ref) {
             setData(null);
             setLoading(false);
@@ -28,8 +26,6 @@ export function useDoc<T extends DocumentData>(ref: DocumentReference<T> | null)
 
         let unsubscribe: (() => void) | undefined;
 
-        // Small delay to ensure the backend has fully registered the auth state
-        // before the first request is sent. This prevents permission race conditions.
         const timeoutId = setTimeout(() => {
             unsubscribe = onSnapshot(ref, 
                 (doc) => {
@@ -52,7 +48,7 @@ export function useDoc<T extends DocumentData>(ref: DocumentReference<T> | null)
                     setLoading(false);
                 }
             );
-        }, 100);
+        }, 150); // Slightly increased delay for stability
 
         return () => {
             clearTimeout(timeoutId);
