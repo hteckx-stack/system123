@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Users, FileText, UserPlus, Megaphone, Clock, CalendarDays, ShieldCheck, ArrowUpRight, History } from "lucide-react"
 import Link from 'next/link';
-import { Button } from '@/button';
+import { Button } from '@/components/ui/button';
 import { useCollection, useFirestore } from "@/firebase";
 import { useMemo } from "react";
 import { collection, query, where, orderBy, limit } from "firebase/firestore";
@@ -196,7 +196,7 @@ export default function Dashboard() {
                             </p>
                             <span className="text-xs text-[#6B7280] flex items-center gap-1">
                                 <Clock className="h-3 w-3" />
-                                {formatDistanceToNow(activity.sentAt.toDate(), { addSuffix: true })}
+                                {recentActivity && formatDistanceToNow(activity.sentAt.toDate(), { addSuffix: true })}
                             </span>
                         </div>
                     </div>
