@@ -25,39 +25,47 @@ export function useCollection<T extends DocumentData>(query: Query<T> | null) {
         }
         
         setLoading(true);
-        const unsubscribe = onSnapshot(query, 
-            (snapshot) => {
-                const result: T[] = [];
-                snapshot.forEach((doc) => {
-                    result.push({ id: doc.id, ...doc.data() } as T);
-                });
-                setData(result);
-                setLoading(false);
-            }, 
-            (error) => {
-                // If it's a permission error, use the specialized emitter
-                if (error.code === 'permission-denied') {
-                    // Safely attempt to extract path for better debugging
-                    let path = 'unknown collection';
-                    try {
-                        // Accessing internal path for debugging purposes in dev
-                        path = (query as any)._query?.path?.segments?.join('/') || 'unknown';
-                    } catch (e) {
-                        path = 'collection';
-                    }
 
-                    const permissionError = new FirestorePermissionError({
-                        path: path, 
-                        operation: 'list',
+        // Small delay to ensure the backend has fully registered the auth state
+        // before the first request is sent. This prevents permission race conditions.
+        const timeoutId = setTimeout(() => {
+            const unsubscribe = onSnapshot(query, 
+                (snapshot) => {
+                    const result: T[] = [];
+                    snapshot.forEach((doc) => {
+                        result.push({ id: doc.id, ...doc.data() } as T);
                     });
-                    errorEmitter.emit('permission-error', permissionError);
-                }
-                setData(null);
-                setLoading(false);
-            }
-        );
+                    setData(result);
+                    setLoading(false);
+                }, 
+                (error) => {
+                    if (error.code === 'permission-denied') {
+                        let path = 'collection';
+                        try {
+                            // Extract path safely for debugging
+                            const internalQuery = (query as any)._query;
+                            if (internalQuery && internalQuery.path) {
+                                path = internalQuery.path.segments.join('/');
+                            }
+                        } catch (e) {
+                            path = 'users'; // Fallback
+                        }
 
-        return () => unsubscribe();
+                        const permissionError = new FirestorePermissionError({
+                            path: path, 
+                            operation: 'list',
+                        });
+                        errorEmitter.emit('permission-error', permissionError);
+                    }
+                    setData(null);
+                    setLoading(false);
+                }
+            );
+
+            return () => unsubscribe();
+        }, 50);
+
+        return () => clearTimeout(timeoutId);
     }, [query, user, userLoading]);
 
     return { data, loading };

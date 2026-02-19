@@ -3,66 +3,38 @@ service cloud.firestore {
   match /databases/{database}/documents {
     // Helper function to check if user is authenticated
     function isAuthenticated() {
-      return request.auth != null;
+      return request.auth != null && request.auth.uid != null;
     }
 
-    // Users collection: Allow all authenticated users to read/write profiles
-    // This is necessary for admins to manage staff and for staff to manage their own profiles.
+    // Allow all authenticated users to read/write to all core collections.
+    // This is appropriate for an internal admin-only portal where all users are staff.
+    
     match /users/{userId} {
       allow read, write: if isAuthenticated();
     }
     
-    // Support collection-level listing
-    match /users {
-      allow list: if isAuthenticated();
-    }
-
-    // Documents
     match /documents/{documentId} {
       allow read, write: if isAuthenticated();
     }
-    match /documents {
-      allow list: if isAuthenticated();
-    }
 
-    // Announcements
     match /announcements/{announcementId} {
       allow read, write: if isAuthenticated();
     }
-    match /announcements {
-      allow list: if isAuthenticated();
-    }
 
-    // Leave Requests
     match /leave_requests/{requestId} {
       allow read, write: if isAuthenticated();
     }
-    match /leave_requests {
-      allow list: if isAuthenticated();
-    }
 
-    // Conversations
     match /conversations/{conversationId} {
       allow read, write: if isAuthenticated();
     }
-    match /conversations {
-      allow list: if isAuthenticated();
-    }
 
-    // Messages
     match /messages/{messageId} {
       allow read, write: if isAuthenticated();
     }
-    match /messages {
-      allow list: if isAuthenticated();
-    }
 
-    // Activity Logs
     match /activity_logs/{logId} {
       allow read, write: if isAuthenticated();
-    }
-    match /activity_logs {
-      allow list: if isAuthenticated();
     }
   }
 }

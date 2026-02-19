@@ -25,30 +25,36 @@ export function useDoc<T extends DocumentData>(ref: DocumentReference<T> | null)
         }
         
         setLoading(true);
-        const unsubscribe = onSnapshot(ref, 
-            (doc) => {
-                if (doc.exists()) {
-                    setData({ id: doc.id, ...doc.data() } as T);
-                } else {
-                    setData(null);
-                }
-                setLoading(false);
-            },
-            (error) => {
-                // If it's a permission error, use the specialized emitter
-                if (error.code === 'permission-denied') {
-                    const permissionError = new FirestorePermissionError({
-                        path: ref.path,
-                        operation: 'get',
-                    });
-                    errorEmitter.emit('permission-error', permissionError);
-                }
-                setData(null);
-                setLoading(false);
-            }
-        );
 
-        return () => unsubscribe();
+        // Small delay to ensure the backend has fully registered the auth state
+        // before the first request is sent. This prevents permission race conditions.
+        const timeoutId = setTimeout(() => {
+            const unsubscribe = onSnapshot(ref, 
+                (doc) => {
+                    if (doc.exists()) {
+                        setData({ id: doc.id, ...doc.data() } as T);
+                    } else {
+                        setData(null);
+                    }
+                    setLoading(false);
+                },
+                (error) => {
+                    if (error.code === 'permission-denied') {
+                        const permissionError = new FirestorePermissionError({
+                            path: ref.path,
+                            operation: 'get',
+                        });
+                        errorEmitter.emit('permission-error', permissionError);
+                    }
+                    setData(null);
+                    setLoading(false);
+                }
+            );
+
+            return () => unsubscribe();
+        }, 50);
+
+        return () => clearTimeout(timeoutId);
     }, [ref, user, userLoading]);
 
     return { data, loading };
