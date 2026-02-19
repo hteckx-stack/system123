@@ -1,10 +1,11 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useRouter } from 'next/navigation';
-import { User as UserIcon, Mail, KeyRound } from 'lucide-react';
+import { User as UserIcon, Mail, KeyRound, ShieldCheck, Users } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { PlaceHolderImages } from "@/lib/placeholder-images";
@@ -13,6 +14,7 @@ import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
 import { updateUser } from '@/firebase/firestore/users';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -23,6 +25,7 @@ export default function SignupPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState<'admin' | 'staff'>('staff');
   
   const signupImage = PlaceHolderImages.find(p => p.id === 'login-splash');
 
@@ -49,16 +52,23 @@ export default function SignupPage() {
       });
       
       // Create user document in Firestore
+      // Admins are active by default for this setup, staff are pending
       const newStaffData = {
           name,
           email,
-          status: 'pending' as const,
+          role,
+          status: role === 'admin' ? 'active' : 'pending' as const,
           photoUrl,
           department: "Not Assigned",
           position: "Not Assigned",
           phone: ""
       };
       await updateUser(firestore, authUser.uid, newStaffData);
+
+      toast({
+        title: "Account Created",
+        description: role === 'admin' ? "Welcome, Admin!" : "Your account is pending approval from an administrator.",
+      });
 
       router.push('/dashboard');
     } catch (error: any) {
@@ -148,6 +158,28 @@ export default function SignupPage() {
                   <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
                   <Input id="email" type="email" placeholder="name@example.com" required className="pl-10" value={email} onChange={(e) => setEmail(e.target.value)} />
                 </div>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="role">Register as</Label>
+               <Select value={role} onValueChange={(val: 'admin' | 'staff') => setRole(val)}>
+                  <SelectTrigger id="role" className="w-full">
+                    <SelectValue placeholder="Select a role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">
+                        <div className="flex items-center gap-2">
+                            <ShieldCheck className="h-4 w-4" />
+                            <span>Admin</span>
+                        </div>
+                    </SelectItem>
+                    <SelectItem value="staff">
+                        <div className="flex items-center gap-2">
+                            <Users className="h-4 w-4" />
+                            <span>Staff</span>
+                        </div>
+                    </SelectItem>
+                  </SelectContent>
+               </Select>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="password">Password</Label>

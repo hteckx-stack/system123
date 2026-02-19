@@ -2,7 +2,7 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
-import { Users, FileText, UserPlus, Megaphone, Clock, CalendarDays } from "lucide-react"
+import { Users, FileText, UserPlus, Megaphone, Clock, CalendarDays, ShieldCheck } from "lucide-react"
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useCollection, useFirestore } from "@/firebase";
@@ -14,12 +14,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { updateUser, deleteUser } from "@/firebase/firestore/users";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
+import { Badge } from "@/components/ui/badge";
 
 export default function Dashboard() {
   const firestore = useFirestore();
   const { toast } = useToast();
 
-  const staffQuery = useMemo(() => collection(firestore, "users"), [firestore]);
+  const staffQuery = useMemo(() => query(collection(firestore, "users"), where("role", "==", "staff")), [firestore]);
   const { data: staffList, loading: staffLoading } = useCollection<Staff>(staffQuery);
 
   const pendingCheckInsQuery = useMemo(() => query(collection(firestore, "check_ins"), where("status", "==", "pending")), [firestore]);
@@ -28,7 +29,12 @@ export default function Dashboard() {
   const pendingLeavesQuery = useMemo(() => query(collection(firestore, "leave_requests"), where("status", "==", "pending")), [firestore]);
   const { data: pendingLeaves, loading: leavesLoading } = useCollection<LeaveRequest>(pendingLeavesQuery);
 
-  const pendingStaffQuery = useMemo(() => query(collection(firestore, "users"), where("status", "==", "pending")), [firestore]);
+  // New Sign Ups should focus on staff awaiting approval
+  const pendingStaffQuery = useMemo(() => query(
+    collection(firestore, "users"), 
+    where("status", "==", "pending"),
+    where("role", "==", "staff")
+  ), [firestore]);
   const { data: pendingStaff, loading: pendingStaffLoading } = useCollection<Staff>(pendingStaffQuery);
   
   const recentActivityQuery = useMemo(() => query(collection(firestore, "announcements"), orderBy("sentAt", "desc"), limit(5)), [firestore]);
@@ -107,7 +113,7 @@ export default function Dashboard() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Sign Ups</CardTitle>
+            <CardTitle className="text-sm font-medium">Pending Staff Sign Ups</CardTitle>
             <UserPlus className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -120,7 +126,7 @@ export default function Dashboard() {
        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
         <Card className="lg:col-span-4">
             <CardHeader>
-                <CardTitle>New Sign Ups</CardTitle>
+                <CardTitle>New Staff Sign Ups</CardTitle>
                 <CardDescription>Review and approve new staff members waiting for access.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">

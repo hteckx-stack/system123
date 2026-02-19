@@ -32,6 +32,14 @@
           "format": "uri",
           "description": "URL for the user's profile picture."
         },
+        "role": {
+          "type": "string",
+          "enum": [
+            "admin",
+            "staff"
+          ],
+          "description": "The user's role in the system."
+        },
         "status": {
           "type": "string",
           "enum": [
@@ -45,7 +53,8 @@
       "required": [
         "name",
         "email",
-        "status"
+        "status",
+        "role"
       ]
     },
     "Document": {

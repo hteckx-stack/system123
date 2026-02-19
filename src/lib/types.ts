@@ -10,6 +10,7 @@ export type Staff = {
   position: string;
   department: string;
   photoUrl: string;
+  role: 'admin' | 'staff';
   status: 'pending' | 'active' | 'inactive';
 };
 
