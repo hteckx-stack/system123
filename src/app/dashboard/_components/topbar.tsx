@@ -1,7 +1,9 @@
+
 "use client"
 
 import { UserNav } from "./user-nav"
-import { Menu, Search, Bell } from "lucide-react"
+import { NotificationsPopover } from "./notifications-popover"
+import { Menu, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -77,10 +79,7 @@ export function Topbar() {
       </div>
 
       <div className="flex items-center gap-4 ml-auto">
-        <Button variant="ghost" size="icon" className="text-white hover:bg-white/10 relative">
-          <Bell className="h-5 w-5" />
-          <span className="absolute top-2 right-2 h-2 w-2 bg-orange-500 rounded-full border-2 border-primary"></span>
-        </Button>
+        <NotificationsPopover />
         <div className="h-8 w-px bg-white/10 mx-2 hidden md:block"></div>
         <UserNav />
       </div>

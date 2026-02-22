@@ -82,6 +82,16 @@ export type ActivityLog = {
   timestamp: Timestamp;
 };
 
+export type Notification = {
+  id: string;
+  userId: string;
+  title: string;
+  message: string;
+  type: 'leave' | 'checkin' | 'message' | 'signup';
+  read: boolean;
+  createdAt: Timestamp;
+};
+
 export type NavItem = {
   title: string;
   href: string;

@@ -197,6 +197,20 @@
         "timestamp": { "type": "string", "format": "date-time" }
       },
       "required": ["action", "details", "user_id", "timestamp"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "A notification for a user about a system event.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "type": { "type": "string", "enum": ["leave", "checkin", "message", "signup"] },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "message", "read", "createdAt"]
     }
   },
   "auth": {
@@ -252,6 +266,12 @@
         "$ref": "#/entities/ActivityLog"
       },
       "description": "Stores audit logs."
+    },
+    "/notifications/{notificationId}": {
+      "schema": {
+        "$ref": "#/entities/Notification"
+      },
+      "description": "Stores system notifications."
     }
   }
 }
