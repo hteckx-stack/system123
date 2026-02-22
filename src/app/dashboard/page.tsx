@@ -5,13 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Users, FileText, UserPlus, Megaphone, Clock, CalendarDays, ShieldCheck, ArrowUpRight, History } from "lucide-react"
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { useCollection, useFirestore } from "@/firebase";
+import { useCollection, useFirestore, useUser } from "@/firebase";
 import { useMemo } from "react";
 import { collection, query, where, orderBy, limit } from "firebase/firestore";
-import type { Document, Staff, Announcement, CheckIn, LeaveRequest } from "@/lib/types";
+import type { Staff, Announcement, CheckIn, LeaveRequest } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { updateUser, deleteUser } from "@/firebase/firestore/users";
+import { logActivity } from "@/firebase/firestore/activity-logs";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +20,7 @@ import { cn } from "@/lib/utils";
 
 export default function Dashboard() {
   const firestore = useFirestore();
+  const { user: currentUser } = useUser();
   const { toast } = useToast();
 
   const staffQuery = useMemo(() => query(collection(firestore, "users"), where("role", "==", "staff")), [firestore]);
@@ -43,30 +45,44 @@ export default function Dashboard() {
   const loading = staffLoading || checkInsLoading || leavesLoading || pendingStaffLoading || activityLoading;
 
   const handleApprove = async (staff: Staff) => {
-    if (!staff.id) return;
+    if (!staff.id || !currentUser) return;
     try {
         await updateUser(firestore, staff.id, { status: "active" });
+        await logActivity(
+            firestore,
+            currentUser.uid,
+            currentUser.displayName || "Admin",
+            "Staff Approved",
+            `Accepted registration for ${staff.name} (${staff.email})`
+        );
         toast({
-          title: "Staff Approved",
-          description: `${staff.name} is now an active staff member.`,
+          title: "Access Granted",
+          description: `${staff.name} is now an active member of the system.`,
         });
     } catch (error) {
         toast({
             variant: "destructive",
-            title: "Approval Failed",
+            title: "Action Failed",
             description: "Could not approve staff member. Please try again.",
         })
     }
   };
 
   const handleDelete = async (staff: Staff) => {
-    if (!staff.id) return;
+    if (!staff.id || !currentUser) return;
     try {
         await deleteUser(firestore, staff.id);
+        await logActivity(
+            firestore,
+            currentUser.uid,
+            currentUser.displayName || "Admin",
+            "Staff Rejected",
+            `Denied registration for ${staff.name} (${staff.email})`
+        );
         toast({
           variant: "destructive",
-          title: "Staff Account Denied",
-          description: `${staff.name}'s account has been denied.`,
+          title: "Registration Denied",
+          description: `The account request for ${staff.name} has been rejected and removed.`,
         });
     } catch (error) {
         toast({
@@ -141,20 +157,33 @@ export default function Dashboard() {
                 ) : pendingStaff && pendingStaff.length > 0 ? (
                     <div className="space-y-3">
                       {pendingStaff.map((staff) => (
-                          <div key={staff.id} className="flex items-center justify-between p-4 rounded-xl border border-slate-50 bg-white hover:border-accent/20 transition-all shadow-sm">
+                          <div key={staff.id} className="flex items-center justify-between p-4 rounded-xl border border-slate-50 bg-white hover:border-accent/20 transition-all shadow-sm group">
                               <div className="flex items-center gap-4">
-                                  <Avatar className="h-11 w-11 border-2 border-slate-100 shadow-sm">
+                                  <Avatar className="h-11 w-11 border-2 border-slate-100 shadow-sm transition-transform group-hover:scale-105">
                                       <AvatarImage src={staff.photoUrl} alt={staff.name} />
                                       <AvatarFallback className="bg-primary/10 text-primary font-bold">{staff.name?.charAt(0)}</AvatarFallback>
                                   </Avatar>
-                                  <div>
-                                      <p className="font-semibold text-[#1A1A1A]">{staff.name}</p>
-                                      <p className="text-xs text-[#6B7280]">{staff.email}</p>
+                                  <div className="min-w-0">
+                                      <p className="font-bold text-[#1A1A1A] truncate">{staff.name}</p>
+                                      <p className="text-xs text-[#6B7280] truncate">{staff.email}</p>
                                   </div>
                               </div>
-                              <div className="flex gap-2">
-                                  <Button size="sm" className="bg-[#22C55E] hover:bg-[#1ea34d] shadow-sm font-bold" onClick={() => handleApprove(staff)}>Approve</Button>
-                                  <Button size="sm" variant="ghost" className="text-red-600 hover:text-red-700 hover:bg-red-50 font-bold" onClick={() => handleDelete(staff)}>Deny</Button>
+                              <div className="flex gap-2 shrink-0">
+                                  <Button 
+                                    size="sm" 
+                                    className="bg-[#22C55E] hover:bg-[#1ea34d] shadow-md shadow-[#22C55E]/20 font-bold px-4 rounded-xl" 
+                                    onClick={() => handleApprove(staff)}
+                                  >
+                                    Accept
+                                  </Button>
+                                  <Button 
+                                    size="sm" 
+                                    variant="ghost" 
+                                    className="text-red-600 hover:text-red-700 hover:bg-red-50 font-bold px-4 rounded-xl" 
+                                    onClick={() => handleDelete(staff)}
+                                  >
+                                    Reject
+                                  </Button>
                               </div>
                           </div>
                       ))}
@@ -170,8 +199,8 @@ export default function Dashboard() {
 
         <Card className="lg:col-span-3 border-none shadow-soft">
           <CardHeader>
-            <CardTitle className="text-xl">Recent Activity</CardTitle>
-            <CardDescription>Audit trail of recent system broadcasts.</CardDescription>
+            <CardTitle className="text-xl">System Broadcasts</CardTitle>
+            <CardDescription>Recent communications sent to the team.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6 pt-2">
             {activityLoading ? (
@@ -191,11 +220,11 @@ export default function Dashboard() {
                             <Megaphone className="h-5 w-5 text-accent" />
                         </div>
                         <div className="grid gap-1 border-b border-slate-50 pb-4 w-full last:border-0">
-                            <p className="text-sm leading-tight">
-                                <span className="font-semibold text-[#1A1A1A]">Admin</span> sent 
-                                <span className="text-accent font-medium mx-1">{activity.title}</span>
+                            <p className="text-sm leading-tight text-slate-700">
+                                <span className="font-bold text-[#1A1A1A]">Admin</span> broadcasted 
+                                <span className="text-accent font-bold mx-1">{activity.title}</span>
                             </p>
-                            <span className="text-xs text-[#6B7280] flex items-center gap-1">
+                            <span className="text-[10px] text-[#6B7280] flex items-center gap-1 font-bold uppercase tracking-wider">
                                 <Clock className="h-3 w-3" />
                                 {recentActivity && formatDistanceToNow(activity.sentAt.toDate(), { addSuffix: true })}
                             </span>
@@ -211,8 +240,8 @@ export default function Dashboard() {
           </CardContent>
           <CardFooter className="pt-2">
             <Link href="/dashboard/activity" className="w-full">
-              <Button variant="outline" className="w-full border-slate-200 text-[#1A1A1A] hover:bg-slate-50 font-semibold shadow-sm">
-                View All Activity
+              <Button variant="outline" className="w-full border-slate-200 text-[#1A1A1A] hover:bg-slate-50 font-bold rounded-xl shadow-sm">
+                View Full Audit Log
               </Button>
             </Link>
           </CardFooter>

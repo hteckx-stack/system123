@@ -32,10 +32,11 @@ import {
   MessageSquare,
   Building2,
 } from "lucide-react"
-import { useAuth, useFirestore } from "@/firebase"
+import { useAuth, useFirestore, useUser } from "@/firebase"
 import { sendPasswordResetEmail } from "firebase/auth"
 import { useToast } from "@/hooks/use-toast"
 import { updateUser, deleteUser } from "@/firebase/firestore/users"
+import { logActivity } from "@/firebase/firestore/activity-logs"
 import { useRouter } from "next/navigation"
 import { getOrCreateConversation } from "@/firebase/firestore/messages"
 import { useState } from "react"
@@ -48,6 +49,7 @@ interface StaffCardProps {
 
 export function StaffCard({ staff, onEdit }: StaffCardProps) {
   const auth = useAuth()
+  const { user: currentUser } = useUser()
   const firestore = useFirestore()
   const { toast } = useToast()
   const router = useRouter()
@@ -67,30 +69,51 @@ export function StaffCard({ staff, onEdit }: StaffCardProps) {
   }
 
   const handleApprove = async () => {
-    if (!staff.id) return
+    if (!staff.id || !currentUser) return
     try {
         await updateUser(firestore, staff.id, { status: "active" })
-        toast({ title: "Verified", description: `${staff.name} is now an active member.` })
+        await logActivity(
+            firestore,
+            currentUser.uid,
+            currentUser.displayName || "Admin",
+            "Staff Approved",
+            `Accepted registration for ${staff.name} (${staff.email})`
+        );
+        toast({ title: "Registration Accepted", description: `${staff.name} is now an active member.` })
     } catch {
         toast({ variant: "destructive", title: "Error", description: "Failed to approve staff member." })
     }
   }
 
   const handleDeactivate = async () => {
-    if (!staff.id) return
+    if (!staff.id || !currentUser) return
     try {
         await updateUser(firestore, staff.id, { status: "inactive" })
-        toast({ title: "Inactive", description: `${staff.name} has been deactivated.` })
+        await logActivity(
+            firestore,
+            currentUser.uid,
+            currentUser.displayName || "Admin",
+            "Staff Deactivated",
+            `Deactivated account for ${staff.name}`
+        );
+        toast({ title: "Account Inactive", description: `${staff.name} has been marked as inactive.` })
     } catch {
          toast({ variant: "destructive", title: "Error", description: "Failed to deactivate." })
     }
   }
 
   const handleDelete = async () => {
-    if (!staff.id) return
+    if (!staff.id || !currentUser) return
     try {
         await deleteUser(firestore, staff.id)
-        toast({ variant: "destructive", title: "Account Denied", description: "Data has been removed permanently." })
+        await logActivity(
+            firestore,
+            currentUser.uid,
+            currentUser.displayName || "Admin",
+            "Staff Removed",
+            `Rejected and deleted registration for ${staff.name}`
+        );
+        toast({ variant: "destructive", title: "Registration Denied", description: "Access has been denied and record removed." })
     } catch {
         toast({ variant: "destructive", title: "Error", description: "Failed to deny account." })
     }
@@ -127,9 +150,9 @@ export function StaffCard({ staff, onEdit }: StaffCardProps) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-[180px] rounded-xl border-none shadow-xl">
                {staff.status === 'pending' && (
-                <DropdownMenuItem onSelect={handleApprove} className="rounded-lg">
+                <DropdownMenuItem onSelect={handleApprove} className="rounded-lg font-bold text-green-600">
                   <UserCheck className="mr-2 h-4 w-4" />
-                  Approve Account
+                  Accept Request
                 </DropdownMenuItem>
               )}
               {staff.status === 'active' && (
@@ -138,14 +161,14 @@ export function StaffCard({ staff, onEdit }: StaffCardProps) {
                     <Edit className="mr-2 h-4 w-4" />
                     Edit Profile
                   </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={handleDeactivate} className="rounded-lg text-orange-600 focus:text-orange-600">
+                  <DropdownMenuItem onSelect={handleDeactivate} className="rounded-lg text-orange-600 focus:text-orange-600 font-medium">
                     <UserX className="mr-2 h-4 w-4" />
                     Deactivate
                   </DropdownMenuItem>
                 </>
               )}
               {staff.status === 'inactive' && (
-                <DropdownMenuItem onSelect={handleApprove} className="rounded-lg">
+                <DropdownMenuItem onSelect={handleApprove} className="rounded-lg font-bold text-green-600">
                   <UserCheck className="mr-2 h-4 w-4" />
                   Reactivate
                 </DropdownMenuItem>
@@ -156,16 +179,16 @@ export function StaffCard({ staff, onEdit }: StaffCardProps) {
                 Login Recovery
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onSelect={handleDelete} className="text-red-600 focus:text-red-600 focus:bg-red-50 rounded-lg font-semibold">
+              <DropdownMenuItem onSelect={handleDelete} className="text-red-600 focus:text-red-600 focus:bg-red-50 rounded-lg font-bold">
                 <Trash2 className="mr-2 h-4 w-4" />
-                Delete Account
+                Reject & Delete
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
         <div className="pt-2">
-          <CardTitle className="text-xl font-bold text-[#1A1A1A]">{staff.name}</CardTitle>
-          <CardDescription className="text-xs font-bold text-accent uppercase tracking-widest mt-0.5">{staff.position}</CardDescription>
+          <CardTitle className="text-xl font-bold text-[#1A1A1A] truncate">{staff.name}</CardTitle>
+          <CardDescription className="text-xs font-bold text-accent uppercase tracking-widest mt-0.5 truncate">{staff.position}</CardDescription>
         </div>
       </CardHeader>
       <CardContent className="space-y-4 pt-0">
@@ -189,10 +212,10 @@ export function StaffCard({ staff, onEdit }: StaffCardProps) {
           <div className="flex w-full gap-2">
             <Button 
               size="sm" 
-              className="flex-1 bg-[#22C55E] hover:bg-[#1ea34d] font-bold text-xs rounded-xl h-9"
+              className="flex-1 bg-[#22C55E] hover:bg-[#1ea34d] font-bold text-xs rounded-xl h-9 shadow-md shadow-[#22C55E]/10"
               onClick={handleApprove}
             >
-              Approve
+              Accept
             </Button>
             <Button 
               variant="outline" 
@@ -200,7 +223,7 @@ export function StaffCard({ staff, onEdit }: StaffCardProps) {
               className="flex-1 text-red-600 border-red-100 hover:bg-red-50 font-bold text-xs rounded-xl h-9"
               onClick={handleDelete}
             >
-              Deny
+              Reject
             </Button>
           </div>
         ) : (
