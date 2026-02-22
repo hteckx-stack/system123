@@ -2,7 +2,7 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
-import { Users, FileText, UserPlus, Megaphone, Clock, CalendarDays, ShieldCheck, ArrowUpRight, History } from "lucide-react"
+import { Users, UserPlus, Megaphone, Clock, CalendarDays, ArrowUpRight, History } from "lucide-react"
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useCollection, useFirestore, useUser } from "@/firebase";
@@ -15,7 +15,6 @@ import { updateUser, deleteUser } from "@/firebase/firestore/users";
 import { logActivity } from "@/firebase/firestore/activity-logs";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 export default function Dashboard() {

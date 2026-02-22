@@ -3,7 +3,7 @@
 
 import { UserNav } from "./user-nav"
 import { NotificationsPopover } from "./notifications-popover"
-import { Menu, Search } from "lucide-react"
+import { Menu, Search, MessageSquare } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -13,7 +13,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 
@@ -29,6 +29,7 @@ const navItems = [
 
 export function Topbar() {
   const pathname = usePathname()
+  const router = useRouter()
 
   const getPageTitle = () => {
     const item = navItems.find(i => i.href === pathname)
@@ -78,7 +79,16 @@ export function Topbar() {
         </div>
       </div>
 
-      <div className="flex items-center gap-4 ml-auto">
+      <div className="flex items-center gap-2 md:gap-4 ml-auto">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="text-white hover:bg-white/10"
+          onClick={() => router.push('/dashboard/messages')}
+          title="Message Center"
+        >
+          <MessageSquare className="h-5 w-5" />
+        </Button>
         <NotificationsPopover />
         <div className="h-8 w-px bg-white/10 mx-2 hidden md:block"></div>
         <UserNav />
