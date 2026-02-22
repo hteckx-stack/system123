@@ -1,4 +1,3 @@
-
 "use client"
 
 import Link from "next/link"
@@ -50,7 +49,7 @@ export function AppHeader() {
           <div className="bg-white text-primary p-1 rounded-md shadow-sm">
             <LayoutDashboard className="h-6 w-6" />
           </div>
-          <span>BlueLink</span>
+          <span>EMPLOYEE APP</span>
         </Link>
         {navItems.map((item) => (
           <Link
@@ -81,7 +80,7 @@ export function AppHeader() {
         </SheetTrigger>
         <SheetContent side="left" className="bg-primary border-r-white/10 text-white">
           <SheetHeader>
-            <SheetTitle className="text-white text-left font-bold text-2xl mb-4">BlueLink</SheetTitle>
+            <SheetTitle className="text-white text-left font-bold text-2xl mb-4">EMPLOYEE APP</SheetTitle>
           </SheetHeader>
           <nav className="grid gap-4 text-lg font-medium">
             {navItems.map((item) => (

@@ -20,7 +20,7 @@ export default function Loading() {
             />
           </svg>
           <p className="text-lg font-medium text-muted-foreground">
-            BlueLink is loading...
+            EMPLOYEE APP is loading...
           </p>
         </div>
       </div>

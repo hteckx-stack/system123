@@ -55,7 +55,7 @@ export function Sidebar() {
         <div className="bg-white text-primary p-1.5 rounded-lg shadow-sm shrink-0">
           <LayoutDashboard className="h-6 w-6" />
         </div>
-        {!isCollapsed && <span className="text-xl font-bold tracking-tight">BlueLink</span>}
+        {!isCollapsed && <span className="text-xl font-bold tracking-tight">EMPLOYEE APP</span>}
       </div>
 
       <nav className="flex-1 px-3 space-y-1">

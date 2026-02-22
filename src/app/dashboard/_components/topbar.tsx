@@ -30,7 +30,7 @@ export function Topbar() {
 
   const getPageTitle = () => {
     const item = navItems.find(i => i.href === pathname)
-    return item ? item.title : "BlueLink"
+    return item ? item.title : "EMPLOYEE APP"
   }
 
   return (
@@ -44,7 +44,7 @@ export function Topbar() {
           </SheetTrigger>
           <SheetContent side="left" className="bg-[#0A3578] text-white border-none">
             <SheetHeader>
-              <SheetTitle className="text-white text-left text-2xl font-bold mb-8">BlueLink</SheetTitle>
+              <SheetTitle className="text-white text-left text-2xl font-bold mb-8">EMPLOYEE APP</SheetTitle>
             </SheetHeader>
             <nav className="flex flex-col gap-2">
               {navItems.map((item) => (
@@ -62,7 +62,7 @@ export function Topbar() {
             </nav>
           </SheetContent>
         </Sheet>
-        <span className="font-bold text-lg">BlueLink</span>
+        <span className="font-bold text-lg">EMPLOYEE APP</span>
       </div>
 
       <div className="hidden md:flex items-center gap-4 flex-1">

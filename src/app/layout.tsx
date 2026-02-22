@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { FirebaseClientProvider } from '@/firebase';
 
 export const metadata: Metadata = {
-  title: 'BlueLink Admin Portal',
+  title: 'EMPLOYEE APP Admin Portal',
   description: 'Admin Staff Management Portal',
 };
 
