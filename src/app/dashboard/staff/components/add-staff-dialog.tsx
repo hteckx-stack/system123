@@ -16,6 +16,7 @@ import type { Staff } from "@/lib/types"
 import { useFirestore } from "@/firebase"
 import { addUser } from "@/firebase/firestore/users"
 import { useToast } from "@/hooks/use-toast"
+import { cn } from "@/lib/utils"
 
 interface AddStaffDialogProps {
   open: boolean
@@ -24,7 +25,9 @@ interface AddStaffDialogProps {
 
 export function AddStaffDialog({ open, onOpenChange }: AddStaffDialogProps) {
   const [formData, setFormData] = useState({
-    name: "",
+    firstName: "",
+    middleName: "",
+    lastName: "",
     phone: "",
     email: "",
     position: "",
@@ -44,9 +47,19 @@ export function AddStaffDialog({ open, onOpenChange }: AddStaffDialogProps) {
     setIsSaving(true)
     
     try {
+      // Concatenate names for the backend
+      const fullName = [formData.firstName, formData.middleName, formData.lastName]
+        .filter(Boolean)
+        .join(" ");
+
       const newStaffData: Omit<Staff, 'id'> = {
-        ...formData,
+        name: fullName,
+        phone: formData.phone,
+        email: formData.email,
+        position: formData.position,
+        department: formData.department,
         status: 'pending',
+        role: 'staff',
         photoUrl: `https://picsum.photos/seed/${formData.email}/100/100`
       };
 
@@ -54,7 +67,7 @@ export function AddStaffDialog({ open, onOpenChange }: AddStaffDialogProps) {
       
       toast({
         title: "Staff Added",
-        description: `${formData.name} has been added. They will still need to sign up to create an account.`,
+        description: `${fullName} has been added. They will still need to sign up with ${formData.email} to create an account.`,
       })
       onOpenChange(false)
     } catch (error) {
@@ -70,38 +83,78 @@ export function AddStaffDialog({ open, onOpenChange }: AddStaffDialogProps) {
   
   const handleOpenChange = (isOpen: boolean) => {
     if (!isSaving && !isOpen) {
-        setFormData({ name: "", phone: "", email: "", position: "", department: "" });
+        setFormData({ 
+          firstName: "", 
+          middleName: "", 
+          lastName: "", 
+          phone: "", 
+          email: "", 
+          position: "", 
+          department: "" 
+        });
     }
     onOpenChange(isOpen);
   }
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Add New Staff Member</DialogTitle>
-          <DialogDescription>
-            Create a new staff profile. The staff member will need to sign up with the same email to access their account.
+      <DialogContent className="sm:max-w-[550px] p-0 border-none shadow-2xl rounded-3xl overflow-hidden">
+        <DialogHeader className="bg-primary p-8 text-white">
+          <DialogTitle className="text-2xl font-bold">Add New Staff Member</DialogTitle>
+          <DialogDescription className="text-white/70">
+            Create a new staff profile. Names will be combined for the global directory.
           </DialogDescription>
         </DialogHeader>
-        <form id="add-staff-form" onSubmit={handleFormSubmit}>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">
-                Name
+        <form id="add-staff-form" onSubmit={handleFormSubmit} className="p-8 space-y-5 bg-white">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="firstName" className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">
+                First Name
               </Label>
               <Input
-                id="name"
-                name="name"
-                value={formData.name}
+                id="firstName"
+                name="firstName"
+                value={formData.firstName}
                 onChange={handleChange}
-                className="col-span-3"
+                placeholder="Jane"
+                className="rounded-xl border-slate-200 bg-slate-50/50 focus-visible:ring-primary/20 h-11"
                 required
               />
             </div>
-             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="email" className="text-right">
-                Email
+            <div className="space-y-2">
+              <Label htmlFor="lastName" className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">
+                Last Name
+              </Label>
+              <Input
+                id="lastName"
+                name="lastName"
+                value={formData.lastName}
+                onChange={handleChange}
+                placeholder="Doe"
+                className="rounded-xl border-slate-200 bg-slate-50/50 focus-visible:ring-primary/20 h-11"
+                required
+              />
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="middleName" className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">
+              Middle Name <span className="text-slate-300 font-normal italic">(Optional)</span>
+            </Label>
+            <Input
+              id="middleName"
+              name="middleName"
+              value={formData.middleName}
+              onChange={handleChange}
+              placeholder="Maria"
+              className="rounded-xl border-slate-200 bg-slate-50/50 focus-visible:ring-primary/20 h-11"
+            />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">
+                Email Address
               </Label>
               <Input
                 id="email"
@@ -109,13 +162,14 @@ export function AddStaffDialog({ open, onOpenChange }: AddStaffDialogProps) {
                 type="email"
                 value={formData.email}
                 onChange={handleChange}
-                className="col-span-3"
+                placeholder="jane.doe@company.com"
+                className="rounded-xl border-slate-200 bg-slate-50/50 focus-visible:ring-primary/20 h-11"
                 required
               />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="phone" className="text-right">
-                Phone
+            <div className="space-y-2">
+              <Label htmlFor="phone" className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">
+                Phone Number
               </Label>
               <Input
                 id="phone"
@@ -123,14 +177,17 @@ export function AddStaffDialog({ open, onOpenChange }: AddStaffDialogProps) {
                 type="tel"
                 value={formData.phone}
                 onChange={handleChange}
-                className="col-span-3"
                 placeholder="+260977123456"
-                pattern="^\\+260\\d{9}$"
+                pattern="^\+260\d{9}$"
                 title="Enter a valid Zambian phone number (e.g. +260977123456)"
+                className="rounded-xl border-slate-200 bg-slate-50/50 focus-visible:ring-primary/20 h-11"
               />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="position" className="text-right">
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="position" className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">
                 Position
               </Label>
               <Input
@@ -138,12 +195,13 @@ export function AddStaffDialog({ open, onOpenChange }: AddStaffDialogProps) {
                 name="position"
                 value={formData.position}
                 onChange={handleChange}
-                className="col-span-3"
+                placeholder="Project Manager"
+                className="rounded-xl border-slate-200 bg-slate-50/50 focus-visible:ring-primary/20 h-11"
                 required
               />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="department" className="text-right">
+            <div className="space-y-2">
+              <Label htmlFor="department" className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">
                 Department
               </Label>
               <Input
@@ -151,23 +209,25 @@ export function AddStaffDialog({ open, onOpenChange }: AddStaffDialogProps) {
                 name="department"
                 value={formData.department}
                 onChange={handleChange}
-                className="col-span-3"
+                placeholder="Operations"
+                className="rounded-xl border-slate-200 bg-slate-50/50 focus-visible:ring-primary/20 h-11"
                 required
               />
             </div>
           </div>
         </form>
-        <DialogFooter>
+        <DialogFooter className="bg-slate-50 p-6 px-8 border-t flex items-center justify-end gap-3">
            <Button
             type="button"
-            variant="outline"
+            variant="ghost"
             onClick={() => onOpenChange(false)}
             disabled={isSaving}
+            className="rounded-xl text-slate-500 hover:bg-slate-200/50 font-bold"
           >
             Cancel
           </Button>
-          <Button type="submit" form="add-staff-form" disabled={isSaving}>
-            {isSaving ? "Adding..." : "Add Staff"}
+          <Button type="submit" form="add-staff-form" disabled={isSaving} className="rounded-xl px-8 font-bold shadow-lg shadow-primary/20 h-11">
+            {isSaving ? "Creating Account..." : "Add Staff Member"}
           </Button>
         </DialogFooter>
       </DialogContent>
