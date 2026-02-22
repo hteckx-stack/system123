@@ -14,6 +14,7 @@ import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
 import { updateUser } from '@/firebase/firestore/users';
+import { addNotification } from '@/firebase/firestore/notifications';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function SignupPage() {
@@ -64,6 +65,17 @@ export default function SignupPage() {
           phone: ""
       };
       await updateUser(firestore, authUser.uid, newStaffData);
+
+      // Create notification for admins
+      if (role === 'staff') {
+        await addNotification(firestore, {
+            userId: 'admin',
+            title: 'New Staff Registration',
+            message: `${name} has signed up and is awaiting approval.`,
+            type: 'signup',
+            read: false
+        });
+      }
 
       toast({
         title: "Account Created",

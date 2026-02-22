@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
@@ -65,13 +66,13 @@ export default function Dashboard() {
         toast({
           variant: "destructive",
           title: "Staff Account Denied",
-          description: `${staff.name}'s account has been deleted.`,
+          description: `${staff.name}'s account has been denied.`,
         });
     } catch (error) {
         toast({
             variant: "destructive",
-            title: "Deletion Failed",
-            description: "Could not delete staff account. Please try again.",
+            title: "Action Failed",
+            description: "Could not process request. Please try again.",
         })
     }
   };
@@ -152,8 +153,8 @@ export default function Dashboard() {
                                   </div>
                               </div>
                               <div className="flex gap-2">
-                                  <Button size="sm" className="bg-[#22C55E] hover:bg-[#1ea34d] shadow-sm" onClick={() => handleApprove(staff)}>Approve</Button>
-                                  <Button size="sm" variant="ghost" className="text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => handleDelete(staff)}>Deny</Button>
+                                  <Button size="sm" className="bg-[#22C55E] hover:bg-[#1ea34d] shadow-sm font-bold" onClick={() => handleApprove(staff)}>Approve</Button>
+                                  <Button size="sm" variant="ghost" className="text-red-600 hover:text-red-700 hover:bg-red-50 font-bold" onClick={() => handleDelete(staff)}>Deny</Button>
                               </div>
                           </div>
                       ))}

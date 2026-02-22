@@ -1,3 +1,4 @@
+
 "use client"
 
 import type { Staff } from "@/lib/types"
@@ -89,9 +90,9 @@ export function StaffCard({ staff, onEdit }: StaffCardProps) {
     if (!staff.id) return
     try {
         await deleteUser(firestore, staff.id)
-        toast({ variant: "destructive", title: "Account Deleted", description: "Data has been removed permanently." })
+        toast({ variant: "destructive", title: "Account Denied", description: "Data has been removed permanently." })
     } catch {
-        toast({ variant: "destructive", title: "Error", description: "Failed to delete account." })
+        toast({ variant: "destructive", title: "Error", description: "Failed to deny account." })
     }
   }
 
@@ -184,27 +185,49 @@ export function StaffCard({ staff, onEdit }: StaffCardProps) {
         </div>
       </CardContent>
       <CardFooter className="flex justify-between items-center gap-2 pt-0 border-t border-slate-50 bg-slate-50/30 p-4">
-        <Badge
-          variant="outline"
-          className={cn(
-            "capitalize px-3 py-0.5 border-none font-bold text-[10px] tracking-widest",
-            staff.status === "active" && "bg-[#22C55E]/10 text-[#22C55E]",
-            staff.status === "pending" && "bg-[#F59E0B]/10 text-[#F59E0B]",
-            staff.status === "inactive" && "bg-red-50 text-red-600"
-          )}
-        >
-          {staff.status}
-        </Badge>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="h-9 text-primary hover:text-primary hover:bg-white font-bold gap-2 bg-white/50 rounded-xl"
-          onClick={handleMessageStaff}
-          disabled={isMessaging}
-        >
-          <MessageSquare className="h-4 w-4" />
-          Chat
-        </Button>
+        {staff.status === 'pending' ? (
+          <div className="flex w-full gap-2">
+            <Button 
+              size="sm" 
+              className="flex-1 bg-[#22C55E] hover:bg-[#1ea34d] font-bold text-xs rounded-xl h-9"
+              onClick={handleApprove}
+            >
+              Approve
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="flex-1 text-red-600 border-red-100 hover:bg-red-50 font-bold text-xs rounded-xl h-9"
+              onClick={handleDelete}
+            >
+              Deny
+            </Button>
+          </div>
+        ) : (
+          <>
+            <Badge
+              variant="outline"
+              className={cn(
+                "capitalize px-3 py-0.5 border-none font-bold text-[10px] tracking-widest",
+                staff.status === "active" && "bg-[#22C55E]/10 text-[#22C55E]",
+                staff.status === "pending" && "bg-[#F59E0B]/10 text-[#F59E0B]",
+                staff.status === "inactive" && "bg-red-50 text-red-600"
+              )}
+            >
+              {staff.status}
+            </Badge>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-9 text-primary hover:text-primary hover:bg-white font-bold gap-2 bg-white/50 rounded-xl"
+              onClick={handleMessageStaff}
+              disabled={isMessaging}
+            >
+              <MessageSquare className="h-4 w-4" />
+              Chat
+            </Button>
+          </>
+        )}
       </CardFooter>
     </Card>
   )
