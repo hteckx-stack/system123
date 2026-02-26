@@ -1,3 +1,4 @@
+
 'use client';
 
 import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
@@ -31,7 +32,6 @@ export function initializeFirebase(): FirebaseInstances {
 
   const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
   
-  // Initialize standard reCAPTCHA v3 using the provided token
   if (typeof window !== 'undefined') {
     initializeAppCheck(app, {
       provider: new ReCaptchaV3Provider('75B62F21-5EB1-4CD8-AFC2-0647D90583BA'),

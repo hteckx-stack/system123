@@ -50,18 +50,18 @@ export default function SignupPage() {
           photoURL: photoUrl
       });
       
-      // Crucial: Set status and approved flag for the Admin Portal to pick up
       const newStaffData = {
           name,
           email,
           role,
           status: role === 'admin' ? 'active' : 'pending' as const,
-          approved: role === 'admin', // Staff must be approved by admin
+          approved: role === 'admin',
           photoUrl,
           department: "Not Assigned",
-          position: "Not Assigned",
+          position: role === 'admin' ? 'Administrator' : 'Not Assigned',
           phone: ""
       };
+      
       await updateUser(firestore, authUser.uid, newStaffData);
 
       if (role === 'staff') {

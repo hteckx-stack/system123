@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { logActivity } from "@/firebase/firestore/activity-logs";
 import { 
@@ -30,7 +30,7 @@ export default function Dashboard() {
   const { user: currentUser } = useUser();
   const { toast } = useToast();
 
-  // Fetch users from 'users' collection where approved is false and role is staff
+  // Fetch users from 'users' collection where role is staff
   const staffQuery = useMemo(() => query(
     collection(firestore, "users"), 
     where("role", "==", "staff")
