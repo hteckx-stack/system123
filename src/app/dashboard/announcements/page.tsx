@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useMemo } from "react"
@@ -26,6 +25,7 @@ export default function AnnouncementsPage() {
   const [message, setMessage] = useState("")
   const [isSending, setIsSending] = useState(false)
 
+  // Announcements history listener
   const announcementsQuery = useMemo(() => query(
     collection(firestore, "announcements"), 
     orderBy("sentAt", "desc")
@@ -38,6 +38,7 @@ export default function AnnouncementsPage() {
 
     setIsSending(true)
     try {
+      // 1. Instant Push to Realtime Database for mobile app listeners
       const rtdbRef = ref(database, 'announcements');
       await push(rtdbRef, {
         title,
@@ -46,6 +47,7 @@ export default function AnnouncementsPage() {
         timestamp: rtdbTimestamp()
       });
 
+      // 2. Log to Firestore for portal history
       await addDoc(collection(firestore, "announcements"), {
         title,
         message,
@@ -54,7 +56,7 @@ export default function AnnouncementsPage() {
 
       toast({
         title: "Broadcast Successful",
-        description: "Staff home screens updated instantly.",
+        description: "Mobile app home screens updated instantly.",
       });
       setTitle("");
       setMessage("");
@@ -62,7 +64,7 @@ export default function AnnouncementsPage() {
       toast({
         variant: "destructive",
         title: "Broadcast Failed",
-        description: "Check your connection to Realtime Database."
+        description: "Verify your connection to Realtime Database."
       });
     } finally {
       setIsSending(false);
@@ -73,7 +75,7 @@ export default function AnnouncementsPage() {
     <div className="space-y-10 pb-10">
       <div className="flex flex-col gap-1">
         <h1 className="text-3xl font-bold tracking-tight text-[#1A1A1A]">Broadcast Tool</h1>
-        <p className="text-[#6B7280]">Deliver instant real-time updates to all staff home screens.</p>
+        <p className="text-[#6B7280]">Deliver instant real-time updates to all staff app home screens.</p>
       </div>
 
       <div className="grid gap-8 lg:grid-cols-12">
@@ -97,7 +99,7 @@ export default function AnnouncementsPage() {
             <div className="space-y-2">
               <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Message Content</Label>
               <Textarea 
-                placeholder="Staff will see this instantly on their home dashboard..." 
+                placeholder="Staff will see this instantly on their app..." 
                 className="min-h-[200px] rounded-2xl bg-slate-50 border-slate-200 p-5 leading-relaxed"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}

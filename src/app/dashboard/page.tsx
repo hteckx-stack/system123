@@ -1,8 +1,7 @@
-
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Users, Megaphone, Clock, CalendarDays, ShieldCheck, Smartphone, Check, X } from "lucide-react"
+import { Megaphone, Clock, CalendarDays, ShieldCheck, Smartphone, Check, X } from "lucide-react"
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from "@/components/ui/badge";
@@ -20,16 +19,15 @@ export default function Dashboard() {
   const { user: currentUser } = useUser();
   const { toast } = useToast();
 
-  // Onboarding Hub: Fetch all staff with 'pending' status
+  // Onboarding Hub: Robust recapture of ANY staff member awaiting approval
   const pendingStaffQuery = useMemo(() => query(
     collection(firestore, "users"), 
-    where("status", "==", "pending"),
-    where("role", "==", "staff")
+    where("status", "==", "pending")
   ), [firestore]);
   
-  const { data: pendingStaff, loading: staffLoading } = useCollection<Staff>(pendingStaffQuery);
+  const { data: pendingUsers, loading: onboardingLoading } = useCollection<Staff>(pendingStaffQuery);
 
-  // Fetch device login requests
+  // Fetch device login requests to link with staff profiles
   const loginRequestsQuery = useMemo(() => collection(firestore, "login_requests"), [firestore]);
   const { data: loginRequests, loading: loginsLoading } = useCollection<LoginRequest>(loginRequestsQuery);
 
@@ -40,12 +38,13 @@ export default function Dashboard() {
       const batch = writeBatch(firestore);
       
       // Update staff document: approved = true, status = active
+      // This allows the mobile app to move past WaitingApprovalActivity
       batch.update(doc(firestore, "users", staff.id), { 
         approved: true, 
         status: "active" 
       });
       
-      // Delete corresponding login request to notify the user's app
+      // Delete corresponding login request to clear the security queue
       if (loginReqId) {
         batch.delete(doc(firestore, "login_requests", loginReqId));
       }
@@ -61,8 +60,8 @@ export default function Dashboard() {
       );
 
       toast({
-        title: "Staff Approved",
-        description: `${staff.name} can now access the Staff App.`,
+        title: "Access Authorized",
+        description: `${staff.name} can now log into the mobile app.`,
       });
     } catch (error) {
       toast({
@@ -90,7 +89,7 @@ export default function Dashboard() {
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col gap-1">
         <h1 className="text-3xl font-bold tracking-tight text-[#1A1A1A]">Admin Command Center</h1>
-        <p className="text-[#6B7280]">Real-time Source of Truth for Staff App status.</p>
+        <p className="text-[#6B7280]">Real-time "Source of Truth" for Staff App approvals and status.</p>
       </div>
 
       <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-7">
@@ -98,31 +97,31 @@ export default function Dashboard() {
             <CardHeader className="bg-slate-50 border-b pb-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-xl text-[#0D47A1]">System Onboarding</CardTitle>
-                    <CardDescription>Approve staff and clear device requests.</CardDescription>
+                    <CardTitle className="text-xl text-[#0D47A1]">Pending User Approvals</CardTitle>
+                    <CardDescription>Review all registration requests from the app here.</CardDescription>
                   </div>
-                  <Badge className="bg-[#0D47A1] text-white font-bold h-7 px-3 rounded-full">
-                    { (pendingStaff?.length || 0) + (loginRequests?.length || 0) } Pending
+                  <Badge variant="outline" className="bg-white px-3 font-bold border-primary/20">
+                    {pendingUsers?.length || 0} Request(s)
                   </Badge>
                 </div>
             </CardHeader>
             <CardContent className="pt-6">
                 <div className="space-y-4">
-                  {staffLoading || loginsLoading ? (
+                  {onboardingLoading || loginsLoading ? (
                     <div className="space-y-4">
                       <Skeleton className="h-20 w-full rounded-2xl" />
                       <Skeleton className="h-20 w-full rounded-2xl" />
                     </div>
                   ) : (
                     <>
-                      {pendingStaff?.map(staff => {
+                      {pendingUsers?.map(staff => {
                         const matchingReq = loginRequests?.find(r => r.staffId === staff.id);
                         return (
                           <div key={staff.id} className="flex items-center justify-between p-4 rounded-2xl border border-slate-50 bg-white hover:border-[#1976D2]/20 transition-all shadow-sm group">
                             <div className="flex items-center gap-4">
                                 <Avatar className="h-12 w-12 border-2 border-slate-100 shadow-sm">
                                     <AvatarImage src={staff.photoUrl} />
-                                    <AvatarFallback>{staff.name.charAt(0)}</AvatarFallback>
+                                    <AvatarFallback className="bg-primary/5 text-primary font-bold">{staff.name.charAt(0)}</AvatarFallback>
                                 </Avatar>
                                 <div>
                                     <p className="font-bold text-[#1A1A1A]">{staff.name}</p>
@@ -152,10 +151,10 @@ export default function Dashboard() {
                           </div>
                         )
                       })}
-                      {(!pendingStaff || pendingStaff.length === 0) && (
+                      {(!pendingUsers || pendingUsers.length === 0) && (
                         <div className="py-16 text-center text-slate-300">
                           <ShieldCheck className="h-12 w-12 mx-auto opacity-10 mb-3" />
-                          <p className="font-medium">All staff and devices are currently authorized.</p>
+                          <p className="font-medium">All registration requests have been cleared.</p>
                         </div>
                       )}
                     </>
@@ -166,8 +165,8 @@ export default function Dashboard() {
 
         <Card className="lg:col-span-3 border-none shadow-soft bg-white rounded-3xl overflow-hidden">
           <CardHeader className="bg-slate-50 border-b pb-6">
-            <CardTitle className="text-xl text-[#0D47A1]">Quick Controls</CardTitle>
-            <CardDescription>Instant administrative actions.</CardDescription>
+            <CardTitle className="text-xl text-[#0D47A1]">Quick Actions</CardTitle>
+            <CardDescription>Instant administrative controls.</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 pt-6">
              <Link href="/dashboard/tasks">
