@@ -1,3 +1,4 @@
+
 "use client"
 
 import Link from "next/link"
@@ -9,7 +10,7 @@ import {
   Users,
   FileText,
   Megaphone,
-  History,
+  History as LucideHistory,
   Menu,
   CalendarDays,
   MessageSquare,
@@ -33,7 +34,7 @@ const navItems: NavItem[] = [
   { title: "Messages", href: "/dashboard/messages", icon: MessageSquare, variant: "ghost" },
   { title: "Documents", href: "/dashboard/documents", icon: FileText, variant: "ghost" },
   { title: "Announcements", href: "/dashboard/announcements", icon: Megaphone, variant: "ghost" },
-  { title: "Activity", href: "/dashboard/activity", icon: History, variant: "ghost" },
+  { title: "Activity", href: "/dashboard/activity", icon: LucideHistory, variant: "ghost" },
 ]
 
 export function AppHeader() {
