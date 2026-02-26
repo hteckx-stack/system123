@@ -18,8 +18,9 @@ import { useCollection, useFirestore } from "@/firebase"
 import { collection, query, where, getDocs, orderBy } from "firebase/firestore"
 import { addAnnouncement } from "@/firebase/firestore/announcements"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Megaphone, Users, Clock, ArrowRight, Eye } from "lucide-react"
+import { Megaphone, Users, Clock, ArrowRight, History as LucideHistory } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { formatDistanceToNow } from "date-fns"
 
 export default function AnnouncementsPage() {
   const { toast } = useToast()
@@ -124,8 +125,8 @@ export default function AnnouncementsPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="grid gap-8 lg:grid-cols-12">
-        <Card className="lg:col-span-7 border-none shadow-soft rounded-3xl overflow-hidden">
-            <CardHeader className="bg-primary text-white py-6">
+        <Card className="lg:col-span-7 border-none shadow-soft rounded-3xl overflow-hidden bg-white">
+            <CardHeader className="bg-[#0D47A1] text-white py-6">
                 <div className="flex items-center gap-3">
                   <Megaphone className="h-6 w-6" />
                   <CardTitle className="text-xl">Compose Broadcast</CardTitle>
@@ -156,13 +157,13 @@ export default function AnnouncementsPage() {
                 </div>
             </CardContent>
             <CardFooter className="bg-slate-50 border-t p-6">
-              <Button type="submit" className="w-full h-12 rounded-xl font-bold text-lg shadow-lg shadow-primary/20" disabled={staffLoading || isSending}>
+              <Button type="submit" className="w-full h-12 rounded-xl font-bold text-lg shadow-lg shadow-primary/20 bg-[#0D47A1]" disabled={staffLoading || isSending}>
                 {isSending ? 'Broadcasting...' : 'Send Announcement'}
               </Button>
             </CardFooter>
         </Card>
 
-        <Card className="lg:col-span-5 border-none shadow-soft rounded-3xl">
+        <Card className="lg:col-span-5 border-none shadow-soft rounded-3xl bg-white">
             <CardHeader>
                 <CardTitle className="text-xl">Target Recipients</CardTitle>
                 <CardDescription>Select which staff members should receive this update.</CardDescription>
@@ -195,7 +196,7 @@ export default function AnnouncementsPage() {
                       staffList?.map((staff) => (
                         <div key={staff.id} className={cn(
                           "flex items-center space-x-3 rounded-xl p-3 transition-all",
-                          selectedStaff.includes(staff.id) ? "bg-accent/5 border border-accent/10" : "hover:bg-slate-50 border border-transparent"
+                          selectedStaff.includes(staff.id) ? "bg-[#1976D2]/5 border border-[#1976D2]/10" : "hover:bg-slate-50 border border-transparent"
                         )}>
                             <Checkbox
                             id={`select-${staff.id}`}
@@ -220,7 +221,7 @@ export default function AnnouncementsPage() {
             <CardFooter className="pt-4 border-t">
                 <div className="flex items-center justify-between w-full">
                   <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Selected Counts</span>
-                  <Badge variant="secondary" className="bg-accent/10 text-accent font-bold px-4">{selectedStaff.length} Members</Badge>
+                  <Badge variant="secondary" className="bg-[#1976D2]/10 text-[#1976D2] font-bold px-4">{selectedStaff.length} Members</Badge>
                 </div>
             </CardFooter>
         </Card>
@@ -235,7 +236,7 @@ export default function AnnouncementsPage() {
         {announcementsLoading ? (
             <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
                 {Array.from({length: 3}).map((_, i) => (
-                    <Card key={i} className="rounded-2xl shadow-soft">
+                    <Card key={i} className="rounded-2xl shadow-soft bg-white">
                         <CardHeader>
                             <Skeleton className="h-6 w-3/4" />
                             <Skeleton className="h-4 w-1/2" />
@@ -247,13 +248,13 @@ export default function AnnouncementsPage() {
         ) : sentAnnouncements && sentAnnouncements.length > 0 ? (
           <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
             {sentAnnouncements.map((announcement) => (
-              <Card key={announcement.id} className="border-none shadow-soft rounded-2xl group hover:bg-slate-50 transition-all cursor-pointer overflow-hidden border-t-4 border-t-primary" onClick={() => setViewingAnnouncement(announcement)}>
+              <Card key={announcement.id} className="border-none shadow-soft rounded-2xl group hover:bg-slate-50 transition-all cursor-pointer overflow-hidden border-t-4 border-t-[#0D47A1] bg-white" onClick={() => setViewingAnnouncement(announcement)}>
                 <CardHeader className="pb-4">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] font-bold text-primary uppercase tracking-widest bg-primary/5 px-2 py-0.5 rounded-md">Broadcast</span>
+                    <span className="text-[10px] font-bold text-[#0D47A1] uppercase tracking-widest bg-[#0D47A1]/5 px-2 py-0.5 rounded-md">Broadcast</span>
                     <div className="flex items-center gap-1 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
                       <Clock className="h-3 w-3" />
-                      {formatDistanceToNow(announcement.sentAt.toDate(), { addSuffix: true })}
+                      {announcement.sentAt && formatDistanceToNow(announcement.sentAt.toDate(), { addSuffix: true })}
                     </div>
                   </div>
                   <CardTitle className="text-lg font-bold text-[#1A1A1A] line-clamp-1">{announcement.title}</CardTitle>
@@ -266,7 +267,7 @@ export default function AnnouncementsPage() {
                     <Users className="h-3.5 w-3.5" />
                     {announcement.recipientCount} Recipients
                   </div>
-                  <Button variant="ghost" size="sm" className="h-8 text-xs font-bold text-accent hover:bg-accent/10 gap-1 pr-0">
+                  <Button variant="ghost" size="sm" className="h-8 text-xs font-bold text-[#1976D2] hover:bg-[#1976D2]/10 gap-1 pr-0">
                     View Details <ArrowRight className="h-3.5 w-3.5" />
                   </Button>
                 </CardFooter>
@@ -276,7 +277,7 @@ export default function AnnouncementsPage() {
         ) : (
           <div className="py-20 text-center bg-white rounded-3xl shadow-soft flex flex-col items-center justify-center gap-4">
             <div className="bg-slate-50 p-8 rounded-full">
-              <History className="h-12 w-12 text-slate-200" />
+              <LucideHistory className="h-12 w-12 text-slate-200" />
             </div>
             <h3 className="text-xl font-bold text-[#1A1A1A]">History Clear</h3>
             <p className="text-slate-400">You haven't sent any announcements yet.</p>
@@ -287,7 +288,7 @@ export default function AnnouncementsPage() {
       {viewingAnnouncement && (
         <Dialog open={!!viewingAnnouncement} onOpenChange={(open) => !open && setViewingAnnouncement(null)}>
           <DialogContent className="sm:max-w-2xl rounded-3xl p-0 overflow-hidden border-none shadow-2xl">
-            <DialogHeader className="bg-primary text-white p-8">
+            <DialogHeader className="bg-[#0D47A1] text-white p-8">
               <div className="flex items-center gap-4 mb-2">
                 <div className="bg-white/10 p-2 rounded-xl">
                   <Megaphone className="h-6 w-6" />
@@ -298,7 +299,7 @@ export default function AnnouncementsPage() {
                 </div>
               </div>
             </DialogHeader>
-            <div className="p-8 space-y-8">
+            <div className="p-8 space-y-8 bg-white">
                 <div>
                     <h3 className="mb-3 text-xs font-bold uppercase text-slate-400 tracking-widest">Announcement Message</h3>
                     <div className="text-[15px] text-[#1A1A1A] leading-relaxed bg-slate-50 p-6 rounded-2xl border border-slate-100 whitespace-pre-wrap">
@@ -339,7 +340,7 @@ export default function AnnouncementsPage() {
                 </div>
             </div>
             <div className="bg-slate-50 p-6 flex justify-end">
-              <Button onClick={() => setViewingAnnouncement(null)} className="rounded-xl px-8 font-bold">Close Details</Button>
+              <Button onClick={() => setViewingAnnouncement(null)} className="rounded-xl px-8 font-bold bg-[#0D47A1]">Close Details</Button>
             </div>
           </DialogContent>
         </Dialog>

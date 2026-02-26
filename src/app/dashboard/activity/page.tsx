@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useMemo } from "react"
@@ -7,7 +6,7 @@ import { useFirestore, useCollection } from "@/firebase"
 import type { ActivityLog } from "@/lib/types"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
-import { History, Activity, User, ShieldCheck } from "lucide-react"
+import { History as LucideHistory, Activity, User, ShieldCheck } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 
 export default function ActivityPage() {
@@ -22,7 +21,7 @@ export default function ActivityPage() {
   const { data: logs, loading } = useCollection<ActivityLog>(activityQuery)
 
   const getActionIcon = (action: string) => {
-    if (action.includes('Leave')) return <History className="h-4 w-4 text-blue-500" />
+    if (action.includes('Leave')) return <LucideHistory className="h-4 w-4 text-blue-500" />
     if (action.includes('Message')) return <Activity className="h-4 w-4 text-green-500" />
     if (action.includes('Admin')) return <ShieldCheck className="h-4 w-4 text-purple-500" />
     return <User className="h-4 w-4 text-slate-500" />
@@ -31,14 +30,14 @@ export default function ActivityPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-primary">Activity Logs</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-[#0D47A1]">System Audit Logs</h1>
         <p className="text-muted-foreground">
-          Audit trail of important actions performed in the system.
+          Traceability trail of all administrative and staff actions performed.
         </p>
       </div>
 
-      <Card className="border-primary/20 shadow-lg">
-        <CardHeader className="bg-muted/30 border-b">
+      <Card className="border-none shadow-soft bg-white rounded-2xl overflow-hidden">
+        <CardHeader className="bg-slate-50/50 border-b">
           <CardTitle className="text-xl">Audit Trail</CardTitle>
           <CardDescription>
             Most recent 50 activities tracked automatically.
@@ -64,7 +63,7 @@ export default function ActivityPage() {
                   </div>
                   <div className="flex-1 space-y-1">
                     <div className="flex items-center justify-between">
-                      <span className="font-semibold text-sm text-primary">{log.action}</span>
+                      <span className="font-semibold text-sm text-[#0D47A1]">{log.action}</span>
                       <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                         {log.timestamp && formatDistanceToNow(log.timestamp.toDate(), { addSuffix: true })}
                       </span>

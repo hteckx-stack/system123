@@ -7,7 +7,7 @@ import {
   Users,
   FileText,
   Megaphone,
-  History,
+  History as LucideHistory,
   CalendarDays,
   MessageSquare,
   Clock,
@@ -24,13 +24,13 @@ import { useState } from "react"
 
 const navItems = [
   { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { title: "Staff", href: "/dashboard/staff", icon: Users },
-  { title: "Check-ins", href: "/dashboard/check-ins", icon: Clock },
+  { title: "Staff Approvals", href: "/dashboard/staff", icon: Users },
+  { title: "Arrival Logs", href: "/dashboard/check-ins", icon: Clock },
   { title: "Leave Requests", href: "/dashboard/leave-requests", icon: CalendarDays },
-  { title: "Messages", href: "/dashboard/messages", icon: MessageSquare },
+  { title: "Communications", href: "/dashboard/messages", icon: MessageSquare },
   { title: "Documents", href: "/dashboard/documents", icon: FileText },
   { title: "Announcements", href: "/dashboard/announcements", icon: Megaphone },
-  { title: "Activity", href: "/dashboard/activity", icon: History },
+  { title: "Audit Trail", href: "/dashboard/activity", icon: LucideHistory },
 ]
 
 export function Sidebar() {
@@ -52,10 +52,10 @@ export function Sidebar() {
       )}
     >
       <div className="p-6 flex items-center gap-3">
-        <div className="bg-white text-primary p-1.5 rounded-lg shadow-sm shrink-0">
+        <div className="bg-white text-[#0A3578] p-1.5 rounded-lg shadow-sm shrink-0">
           <LayoutDashboard className="h-6 w-6" />
         </div>
-        {!isCollapsed && <span className="text-xl font-bold tracking-tight">EMPLOYEE APP</span>}
+        {!isCollapsed && <span className="text-xl font-bold tracking-tight">ADMIN PORTAL</span>}
       </div>
 
       <nav className="flex-1 px-3 space-y-1">
@@ -92,7 +92,7 @@ export function Sidebar() {
 
       <button
         onClick={() => setIsCollapsed(!isCollapsed)}
-        className="absolute -right-3 top-20 bg-accent text-white rounded-full p-1 shadow-md hover:bg-accent/90 focus:outline-none"
+        className="absolute -right-3 top-20 bg-[#1976D2] text-white rounded-full p-1 shadow-md hover:bg-[#1976D2]/90 focus:outline-none z-50"
       >
         {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
       </button>

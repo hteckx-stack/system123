@@ -113,7 +113,7 @@ export default function MessagesPage() {
             <span className="text-xs font-semibold text-slate-600">Filter Topic</span>
           </Badge>
           <Select value={topicFilter} onValueChange={setTopicFilter}>
-            <SelectTrigger className="w-[180px] border-none shadow-soft bg-white focus:ring-accent/20 h-10 rounded-xl">
+            <SelectTrigger className="w-[180px] border-none shadow-soft bg-white focus:ring-[#1976D2]/20 h-10 rounded-xl">
               <SelectValue placeholder="All Topics" />
             </SelectTrigger>
             <SelectContent className="rounded-xl border-none shadow-xl">
@@ -131,7 +131,7 @@ export default function MessagesPage() {
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6 flex-1 overflow-hidden">
         {/* Conversations List */}
         <Card className={cn(
-          "md:col-span-4 flex flex-col overflow-hidden border-none shadow-soft rounded-2xl",
+          "md:col-span-4 flex flex-col overflow-hidden border-none shadow-soft rounded-2xl bg-white",
           selectedConvId ? "hidden md:flex" : "flex"
         )}>
           <CardHeader className="bg-white border-b py-4 px-5">
@@ -139,7 +139,7 @@ export default function MessagesPage() {
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <Input 
                 placeholder="Search conversations..." 
-                className="pl-10 bg-slate-50 border-none rounded-xl h-10 focus-visible:ring-accent/10"
+                className="pl-10 bg-slate-50 border-none rounded-xl h-10 focus-visible:ring-[#1976D2]/10"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -165,7 +165,7 @@ export default function MessagesPage() {
                     className={cn(
                       "flex flex-col gap-1 p-4 rounded-xl cursor-pointer transition-all border border-transparent",
                       selectedConvId === conv.id 
-                        ? "bg-accent/10 border-accent/20 shadow-sm" 
+                        ? "bg-[#1976D2]/10 border-[#1976D2]/20 shadow-sm" 
                         : "hover:bg-slate-50"
                     )}
                   >
@@ -213,7 +213,7 @@ export default function MessagesPage() {
                 </Button>
                 <div className="flex items-center gap-4">
                   <Avatar className="h-10 w-10 border-2 border-slate-50 shadow-sm">
-                    <AvatarFallback className="bg-primary text-white font-bold">
+                    <AvatarFallback className="bg-[#0D47A1] text-white font-bold">
                       {selectedConv.staff_name.charAt(0)}
                     </AvatarFallback>
                   </Avatar>
@@ -247,7 +247,7 @@ export default function MessagesPage() {
                           className={cn(
                             "px-4 py-3 rounded-2xl text-[14px] shadow-sm leading-relaxed",
                             msg.sender_role === 'admin'
-                              ? "bg-primary text-white rounded-tr-none"
+                              ? "bg-[#0D47A1] text-white rounded-tr-none"
                               : "bg-white text-[#1A1A1A] border border-slate-200 rounded-tl-none"
                           )}
                         >
@@ -268,16 +268,16 @@ export default function MessagesPage() {
                     placeholder="Type a message to staff..."
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
-                    className="flex-1 border-none bg-slate-100 rounded-xl h-11 focus-visible:ring-primary/20"
+                    className="flex-1 border-none bg-slate-100 rounded-xl h-11 focus-visible:ring-[#0D47A1]/20"
                   />
-                  <Button type="submit" disabled={!newMessage.trim()} className="bg-primary hover:bg-primary/90 rounded-xl h-11 w-11 p-0 shadow-lg shadow-primary/20 shrink-0">
+                  <Button type="submit" disabled={!newMessage.trim()} className="bg-[#0D47A1] hover:bg-[#0D47A1]/90 rounded-xl h-11 w-11 p-0 shadow-lg shadow-[#0D47A1]/20 shrink-0">
                     <Send className="h-5 w-5" />
                   </Button>
                 </form>
               </div>
             </>
           ) : (
-            <div className="flex flex-col items-center justify-center flex-1 text-slate-400 p-10">
+            <div className="flex flex-col items-center justify-center flex-1 text-slate-400 p-10 bg-white">
               <div className="bg-slate-50 p-10 rounded-full mb-6 border border-slate-100">
                 <MessageSquare className="h-16 w-16 text-slate-200" />
               </div>

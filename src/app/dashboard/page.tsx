@@ -1,10 +1,10 @@
-
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
-import { Users, UserPlus, Megaphone, Clock, CalendarDays, ArrowUpRight, History } from "lucide-react"
+import { Users, UserPlus, Megaphone, Clock, CalendarDays, ArrowUpRight, History as LucideHistory } from "lucide-react"
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { Badge } from "@/components/ui/badge";
 import { useCollection, useFirestore, useUser } from "@/firebase";
 import { useMemo } from "react";
 import { collection, query, where, orderBy, limit } from "firebase/firestore";
@@ -33,15 +33,14 @@ export default function Dashboard() {
 
   const pendingStaffQuery = useMemo(() => query(
     collection(firestore, "users"), 
-    where("status", "==", "pending"),
-    where("role", "==", "staff")
+    where("status", "==", "pending")
   ), [firestore]);
-  const { data: pendingStaff, loading: pendingStaffLoading } = useCollection<Staff>(pendingStaffQuery);
+  const { data: pendingUsers, loading: onboardingLoading } = useCollection<Staff>(pendingStaffQuery);
   
   const recentActivityQuery = useMemo(() => query(collection(firestore, "announcements"), orderBy("sentAt", "desc"), limit(5)), [firestore]);
-  const { data: recentActivity, loading: activityLoading } = useCollection<Announcement>(recentActivityQuery);
+  const { data: recentBroadcasts, loading: activityLoading } = useCollection<Announcement>(recentActivityQuery);
 
-  const loading = staffLoading || checkInsLoading || leavesLoading || pendingStaffLoading || activityLoading;
+  const loading = staffLoading || checkInsLoading || leavesLoading || onboardingLoading || activityLoading;
 
   const handleApprove = async (staff: Staff) => {
     if (!staff.id || !currentUser) return;
@@ -51,8 +50,8 @@ export default function Dashboard() {
             firestore,
             currentUser.uid,
             currentUser.displayName || "Admin",
-            "Staff Approved",
-            `Accepted registration for ${staff.name} (${staff.email})`
+            "User Approved",
+            `Activated system access for ${staff.name} (${staff.email})`
         );
         toast({
           title: "Access Granted",
@@ -62,7 +61,7 @@ export default function Dashboard() {
         toast({
             variant: "destructive",
             title: "Action Failed",
-            description: "Could not approve staff member. Please try again.",
+            description: "Could not approve registration. Please try again.",
         })
     }
   };
@@ -75,13 +74,13 @@ export default function Dashboard() {
             firestore,
             currentUser.uid,
             currentUser.displayName || "Admin",
-            "Staff Rejected",
+            "User Rejected",
             `Denied registration for ${staff.name} (${staff.email})`
         );
         toast({
           variant: "destructive",
           title: "Registration Denied",
-          description: `The account request for ${staff.name} has been rejected and removed.`,
+          description: `The account request for ${staff.name} has been removed.`,
         });
     } catch (error) {
         toast({
@@ -95,18 +94,18 @@ export default function Dashboard() {
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col gap-1">
-        <h1 className="text-3xl font-bold tracking-tight text-[#1A1A1A]">System Overview</h1>
-        <p className="text-[#6B7280]">Welcome back, administrator. Here's what's happening today.</p>
+        <h1 className="text-3xl font-bold tracking-tight text-[#1A1A1A]">Admin Command Center</h1>
+        <p className="text-[#6B7280]">Welcome back. Here is your system overview and pending oversight tasks.</p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         {[
-          { title: "Total Staff", val: staffList?.length, icon: Users, color: "text-blue-600", bg: "bg-blue-50", desc: "Registered users" },
-          { title: "Pending Check-ins", val: pendingCheckIns?.length, icon: Clock, color: "text-orange-600", bg: "bg-orange-50", desc: "Arrivals today" },
-          { title: "Leave Requests", val: pendingLeaves?.length, icon: CalendarDays, color: "text-green-600", bg: "bg-green-50", desc: "Awaiting review" },
-          { title: "Pending Approvals", val: pendingStaff?.length, icon: UserPlus, color: "text-purple-600", bg: "bg-purple-50", desc: "New registrations" },
+          { title: "Total Users (Staff)", val: staffList?.length, icon: Users, color: "text-blue-600", bg: "bg-blue-50", desc: "Registered accounts" },
+          { title: "Arrivals Awaiting", val: pendingCheckIns?.length, icon: Clock, color: "text-orange-600", bg: "bg-orange-50", desc: "Today's logs" },
+          { title: "Leave Approvals", val: pendingLeaves?.length, icon: CalendarDays, color: "text-green-600", bg: "bg-green-50", desc: "Pending review" },
+          { title: "System Onboarding", val: pendingUsers?.length, icon: UserPlus, color: "text-purple-600", bg: "bg-purple-50", desc: "New registrations" },
         ].map((item, idx) => (
-          <Card key={idx} className="border-none shadow-soft overflow-hidden">
+          <Card key={idx} className="border-none shadow-soft overflow-hidden bg-white">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-semibold uppercase tracking-wider text-[#6B7280]">{item.title}</CardTitle>
               <div className={cn("p-2 rounded-lg", item.bg)}>
@@ -122,20 +121,16 @@ export default function Dashboard() {
       </div>
 
        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="lg:col-span-4 border-none shadow-soft">
-            <CardHeader className="flex flex-row items-center justify-between">
+        <Card className="lg:col-span-4 border-none shadow-soft bg-white">
+            <CardHeader className="flex flex-row items-center justify-between border-b pb-6">
                 <div>
-                  <CardTitle className="text-xl">Staff Onboarding</CardTitle>
-                  <CardDescription>Review new staff members waiting for system access.</CardDescription>
+                  <CardTitle className="text-xl">Pending User Approvals</CardTitle>
+                  <CardDescription>Review all registration requests from the app here.</CardDescription>
                 </div>
-                <Link href="/dashboard/staff">
-                  <Button variant="ghost" size="sm" className="text-accent hover:bg-accent/5 gap-1">
-                    Manage All <ArrowUpRight className="h-4 w-4" />
-                  </Button>
-                </Link>
+                <Badge variant="outline" className="bg-white px-3 font-bold border-primary/20">{pendingUsers?.length || 0} Request(s)</Badge>
             </CardHeader>
-            <CardContent className="space-y-4 pt-2">
-                {pendingStaffLoading ? (
+            <CardContent className="space-y-4 pt-6">
+                {onboardingLoading ? (
                     <div className="space-y-4">
                         {Array.from({length: 3}).map((_, i) => (
                             <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-muted/30">
@@ -153,9 +148,9 @@ export default function Dashboard() {
                             </div>
                         ))}
                     </div>
-                ) : pendingStaff && pendingStaff.length > 0 ? (
+                ) : pendingUsers && pendingUsers.length > 0 ? (
                     <div className="space-y-3">
-                      {pendingStaff.map((staff) => (
+                      {pendingUsers.map((staff) => (
                           <div key={staff.id} className="flex items-center justify-between p-4 rounded-xl border border-slate-50 bg-white hover:border-accent/20 transition-all shadow-sm group">
                               <div className="flex items-center gap-4">
                                   <Avatar className="h-11 w-11 border-2 border-slate-100 shadow-sm transition-transform group-hover:scale-105">
@@ -164,7 +159,7 @@ export default function Dashboard() {
                                   </Avatar>
                                   <div className="min-w-0">
                                       <p className="font-bold text-[#1A1A1A] truncate">{staff.name}</p>
-                                      <p className="text-xs text-[#6B7280] truncate">{staff.email}</p>
+                                      <p className="text-xs text-[#6B7280] truncate">{staff.email} • {staff.role}</p>
                                   </div>
                               </div>
                               <div className="flex gap-2 shrink-0">
@@ -190,18 +185,23 @@ export default function Dashboard() {
                 ) : (
                     <div className="py-20 text-center flex flex-col items-center justify-center gap-3 bg-slate-50/50 rounded-2xl border-2 border-dashed border-slate-200">
                         <UserPlus className="h-10 w-10 text-slate-300" />
-                        <p className="text-slate-400 font-medium">No new sign ups waiting for approval.</p>
+                        <p className="text-slate-400 font-medium">All registration requests have been processed.</p>
                     </div>
                 )}
             </CardContent>
+            <CardFooter className="pt-2">
+                <Link href="/dashboard/staff" className="w-full">
+                  <Button variant="ghost" className="w-full text-primary font-bold hover:bg-primary/5">View Complete Directory</Button>
+                </Link>
+            </CardFooter>
         </Card>
 
-        <Card className="lg:col-span-3 border-none shadow-soft">
-          <CardHeader>
+        <Card className="lg:col-span-3 border-none shadow-soft bg-white">
+          <CardHeader className="border-b pb-6">
             <CardTitle className="text-xl">System Broadcasts</CardTitle>
-            <CardDescription>Recent communications sent to the team.</CardDescription>
+            <CardDescription>Recent announcements sent to the team.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6 pt-2">
+          <CardContent className="space-y-6 pt-6">
             {activityLoading ? (
                 Array.from({length: 4}).map((_, i) => (
                    <div className="flex items-center gap-4" key={i}>
@@ -212,35 +212,34 @@ export default function Dashboard() {
                         </div>
                     </div>
                 ))
-            ) : recentActivity && recentActivity.length > 0 ? (
-                recentActivity.map(activity => (
-                    <div className="flex items-start gap-4 relative group" key={activity.id}>
-                        <div className="h-10 w-10 rounded-full bg-accent/10 flex items-center justify-center shrink-0 border border-accent/20">
-                            <Megaphone className="h-5 w-5 text-accent" />
+            ) : recentBroadcasts && recentBroadcasts.length > 0 ? (
+              recentBroadcasts.map(broadcast => (
+                    <div className="flex items-start gap-4 relative group" key={broadcast.id}>
+                        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20">
+                            <Megaphone className="h-5 w-5 text-primary" />
                         </div>
                         <div className="grid gap-1 border-b border-slate-50 pb-4 w-full last:border-0">
-                            <p className="text-sm leading-tight text-slate-700">
-                                <span className="font-bold text-[#1A1A1A]">Admin</span> broadcasted 
-                                <span className="text-accent font-bold mx-1">{activity.title}</span>
+                            <p className="text-sm leading-tight text-slate-700 font-medium">
+                                {broadcast.title}
                             </p>
-                            <span className="text-[10px] text-[#6B7280] flex items-center gap-1 font-bold uppercase tracking-wider">
+                            <span className="text-[10px] text-[#6B7280] flex items-center gap-1 font-bold uppercase tracking-wider mt-1">
                                 <Clock className="h-3 w-3" />
-                                {recentActivity && formatDistanceToNow(activity.sentAt.toDate(), { addSuffix: true })}
+                                {broadcast.sentAt && formatDistanceToNow(broadcast.sentAt.toDate(), { addSuffix: true })}
                             </span>
                         </div>
                     </div>
                 ))
             ) : (
                 <div className="py-20 text-center text-slate-400 flex flex-col items-center gap-3">
-                    <History className="h-10 w-10 text-slate-200" />
-                    <p>No recent system activity found.</p>
+                    <LucideHistory className="h-10 w-10 text-slate-200" />
+                    <p>No recent broadcasts logged.</p>
                 </div>
             )}
           </CardContent>
           <CardFooter className="pt-2">
-            <Link href="/dashboard/activity" className="w-full">
+            <Link href="/dashboard/announcements" className="w-full">
               <Button variant="outline" className="w-full border-slate-200 text-[#1A1A1A] hover:bg-slate-50 font-bold rounded-xl shadow-sm">
-                View Full Audit Log
+                Broadcast New Update
               </Button>
             </Link>
           </CardFooter>
