@@ -6,6 +6,7 @@ import { getAuth, type Auth } from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
 import { getStorage, type Storage } from 'firebase/storage';
 import { getDatabase, type Database } from 'firebase/database';
+import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
 import { firebaseConfig } from './config';
 
 export { FirebaseProvider, useFirebaseApp, useAuth, useFirestore, useFirebase, useStorage, useDatabase } from './provider';
@@ -30,6 +31,15 @@ export function initializeFirebase(): FirebaseInstances {
   }
 
   const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+  
+  // Initialize App Check with the provided reCAPTCHA token
+  if (typeof window !== 'undefined') {
+    initializeAppCheck(app, {
+      provider: new ReCaptchaEnterpriseProvider('75B62F21-5EB1-4CD8-AFC2-0647D90583BA'),
+      isTokenAutoRefreshEnabled: true
+    });
+  }
+
   const auth = getAuth(app);
   const firestore = getFirestore(app);
   const storage = getStorage(app);

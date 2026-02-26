@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -5,11 +6,11 @@ import { Megaphone, Clock, CalendarDays, ShieldCheck, Smartphone, Check, X } fro
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useCollection, useFirestore, useUser } from "@/firebase";
 import { useMemo } from "react";
 import { collection, query, where, doc, writeBatch } from "firebase/firestore";
 import type { Staff, LoginRequest } from "@/lib/types";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { logActivity } from "@/firebase/firestore/activity-logs";
 import { useToast } from "@/hooks/use-toast";
@@ -19,13 +20,16 @@ export default function Dashboard() {
   const { user: currentUser } = useUser();
   const { toast } = useToast();
 
-  // Onboarding Hub: Robust recapture of ANY staff member awaiting approval
-  const pendingStaffQuery = useMemo(() => query(
+  // Robust recapture of any staff member awaiting approval
+  const staffQuery = useMemo(() => query(
     collection(firestore, "users"), 
-    where("status", "==", "pending")
+    where("role", "==", "staff")
   ), [firestore]);
   
-  const { data: pendingUsers, loading: onboardingLoading } = useCollection<Staff>(pendingStaffQuery);
+  const { data: staffList, loading: staffLoading } = useCollection<Staff>(staffQuery);
+
+  // Filter pending users client-side to ensure all are captured
+  const pendingUsers = useMemo(() => staffList?.filter(s => s.approved === false), [staffList]);
 
   // Fetch device login requests to link with staff profiles
   const loginRequestsQuery = useMemo(() => collection(firestore, "login_requests"), [firestore]);
@@ -37,20 +41,20 @@ export default function Dashboard() {
     try {
       const batch = writeBatch(firestore);
       
-      // Update staff document: approved = true, status = active
-      // This allows the mobile app to move past WaitingApprovalActivity
+      // 1. Sets approved = true
       batch.update(doc(firestore, "users", staff.id), { 
         approved: true, 
         status: "active" 
       });
       
-      // Delete corresponding login request to clear the security queue
+      // 2. Deletes the corresponding login request
       if (loginReqId) {
         batch.delete(doc(firestore, "login_requests", loginReqId));
       }
       
       await batch.commit();
       
+      // 3. Notifies the user via audit log
       await logActivity(
         firestore,
         currentUser.uid,
@@ -107,7 +111,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent className="pt-6">
                 <div className="space-y-4">
-                  {onboardingLoading || loginsLoading ? (
+                  {staffLoading || loginsLoading ? (
                     <div className="space-y-4">
                       <Skeleton className="h-20 w-full rounded-2xl" />
                       <Skeleton className="h-20 w-full rounded-2xl" />
