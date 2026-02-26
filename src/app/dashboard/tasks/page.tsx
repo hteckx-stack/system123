@@ -11,9 +11,11 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/hooks/use-toast"
 import { CalendarDays, ClipboardList, User, CheckCircle2 } from "lucide-react"
 import type { Staff, Task } from "@/lib/types"
+import { cn } from "@/lib/utils"
 
 export default function TasksPage() {
   const firestore = useFirestore()
@@ -26,11 +28,18 @@ export default function TasksPage() {
   const [isSaving, setIsSaving] = useState(false)
 
   // Fetch active staff for the dropdown
-  const staffQuery = useMemo(() => query(collection(firestore, "users"), where("status", "==", "active"), where("role", "==", "staff")), [firestore]);
+  const staffQuery = useMemo(() => query(
+    collection(firestore, "users"), 
+    where("status", "==", "active"), 
+    where("role", "==", "staff")
+  ), [firestore]);
   const { data: staffList } = useCollection<Staff>(staffQuery);
 
   // Fetch tasks for the history list
-  const tasksQuery = useMemo(() => query(collection(firestore, "tasks"), orderBy("createdAt", "desc")), [firestore]);
+  const tasksQuery = useMemo(() => query(
+    collection(firestore, "tasks"), 
+    orderBy("createdAt", "desc")
+  ), [firestore]);
   const { data: tasks, loading } = useCollection<Task>(tasksQuery);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -161,8 +170,4 @@ export default function TasksPage() {
       </div>
     </div>
   )
-}
-
-function cn(...classes: any[]) {
-  return classes.filter(Boolean).join(" ");
 }

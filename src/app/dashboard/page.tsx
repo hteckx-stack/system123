@@ -12,7 +12,6 @@ import { collection, query, where, doc, deleteDoc, writeBatch } from "firebase/f
 import type { Staff, LoginRequest } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { updateUser } from "@/firebase/firestore/users";
 import { logActivity } from "@/firebase/firestore/activity-logs";
 import { useToast } from "@/hooks/use-toast";
 
@@ -24,7 +23,8 @@ export default function Dashboard() {
   // Fetch pending staff users
   const pendingStaffQuery = useMemo(() => query(
     collection(firestore, "users"), 
-    where("status", "==", "pending")
+    where("status", "==", "pending"),
+    where("role", "==", "staff")
   ), [firestore]);
   const { data: pendingStaff, loading: staffLoading } = useCollection<Staff>(pendingStaffQuery);
 

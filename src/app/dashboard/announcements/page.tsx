@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast"
 import { Megaphone, History as LucideHistory, Clock, Send } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import type { Announcement } from "@/lib/types"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export default function AnnouncementsPage() {
   const database = useDatabase()
@@ -26,7 +27,10 @@ export default function AnnouncementsPage() {
   const [message, setMessage] = useState("")
   const [isSending, setIsSending] = useState(false)
 
-  const announcementsQuery = useMemo(() => query(collection(firestore, "announcements"), orderBy("sentAt", "desc")), [firestore]);
+  const announcementsQuery = useMemo(() => query(
+    collection(firestore, "announcements"), 
+    orderBy("sentAt", "desc")
+  ), [firestore]);
   const { data: sentAnnouncements, loading } = useCollection<Announcement>(announcementsQuery);
 
   const handleBroadcast = async (e: React.FormEvent) => {
