@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useMemo } from "react"
@@ -48,7 +49,7 @@ export default function TasksPage() {
     try {
       const staffMember = staffList?.find(s => s.id === selectedStaffId);
       
-      // Prompt 4: Add new document to 'tasks' collection
+      // Add new document to 'tasks' collection
       await addDoc(collection(firestore, "tasks"), {
         title,
         description,

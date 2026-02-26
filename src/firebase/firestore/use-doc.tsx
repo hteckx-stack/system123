@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect } from 'react';
 import { onSnapshot, type DocumentReference, type DocumentData } from 'firebase/firestore';
@@ -11,11 +12,13 @@ export function useDoc<T extends DocumentData>(ref: DocumentReference<T> | null)
     const { user, loading: userLoading } = useUser();
 
     useEffect(() => {
+        // If auth state is still loading, wait.
         if (userLoading) {
             setLoading(true);
             return;
         }
 
+        // If no user or no ref, stop.
         if (!user || !ref) {
             setData(null);
             setLoading(false);
@@ -26,6 +29,8 @@ export function useDoc<T extends DocumentData>(ref: DocumentReference<T> | null)
 
         let unsubscribe: (() => void) | undefined;
 
+        // Increased delay to 500ms to ensure the backend has fully registered the auth state
+        // before the first request is sent. This prevents permission race conditions.
         const timeoutId = setTimeout(() => {
             unsubscribe = onSnapshot(ref, 
                 (doc) => {
@@ -48,7 +53,7 @@ export function useDoc<T extends DocumentData>(ref: DocumentReference<T> | null)
                     setLoading(false);
                 }
             );
-        }, 150); // Slightly increased delay for stability
+        }, 500); 
 
         return () => {
             clearTimeout(timeoutId);

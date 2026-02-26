@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useMemo } from "react";
@@ -29,7 +30,7 @@ export default function Dashboard() {
   const { user: currentUser } = useUser();
   const { toast } = useToast();
 
-  // Prompt 1: Fetch users from 'staff' collection where approved is false
+  // Fetch users from 'users' collection where approved is false and role is staff
   const staffQuery = useMemo(() => query(
     collection(firestore, "users"), 
     where("role", "==", "staff")
@@ -40,7 +41,7 @@ export default function Dashboard() {
   // Filter pending users client-side for maximum reliability
   const pendingUsers = useMemo(() => staffList?.filter(s => s.approved === false), [staffList]);
 
-  // Prompt 1: Include second list for 'login_requests'
+  // Fetch login requests
   const loginRequestsQuery = useMemo(() => collection(firestore, "login_requests"), [firestore]);
   const { data: loginRequests, loading: loginsLoading } = useCollection<LoginRequest>(loginRequestsQuery);
 
