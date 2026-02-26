@@ -38,7 +38,6 @@ export default function AnnouncementsPage() {
 
     setIsSending(true)
     try {
-      // 1. Push to Realtime Database for instant Staff App home screen display
       const rtdbRef = ref(database, 'announcements');
       await push(rtdbRef, {
         title,
@@ -47,7 +46,6 @@ export default function AnnouncementsPage() {
         timestamp: rtdbTimestamp()
       });
 
-      // 2. Save to Firestore for Admin Audit Trail
       await addDoc(collection(firestore, "announcements"), {
         title,
         message,
@@ -143,12 +141,6 @@ export default function AnnouncementsPage() {
                 </CardContent>
               </Card>
             ))}
-            {sentAnnouncements?.length === 0 && (
-               <div className="py-20 text-center text-slate-300">
-                  <Megaphone className="h-10 w-10 mx-auto opacity-10 mb-2" />
-                  <p className="text-sm font-medium">No previous broadcasts.</p>
-               </div>
-            )}
           </div>
         </div>
       </div>

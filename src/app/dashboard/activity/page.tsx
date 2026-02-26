@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useMemo } from "react"
@@ -36,7 +37,7 @@ export default function ActivityPage() {
         </p>
       </div>
 
-      <Card className="border-none shadow-soft bg-white rounded-2xl overflow-hidden">
+      <Card className="border-none shadow-soft bg-white rounded-3xl overflow-hidden">
         <CardHeader className="bg-slate-50/50 border-b">
           <CardTitle className="text-xl">Audit Trail</CardTitle>
           <CardDescription>

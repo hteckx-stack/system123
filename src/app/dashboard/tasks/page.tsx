@@ -27,7 +27,6 @@ export default function TasksPage() {
   const [selectedStaffId, setSelectedStaffId] = useState("")
   const [isSaving, setIsSaving] = useState(false)
 
-  // Fetch active staff for the dropdown
   const staffQuery = useMemo(() => query(
     collection(firestore, "users"), 
     where("status", "==", "active"), 
@@ -35,7 +34,6 @@ export default function TasksPage() {
   ), [firestore]);
   const { data: staffList } = useCollection<Staff>(staffQuery);
 
-  // Fetch tasks for the history list
   const tasksQuery = useMemo(() => query(
     collection(firestore, "tasks"), 
     orderBy("createdAt", "desc")
@@ -95,18 +93,12 @@ export default function TasksPage() {
             <CardContent className="space-y-5 pt-8">
               <div className="space-y-2">
                 <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Task Title</Label>
-                <Input 
-                  placeholder="e.g. Mandatory Safety Check" 
-                  value={title} 
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="rounded-xl bg-slate-50 border-slate-200 h-11"
-                  required
-                />
+                <Input placeholder="e.g. Mandatory Safety Check" value={title} onChange={(e) => setTitle(e.target.value)} className="rounded-xl h-11" required />
               </div>
               <div className="space-y-2">
                 <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Assign To Staff</Label>
                 <Select value={selectedStaffId} onValueChange={setSelectedStaffId} required>
-                  <SelectTrigger className="rounded-xl bg-slate-50 border-slate-200 h-11">
+                  <SelectTrigger className="rounded-xl h-11">
                     <SelectValue placeholder="Select staff member" />
                   </SelectTrigger>
                   <SelectContent>
@@ -118,12 +110,7 @@ export default function TasksPage() {
               </div>
               <div className="space-y-2">
                 <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Detailed Description</Label>
-                <Textarea 
-                  placeholder="Provide clear steps for the staff member..." 
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="min-h-[140px] rounded-xl bg-slate-50 border-slate-200 p-4"
-                />
+                <Textarea placeholder="Provide clear steps..." value={description} onChange={(e) => setDescription(e.target.value)} className="min-h-[140px] rounded-xl" />
               </div>
             </CardContent>
             <CardFooter className="p-6 pt-0">
@@ -146,10 +133,7 @@ export default function TasksPage() {
               <Card key={task.id} className="border-none shadow-soft rounded-2xl bg-white group hover:shadow-lg transition-all border-l-4 border-l-transparent hover:border-l-[#0D47A1]">
                 <CardHeader className="p-5 pb-2">
                    <div className="flex justify-between items-start mb-2">
-                      <Badge className={cn(
-                        "text-[10px] uppercase font-bold px-2 py-0 border-none",
-                        task.status === 'completed' ? "bg-green-50 text-green-600" : "bg-orange-50 text-orange-600"
-                      )}>
+                      <Badge className={cn("text-[10px] uppercase font-bold px-2 py-0 border-none", task.status === 'completed' ? "bg-green-50 text-green-600" : "bg-orange-50 text-orange-600")}>
                         {task.status}
                       </Badge>
                       {task.status === 'completed' && <CheckCircle2 className="h-4 w-4 text-green-500" />}
@@ -165,12 +149,6 @@ export default function TasksPage() {
                 </CardContent>
               </Card>
             ))}
-            {tasks?.length === 0 && (
-               <div className="col-span-full py-20 text-center bg-white rounded-3xl border-2 border-dashed border-slate-100 flex flex-col items-center gap-3">
-                  <ClipboardList className="h-10 w-10 text-slate-200" />
-                  <p className="text-slate-400 font-medium">No tasks assigned yet.</p>
-               </div>
-            )}
           </div>
         </div>
       </div>

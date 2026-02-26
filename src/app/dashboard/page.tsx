@@ -20,15 +20,16 @@ export default function Dashboard() {
   const { user: currentUser } = useUser();
   const { toast } = useToast();
 
-  // 1. Staff & Login Approval: Fetch users where approved is false
+  // Onboarding Hub: Fetch all staff with 'pending' status
   const pendingStaffQuery = useMemo(() => query(
     collection(firestore, "users"), 
-    where("approved", "==", false),
+    where("status", "==", "pending"),
     where("role", "==", "staff")
   ), [firestore]);
+  
   const { data: pendingStaff, loading: staffLoading } = useCollection<Staff>(pendingStaffQuery);
 
-  // 2. Fetch login requests
+  // Fetch device login requests
   const loginRequestsQuery = useMemo(() => collection(firestore, "login_requests"), [firestore]);
   const { data: loginRequests, loading: loginsLoading } = useCollection<LoginRequest>(loginRequestsQuery);
 
@@ -44,7 +45,7 @@ export default function Dashboard() {
         status: "active" 
       });
       
-      // Delete corresponding login request
+      // Delete corresponding login request to notify the user's app
       if (loginReqId) {
         batch.delete(doc(firestore, "login_requests", loginReqId));
       }
@@ -93,14 +94,14 @@ export default function Dashboard() {
       </div>
 
       <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="lg:col-span-4 border-none shadow-soft bg-white">
-            <CardHeader className="border-b pb-6">
+        <Card className="lg:col-span-4 border-none shadow-soft bg-white rounded-3xl overflow-hidden">
+            <CardHeader className="bg-slate-50 border-b pb-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="text-xl text-[#0D47A1]">System Onboarding</CardTitle>
-                    <CardDescription>Approve staff and clear login requests.</CardDescription>
+                    <CardDescription>Approve staff and clear device requests.</CardDescription>
                   </div>
-                  <Badge variant="outline" className="bg-[#0D47A1]/5 text-[#0D47A1] border-[#0D47A1]/20 px-3">
+                  <Badge className="bg-[#0D47A1] text-white font-bold h-7 px-3 rounded-full">
                     { (pendingStaff?.length || 0) + (loginRequests?.length || 0) } Pending
                   </Badge>
                 </div>
@@ -109,24 +110,24 @@ export default function Dashboard() {
                 <div className="space-y-4">
                   {staffLoading || loginsLoading ? (
                     <div className="space-y-4">
-                      <Skeleton className="h-20 w-full rounded-xl" />
-                      <Skeleton className="h-20 w-full rounded-xl" />
+                      <Skeleton className="h-20 w-full rounded-2xl" />
+                      <Skeleton className="h-20 w-full rounded-2xl" />
                     </div>
                   ) : (
                     <>
                       {pendingStaff?.map(staff => {
                         const matchingReq = loginRequests?.find(r => r.staffId === staff.id);
                         return (
-                          <div key={staff.id} className="flex items-center justify-between p-4 rounded-xl border border-slate-50 bg-white hover:border-[#1976D2]/20 transition-all shadow-sm group">
+                          <div key={staff.id} className="flex items-center justify-between p-4 rounded-2xl border border-slate-50 bg-white hover:border-[#1976D2]/20 transition-all shadow-sm group">
                             <div className="flex items-center gap-4">
-                                <Avatar className="h-11 w-11 border-2 border-slate-100 shadow-sm">
+                                <Avatar className="h-12 w-12 border-2 border-slate-100 shadow-sm">
                                     <AvatarImage src={staff.photoUrl} />
                                     <AvatarFallback>{staff.name.charAt(0)}</AvatarFallback>
                                 </Avatar>
                                 <div>
                                     <p className="font-bold text-[#1A1A1A]">{staff.name}</p>
-                                    <div className="flex items-center gap-2 text-xs text-[#6B7280]">
-                                        <Smartphone className="h-3 w-3" />
+                                    <div className="flex items-center gap-2 text-[10px] text-[#6B7280] font-bold uppercase tracking-wider">
+                                        <Smartphone className="h-3.5 w-3.5" />
                                         {matchingReq ? `${matchingReq.deviceModel} (ID: ${matchingReq.deviceId.substring(0,8)}...)` : "Awaiting device request..."}
                                     </div>
                                 </div>
@@ -134,15 +135,15 @@ export default function Dashboard() {
                             <div className="flex gap-2">
                                 <Button 
                                   size="sm" 
-                                  className="bg-[#22C55E] hover:bg-[#1ea34d] font-bold rounded-xl shadow-md shadow-[#22C55E]/10"
+                                  className="bg-[#22C55E] hover:bg-[#1ea34d] font-bold rounded-xl h-10 px-4 shadow-lg shadow-[#22C55E]/10"
                                   onClick={() => handleApproveAccess(staff, matchingReq?.id)}
                                 >
-                                  <Check className="h-4 w-4 mr-1" /> Approve
+                                  <Check className="h-4 w-4 mr-1.5" /> Approve
                                 </Button>
                                 <Button 
                                   size="sm" 
                                   variant="ghost" 
-                                  className="text-red-600 hover:bg-red-50 font-bold rounded-xl"
+                                  className="text-red-600 hover:bg-red-50 font-bold rounded-xl h-10 w-10 p-0"
                                   onClick={() => handleRejectAccess(staff.id, matchingReq?.id)}
                                 >
                                   <X className="h-4 w-4" />
@@ -152,8 +153,8 @@ export default function Dashboard() {
                         )
                       })}
                       {(!pendingStaff || pendingStaff.length === 0) && (
-                        <div className="py-12 text-center text-slate-400">
-                          <ShieldCheck className="h-10 w-10 mx-auto opacity-10 mb-2" />
+                        <div className="py-16 text-center text-slate-300">
+                          <ShieldCheck className="h-12 w-12 mx-auto opacity-10 mb-3" />
                           <p className="font-medium">All staff and devices are currently authorized.</p>
                         </div>
                       )}
@@ -163,42 +164,34 @@ export default function Dashboard() {
             </CardContent>
         </Card>
 
-        <Card className="lg:col-span-3 border-none shadow-soft bg-white">
-          <CardHeader className="border-b pb-6">
-            <CardTitle className="text-xl text-[#0D47A1]">Admin Operations</CardTitle>
-            <CardDescription>Direct shortcuts to real-time management.</CardDescription>
+        <Card className="lg:col-span-3 border-none shadow-soft bg-white rounded-3xl overflow-hidden">
+          <CardHeader className="bg-slate-50 border-b pb-6">
+            <CardTitle className="text-xl text-[#0D47A1]">Quick Controls</CardTitle>
+            <CardDescription>Instant administrative actions.</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 pt-6">
              <Link href="/dashboard/tasks">
-                <Button variant="outline" className="w-full justify-start gap-4 h-14 rounded-xl border-slate-200 hover:bg-[#F4F6FA] hover:text-[#0D47A1] group transition-all">
-                    <div className="bg-blue-50 p-2 rounded-lg group-hover:bg-white transition-colors">
+                <Button variant="outline" className="w-full justify-start gap-4 h-16 rounded-2xl border-slate-100 hover:bg-slate-50 group transition-all">
+                    <div className="bg-blue-50 p-2.5 rounded-xl group-hover:bg-white transition-colors">
                       <CalendarDays className="h-5 w-5 text-blue-500" />
                     </div>
                     <span className="font-bold text-slate-700">Task Creator</span>
                 </Button>
              </Link>
              <Link href="/dashboard/announcements">
-                <Button variant="outline" className="w-full justify-start gap-4 h-14 rounded-xl border-slate-200 hover:bg-[#F4F6FA] hover:text-[#0D47A1] group transition-all">
-                    <div className="bg-orange-50 p-2 rounded-lg group-hover:bg-white transition-colors">
+                <Button variant="outline" className="w-full justify-start gap-4 h-16 rounded-2xl border-slate-100 hover:bg-slate-50 group transition-all">
+                    <div className="bg-orange-50 p-2.5 rounded-xl group-hover:bg-white transition-colors">
                       <Megaphone className="h-5 w-5 text-orange-500" />
                     </div>
                     <span className="font-bold text-slate-700">Broadcast Center</span>
                 </Button>
              </Link>
              <Link href="/dashboard/check-ins">
-                <Button variant="outline" className="w-full justify-start gap-4 h-14 rounded-xl border-slate-200 hover:bg-[#F4F6FA] hover:text-[#0D47A1] group transition-all">
-                    <div className="bg-green-50 p-2 rounded-lg group-hover:bg-white transition-colors">
+                <Button variant="outline" className="w-full justify-start gap-4 h-16 rounded-2xl border-slate-100 hover:bg-slate-50 group transition-all">
+                    <div className="bg-green-50 p-2.5 rounded-xl group-hover:bg-white transition-colors">
                       <Clock className="h-5 w-5 text-green-500" />
                     </div>
                     <span className="font-bold text-slate-700">Attendance Feed</span>
-                </Button>
-             </Link>
-             <Link href="/dashboard/staff">
-                <Button variant="outline" className="w-full justify-start gap-4 h-14 rounded-xl border-slate-200 hover:bg-[#F4F6FA] hover:text-[#0D47A1] group transition-all">
-                    <div className="bg-purple-50 p-2 rounded-lg group-hover:bg-white transition-colors">
-                      <Users className="h-5 w-5 text-purple-500" />
-                    </div>
-                    <span className="font-bold text-slate-700">Staff Directory</span>
                 </Button>
              </Link>
           </CardContent>
