@@ -12,6 +12,7 @@ export type Staff = {
   photoUrl: string;
   role: 'admin' | 'staff';
   status: 'pending' | 'active' | 'inactive';
+  approved: boolean; // Field requested for Staff App logic
 };
 
 export type LoginRequest = {
@@ -46,9 +47,10 @@ export type Announcement = {
   id: string;
   title: string;
   message: string;
-  recipientIds: string[];
-  recipientCount: number;
+  recipientIds?: string[];
+  recipientCount?: number;
   sentAt: Timestamp;
+  date?: string; // RTDB format
 };
 
 export type LeaveRequest = {

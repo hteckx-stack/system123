@@ -1,14 +1,14 @@
 
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
-import { Users, UserPlus, Megaphone, Clock, CalendarDays, ShieldCheck, Smartphone, Check, X } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Users, Megaphone, Clock, CalendarDays, ShieldCheck, Smartphone, Check, X } from "lucide-react"
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from "@/components/ui/badge";
 import { useCollection, useFirestore, useUser } from "@/firebase";
 import { useMemo } from "react";
-import { collection, query, where, doc, deleteDoc, writeBatch } from "firebase/firestore";
+import { collection, query, where, doc, writeBatch } from "firebase/firestore";
 import type { Staff, LoginRequest } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -20,15 +20,15 @@ export default function Dashboard() {
   const { user: currentUser } = useUser();
   const { toast } = useToast();
 
-  // Fetch pending staff users
+  // 1. Staff & Login Approval: Fetch users where approved is false
   const pendingStaffQuery = useMemo(() => query(
     collection(firestore, "users"), 
-    where("status", "==", "pending"),
+    where("approved", "==", false),
     where("role", "==", "staff")
   ), [firestore]);
   const { data: pendingStaff, loading: staffLoading } = useCollection<Staff>(pendingStaffQuery);
 
-  // Fetch login requests
+  // 2. Fetch login requests
   const loginRequestsQuery = useMemo(() => collection(firestore, "login_requests"), [firestore]);
   const { data: loginRequests, loading: loginsLoading } = useCollection<LoginRequest>(loginRequestsQuery);
 
@@ -38,10 +38,13 @@ export default function Dashboard() {
     try {
       const batch = writeBatch(firestore);
       
-      // 1. Set approved = true (active) in staff's document
-      batch.set(doc(firestore, "users", staff.id), { status: "active" }, { merge: true });
+      // Update staff document: approved = true, status = active
+      batch.update(doc(firestore, "users", staff.id), { 
+        approved: true, 
+        status: "active" 
+      });
       
-      // 2. Delete corresponding login request if exists
+      // Delete corresponding login request
       if (loginReqId) {
         batch.delete(doc(firestore, "login_requests", loginReqId));
       }
@@ -52,13 +55,13 @@ export default function Dashboard() {
         firestore,
         currentUser.uid,
         currentUser.displayName || "Admin",
-        "Security Approval",
-        `Granted access to ${staff.name} and cleared device request.`
+        "Staff Approved",
+        `Approved access for ${staff.name} and cleared device request.`
       );
 
       toast({
-        title: "Access Approved",
-        description: `${staff.name} can now access the staff app.`,
+        title: "Staff Approved",
+        description: `${staff.name} can now access the Staff App.`,
       });
     } catch (error) {
       toast({
@@ -86,7 +89,7 @@ export default function Dashboard() {
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col gap-1">
         <h1 className="text-3xl font-bold tracking-tight text-[#1A1A1A]">Admin Command Center</h1>
-        <p className="text-[#6B7280]">Source of Truth for Staff App status and security.</p>
+        <p className="text-[#6B7280]">Real-time Source of Truth for Staff App status.</p>
       </div>
 
       <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-7">
@@ -94,10 +97,10 @@ export default function Dashboard() {
             <CardHeader className="border-b pb-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-xl">Staff & Login Approvals</CardTitle>
-                    <CardDescription>Verify users and device requests to unlock Staff App.</CardDescription>
+                    <CardTitle className="text-xl text-[#0D47A1]">System Onboarding</CardTitle>
+                    <CardDescription>Approve staff and clear login requests.</CardDescription>
                   </div>
-                  <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20">
+                  <Badge variant="outline" className="bg-[#0D47A1]/5 text-[#0D47A1] border-[#0D47A1]/20 px-3">
                     { (pendingStaff?.length || 0) + (loginRequests?.length || 0) } Pending
                   </Badge>
                 </div>
@@ -105,14 +108,16 @@ export default function Dashboard() {
             <CardContent className="pt-6">
                 <div className="space-y-4">
                   {staffLoading || loginsLoading ? (
-                    <Skeleton className="h-20 w-full" />
+                    <div className="space-y-4">
+                      <Skeleton className="h-20 w-full rounded-xl" />
+                      <Skeleton className="h-20 w-full rounded-xl" />
+                    </div>
                   ) : (
                     <>
-                      {/* Combine Pending Users and Login Requests for UX */}
                       {pendingStaff?.map(staff => {
                         const matchingReq = loginRequests?.find(r => r.staffId === staff.id);
                         return (
-                          <div key={staff.id} className="flex items-center justify-between p-4 rounded-xl border border-slate-50 bg-white hover:border-accent/20 transition-all shadow-sm group">
+                          <div key={staff.id} className="flex items-center justify-between p-4 rounded-xl border border-slate-50 bg-white hover:border-[#1976D2]/20 transition-all shadow-sm group">
                             <div className="flex items-center gap-4">
                                 <Avatar className="h-11 w-11 border-2 border-slate-100 shadow-sm">
                                     <AvatarImage src={staff.photoUrl} />
@@ -122,14 +127,14 @@ export default function Dashboard() {
                                     <p className="font-bold text-[#1A1A1A]">{staff.name}</p>
                                     <div className="flex items-center gap-2 text-xs text-[#6B7280]">
                                         <Smartphone className="h-3 w-3" />
-                                        {matchingReq ? matchingReq.deviceModel : "Waiting for login..."}
+                                        {matchingReq ? `${matchingReq.deviceModel} (ID: ${matchingReq.deviceId.substring(0,8)}...)` : "Awaiting device request..."}
                                     </div>
                                 </div>
                             </div>
                             <div className="flex gap-2">
                                 <Button 
                                   size="sm" 
-                                  className="bg-[#22C55E] hover:bg-[#1ea34d] font-bold rounded-xl"
+                                  className="bg-[#22C55E] hover:bg-[#1ea34d] font-bold rounded-xl shadow-md shadow-[#22C55E]/10"
                                   onClick={() => handleApproveAccess(staff, matchingReq?.id)}
                                 >
                                   <Check className="h-4 w-4 mr-1" /> Approve
@@ -149,7 +154,7 @@ export default function Dashboard() {
                       {(!pendingStaff || pendingStaff.length === 0) && (
                         <div className="py-12 text-center text-slate-400">
                           <ShieldCheck className="h-10 w-10 mx-auto opacity-10 mb-2" />
-                          <p>All users and devices are authorized.</p>
+                          <p className="font-medium">All staff and devices are currently authorized.</p>
                         </div>
                       )}
                     </>
@@ -160,26 +165,40 @@ export default function Dashboard() {
 
         <Card className="lg:col-span-3 border-none shadow-soft bg-white">
           <CardHeader className="border-b pb-6">
-            <CardTitle className="text-xl">Quick Actions</CardTitle>
-            <CardDescription>Shortcut to vital admin tools.</CardDescription>
+            <CardTitle className="text-xl text-[#0D47A1]">Admin Operations</CardTitle>
+            <CardDescription>Direct shortcuts to real-time management.</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 pt-6">
              <Link href="/dashboard/tasks">
-                <Button variant="outline" className="w-full justify-start gap-3 h-12 rounded-xl border-slate-200">
-                    <CalendarDays className="h-5 w-5 text-blue-500" />
-                    <span className="font-bold">Assign New Tasks</span>
+                <Button variant="outline" className="w-full justify-start gap-4 h-14 rounded-xl border-slate-200 hover:bg-[#F4F6FA] hover:text-[#0D47A1] group transition-all">
+                    <div className="bg-blue-50 p-2 rounded-lg group-hover:bg-white transition-colors">
+                      <CalendarDays className="h-5 w-5 text-blue-500" />
+                    </div>
+                    <span className="font-bold text-slate-700">Task Creator</span>
                 </Button>
              </Link>
              <Link href="/dashboard/announcements">
-                <Button variant="outline" className="w-full justify-start gap-3 h-12 rounded-xl border-slate-200">
-                    <Megaphone className="h-5 w-5 text-orange-500" />
-                    <span className="font-bold">Broadcast Instantly</span>
+                <Button variant="outline" className="w-full justify-start gap-4 h-14 rounded-xl border-slate-200 hover:bg-[#F4F6FA] hover:text-[#0D47A1] group transition-all">
+                    <div className="bg-orange-50 p-2 rounded-lg group-hover:bg-white transition-colors">
+                      <Megaphone className="h-5 w-5 text-orange-500" />
+                    </div>
+                    <span className="font-bold text-slate-700">Broadcast Center</span>
                 </Button>
              </Link>
              <Link href="/dashboard/check-ins">
-                <Button variant="outline" className="w-full justify-start gap-3 h-12 rounded-xl border-slate-200">
-                    <Clock className="h-5 w-5 text-green-500" />
-                    <span className="font-bold">Monitor Attendance</span>
+                <Button variant="outline" className="w-full justify-start gap-4 h-14 rounded-xl border-slate-200 hover:bg-[#F4F6FA] hover:text-[#0D47A1] group transition-all">
+                    <div className="bg-green-50 p-2 rounded-lg group-hover:bg-white transition-colors">
+                      <Clock className="h-5 w-5 text-green-500" />
+                    </div>
+                    <span className="font-bold text-slate-700">Attendance Feed</span>
+                </Button>
+             </Link>
+             <Link href="/dashboard/staff">
+                <Button variant="outline" className="w-full justify-start gap-4 h-14 rounded-xl border-slate-200 hover:bg-[#F4F6FA] hover:text-[#0D47A1] group transition-all">
+                    <div className="bg-purple-50 p-2 rounded-lg group-hover:bg-white transition-colors">
+                      <Users className="h-5 w-5 text-purple-500" />
+                    </div>
+                    <span className="font-bold text-slate-700">Staff Directory</span>
                 </Button>
              </Link>
           </CardContent>

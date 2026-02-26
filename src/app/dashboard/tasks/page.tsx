@@ -79,8 +79,8 @@ export default function TasksPage() {
   return (
     <div className="space-y-10 pb-10">
       <div className="flex flex-col gap-1">
-        <h1 className="text-3xl font-bold tracking-tight text-[#1A1A1A]">Task Management</h1>
-        <p className="text-[#6B7280]">Assign duties and track completion across the team.</p>
+        <h1 className="text-3xl font-bold tracking-tight text-[#1A1A1A]">Task Creator</h1>
+        <p className="text-[#6B7280]">Assign duties that reflect instantly in the Staff App tasks view.</p>
       </div>
 
       <div className="grid gap-8 lg:grid-cols-12">
@@ -88,7 +88,7 @@ export default function TasksPage() {
           <CardHeader className="bg-[#0D47A1] text-white py-6">
             <div className="flex items-center gap-3">
               <ClipboardList className="h-6 w-6" />
-              <CardTitle className="text-xl">Assign New Task</CardTitle>
+              <CardTitle className="text-xl">Assign New Duty</CardTitle>
             </div>
           </CardHeader>
           <form onSubmit={handleSubmit}>
@@ -96,18 +96,18 @@ export default function TasksPage() {
               <div className="space-y-2">
                 <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Task Title</Label>
                 <Input 
-                  placeholder="e.g. Stock Count - Aisle 4" 
+                  placeholder="e.g. Mandatory Safety Check" 
                   value={title} 
                   onChange={(e) => setTitle(e.target.value)}
-                  className="rounded-xl bg-slate-50 border-slate-200"
+                  className="rounded-xl bg-slate-50 border-slate-200 h-11"
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Assign To</Label>
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Assign To Staff</Label>
                 <Select value={selectedStaffId} onValueChange={setSelectedStaffId} required>
-                  <SelectTrigger className="rounded-xl bg-slate-50 border-slate-200">
-                    <SelectValue placeholder="Select a staff member" />
+                  <SelectTrigger className="rounded-xl bg-slate-50 border-slate-200 h-11">
+                    <SelectValue placeholder="Select staff member" />
                   </SelectTrigger>
                   <SelectContent>
                     {staffList?.map(staff => (
@@ -117,18 +117,18 @@ export default function TasksPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Description</Label>
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Detailed Description</Label>
                 <Textarea 
-                  placeholder="Provide specific instructions..." 
+                  placeholder="Provide clear steps for the staff member..." 
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="min-h-[120px] rounded-xl bg-slate-50 border-slate-200"
+                  className="min-h-[140px] rounded-xl bg-slate-50 border-slate-200 p-4"
                 />
               </div>
             </CardContent>
             <CardFooter className="p-6 pt-0">
-              <Button type="submit" disabled={isSaving} className="w-full bg-[#0D47A1] rounded-xl font-bold h-11">
-                {isSaving ? "Creating..." : "Create Task"}
+              <Button type="submit" disabled={isSaving} className="w-full bg-[#0D47A1] rounded-xl font-bold h-12 shadow-lg shadow-[#0D47A1]/20">
+                {isSaving ? "Creating..." : "Assign Task"}
               </Button>
             </CardFooter>
           </form>
@@ -137,13 +137,13 @@ export default function TasksPage() {
         <div className="lg:col-span-7 space-y-6">
           <h2 className="text-xl font-bold text-[#1A1A1A] flex items-center gap-2">
             <CalendarDays className="h-5 w-5 text-slate-400" />
-            Recent Assignments
+            Duty Logs
           </h2>
           <div className="grid gap-4 sm:grid-cols-2">
             {loading ? (
-              <Skeleton className="h-32 w-full rounded-2xl" />
+              <Skeleton className="h-40 w-full rounded-2xl" />
             ) : tasks?.map(task => (
-              <Card key={task.id} className="border-none shadow-soft rounded-2xl bg-white group hover:shadow-lg transition-all">
+              <Card key={task.id} className="border-none shadow-soft rounded-2xl bg-white group hover:shadow-lg transition-all border-l-4 border-l-transparent hover:border-l-[#0D47A1]">
                 <CardHeader className="p-5 pb-2">
                    <div className="flex justify-between items-start mb-2">
                       <Badge className={cn(
@@ -154,17 +154,23 @@ export default function TasksPage() {
                       </Badge>
                       {task.status === 'completed' && <CheckCircle2 className="h-4 w-4 text-green-500" />}
                    </div>
-                   <CardTitle className="text-base font-bold text-[#1A1A1A]">{task.title}</CardTitle>
+                   <CardTitle className="text-base font-bold text-[#1A1A1A] line-clamp-1">{task.title}</CardTitle>
                 </CardHeader>
                 <CardContent className="p-5 pt-0 pb-4">
-                  <p className="text-xs text-slate-500 line-clamp-2 mb-4">{task.description}</p>
+                  <p className="text-xs text-slate-500 line-clamp-2 mb-4 h-8">{task.description}</p>
                   <div className="flex items-center gap-2 pt-3 border-t border-slate-50">
                     <User className="h-3.5 w-3.5 text-slate-300" />
-                    <span className="text-[11px] font-bold text-slate-600">{task.staff_name}</span>
+                    <span className="text-[11px] font-bold text-[#0D47A1]">{task.staff_name}</span>
                   </div>
                 </CardContent>
               </Card>
             ))}
+            {tasks?.length === 0 && (
+               <div className="col-span-full py-20 text-center bg-white rounded-3xl border-2 border-dashed border-slate-100 flex flex-col items-center gap-3">
+                  <ClipboardList className="h-10 w-10 text-slate-200" />
+                  <p className="text-slate-400 font-medium">No tasks assigned yet.</p>
+               </div>
+            )}
           </div>
         </div>
       </div>
