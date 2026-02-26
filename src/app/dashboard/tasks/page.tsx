@@ -131,10 +131,9 @@ export default function TasksPage() {
           </h2>
           <div className="grid gap-4 sm:grid-cols-2">
             {loading ? (
-              <>
-                <Skeleton className="h-40 w-full rounded-2xl" />
-                <Skeleton className="h-40 w-full rounded-2xl" />
-              </>
+              Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-40 w-full rounded-2xl" />
+              ))
             ) : tasks && tasks.length > 0 ? (
               tasks.map(task => (
                 <Card key={task.id} className="border-none shadow-soft rounded-2xl bg-white group hover:shadow-lg transition-all border-l-4 border-l-transparent hover:border-l-[#0D47A1]">

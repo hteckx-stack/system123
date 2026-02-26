@@ -39,7 +39,6 @@ export default function Dashboard() {
   const { data: staffList, loading: onboardingLoading } = useCollection<Staff>(staffQuery);
 
   // Filter pending users client-side for maximum reliability
-  // Catch both false and undefined/missing flags
   const pendingUsers = useMemo(() => staffList?.filter(s => s.approved !== true), [staffList]);
 
   // Fetch login requests

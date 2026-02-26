@@ -27,24 +27,30 @@ export default function SignupPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<'admin' | 'staff'>('staff');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const signupImage = PlaceHolderImages.find(p => p.id === 'login-splash');
 
+  // Prevent automatic redirect on auth state change during signup process
+  // We want to handle redirection manually after Firestore write is complete
   useEffect(() => {
-    if (!loading && user) {
+    if (!loading && user && !isSubmitting) {
       router.push('/dashboard');
     }
-  }, [user, loading, router]);
-
+  }, [user, loading, router, isSubmitting]);
 
   const handleSignUp = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const authUser = userCredential.user;
 
       const photoUrl = `https://picsum.photos/seed/${authUser.uid}/100/100`;
 
+      // Update Auth Profile
       await updateProfile(authUser, {
           displayName: name,
           photoURL: photoUrl
@@ -62,6 +68,7 @@ export default function SignupPage() {
           phone: ""
       };
       
+      // Update Firestore User Profile - CRITICAL: must wait for this
       await updateUser(firestore, authUser.uid, newStaffData);
 
       if (role === 'staff') {
@@ -79,8 +86,10 @@ export default function SignupPage() {
         description: role === 'admin' ? "Welcome, Admin!" : "Your account is pending approval from an administrator.",
       });
 
+      // Manual redirect after successful setup
       router.push('/dashboard');
     } catch (error: any) {
+      setIsSubmitting(false);
       let description = "An unexpected error occurred.";
       if (error.code === 'auth/email-already-in-use') {
           description = "This email address is already in use.";
@@ -95,7 +104,7 @@ export default function SignupPage() {
     }
   };
 
-  if (loading || (!loading && user)) {
+  if (loading) {
       return (
         <div className="flex h-screen items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
@@ -167,7 +176,9 @@ export default function SignupPage() {
                 <Input id="password" type="password" required className="pl-10 rounded-xl" value={password} onChange={(e) => setPassword(e.target.value)} />
               </div>
             </div>
-            <Button type="submit" className="w-full rounded-xl h-11 bg-[#0D47A1] font-bold">Create Account</Button>
+            <Button type="submit" disabled={isSubmitting} className="w-full rounded-xl h-11 bg-[#0D47A1] font-bold">
+              {isSubmitting ? "Creating..." : "Create Account"}
+            </Button>
             <div className="mt-4 text-center text-sm">
                 Already have an account?{" "}
                 <Link href="/login" className="underline">Log in</Link>
