@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from "@/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { logActivity } from "@/firebase/firestore/activity-logs";
 import { 
@@ -39,7 +39,8 @@ export default function Dashboard() {
   const { data: staffList, loading: onboardingLoading } = useCollection<Staff>(staffQuery);
 
   // Filter pending users client-side for maximum reliability
-  const pendingUsers = useMemo(() => staffList?.filter(s => s.approved === false), [staffList]);
+  // Catch both false and undefined/missing flags
+  const pendingUsers = useMemo(() => staffList?.filter(s => s.approved !== true), [staffList]);
 
   // Fetch login requests
   const loginRequestsQuery = useMemo(() => collection(firestore, "login_requests"), [firestore]);

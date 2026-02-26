@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from "react"
@@ -16,7 +17,6 @@ import type { Staff } from "@/lib/types"
 import { useFirestore } from "@/firebase"
 import { addUser } from "@/firebase/firestore/users"
 import { useToast } from "@/hooks/use-toast"
-import { cn } from "@/lib/utils"
 
 interface AddStaffDialogProps {
   open: boolean
@@ -60,6 +60,7 @@ export function AddStaffDialog({ open, onOpenChange }: AddStaffDialogProps) {
         department: formData.department,
         status: 'pending',
         role: 'staff',
+        approved: false, // Ensure they appear in the pending queue
         photoUrl: `https://picsum.photos/seed/${formData.email}/100/100`
       };
 
