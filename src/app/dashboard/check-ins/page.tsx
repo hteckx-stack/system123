@@ -1,177 +1,145 @@
+
 "use client"
 
-import { useMemo } from "react"
-import { collection, query, orderBy } from "firebase/firestore"
-import { useFirestore, useCollection, useUser } from "@/firebase"
+import { useState, useEffect } from "react"
+import { useDatabase, useUser } from "@/firebase"
+import { ref, onValue, update } from "firebase/database"
 import type { CheckIn } from "@/lib/types"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/hooks/use-toast"
-import { Check, X, MapPin, Clock, ShieldCheck, UserCheck } from "lucide-react"
-import { updateCheckInStatus } from "@/firebase/firestore/check-ins"
-import { logActivity } from "@/firebase/firestore/activity-logs"
+import { Check, Clock, ShieldCheck, MapPin, UserCheck } from "lucide-react"
 import { format } from "date-fns"
-import { cn } from "@/lib/utils"
 
 export default function CheckInsPage() {
-  const firestore = useFirestore()
+  const database = useDatabase()
   const { user } = useUser()
   const { toast } = useToast()
+  const [pendingCheckIns, setPendingCheckIns] = useState<CheckIn[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const checkInQuery = useMemo(() => query(
-    collection(firestore, "check_ins"),
-    orderBy("timestamp", "desc")
-  ), [firestore])
-
-  const { data: checkIns, loading } = useCollection<CheckIn>(checkInQuery)
-
-  const handleStatusUpdate = async (checkIn: CheckIn, status: 'approved' | 'rejected') => {
-    try {
-      await updateCheckInStatus(firestore, checkIn.id, status)
+  useEffect(() => {
+    const checkinsRef = ref(database, 'checkins');
+    
+    // Listening to the whole tree to find pending check-ins
+    const unsubscribe = onValue(checkinsRef, (snapshot) => {
+      const data = snapshot.val();
+      const pending: CheckIn[] = [];
       
-      if (user) {
-        await logActivity(
-          firestore, 
-          user.uid, 
-          user.displayName || "Admin", 
-          `Check-in ${status}`, 
-          `${status.toUpperCase()} morning check-in for ${checkIn.staff_name}`
-        )
+      if (data) {
+        // Path structure: /checkins/{uid}/{dateStr}
+        Object.entries(data).forEach(([uid, dates]: [string, any]) => {
+          Object.entries(dates).forEach(([dateStr, details]: [string, any]) => {
+            if (details.status === 'pending') {
+              pending.push({
+                id: uid, // using uid as identifier for the approval path
+                staff_id: uid,
+                staff_name: details.staff_name || "Unknown",
+                timestamp: details.timestamp,
+                status: details.status,
+                location: details.location,
+                dateStr: dateStr
+              });
+            }
+          });
+        });
       }
+      setPendingCheckIns(pending);
+      setLoading(false);
+    });
 
+    return () => unsubscribe();
+  }, [database]);
+
+  const handleAuthorize = async (checkIn: CheckIn) => {
+    try {
+      const path = `checkins/${checkIn.staff_id}/${checkIn.dateStr}`;
+      await update(ref(database, path), { status: 'approved' });
+      
       toast({
-        title: `Check-in ${status.charAt(0).toUpperCase() + status.slice(1)}`,
-        description: `Check-in for ${checkIn.staff_name} has been ${status}.`,
-      })
+        title: "Attendance Authorized",
+        description: `${checkIn.staff_name} can now check out in their app.`,
+      });
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Update Failed",
-        description: "Could not update the check-in status. Please try again.",
-      })
-    }
-  }
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'approved':
-        return <Badge className="bg-[#22C55E]/10 text-[#22C55E] hover:bg-[#22C55E]/20 border-none px-3 font-semibold">Verified</Badge>
-      case 'rejected':
-        return <Badge className="bg-red-50 text-red-600 hover:bg-red-100 border-none px-3 font-semibold">Rejected</Badge>
-      default:
-        return <Badge className="bg-[#F59E0B]/10 text-[#F59E0B] hover:bg-[#F59E0B]/20 border-none px-3 font-semibold">Pending Approval</Badge>
+        title: "Authorization Failed",
+      });
     }
   }
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-col gap-1">
-        <h1 className="text-3xl font-bold tracking-tight text-[#1A1A1A]">Daily Arrival Logs</h1>
-        <p className="text-[#6B7280]">Real-time monitoring and verification of staff check-ins.</p>
+        <h1 className="text-3xl font-bold tracking-tight text-[#1A1A1A]">Real-time Attendance Monitor</h1>
+        <p className="text-[#6B7280]">Authorize morning check-ins to enable staff operations.</p>
       </div>
 
       <Card className="border-none shadow-soft rounded-2xl overflow-hidden">
         <CardHeader className="bg-white border-b py-6 px-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="bg-primary/5 p-2 rounded-xl border border-primary/10">
+              <div className="bg-primary/5 p-2 rounded-xl">
                 <ShieldCheck className="h-6 w-6 text-primary" />
               </div>
               <div>
-                <CardTitle className="text-xl">Today's Check-ins</CardTitle>
-                <CardDescription>Verify employee location and arrival time.</CardDescription>
+                <CardTitle className="text-xl">Awaiting Authorization</CardTitle>
+                <CardDescription>Live feed from Realtime Database.</CardDescription>
               </div>
-            </div>
-            <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-xl border border-slate-100">
-              <Clock className="h-4 w-4 text-slate-400" />
-              <span className="text-sm font-bold text-slate-600">{format(new Date(), "MMMM do, yyyy")}</span>
             </div>
           </div>
         </CardHeader>
         <CardContent className="p-0">
           <Table>
             <TableHeader className="bg-slate-50/50">
-              <TableRow className="hover:bg-transparent border-b">
-                <TableHead className="px-8 font-bold text-[#1A1A1A] h-14 uppercase text-[11px] tracking-widest">Employee</TableHead>
-                <TableHead className="font-bold text-[#1A1A1A] h-14 uppercase text-[11px] tracking-widest">Time In</TableHead>
-                <TableHead className="font-bold text-[#1A1A1A] h-14 uppercase text-[11px] tracking-widest">Location</TableHead>
-                <TableHead className="font-bold text-[#1A1A1A] h-14 uppercase text-[11px] tracking-widest">Status</TableHead>
-                <TableHead className="text-right px-8 font-bold text-[#1A1A1A] h-14 uppercase text-[11px] tracking-widest">Actions</TableHead>
+              <TableRow className="h-14 uppercase text-[11px] tracking-widest font-bold">
+                <TableHead className="px-8">Employee</TableHead>
+                <TableHead>Arrival Time</TableHead>
+                <TableHead>Location</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right px-8">Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <TableRow key={i} className="border-b last:border-0 h-20">
-                    <TableCell className="px-8"><Skeleton className="h-5 w-32" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-48" /></TableCell>
-                    <TableCell><Skeleton className="h-6 w-24 rounded-full" /></TableCell>
-                    <TableCell className="text-right px-8 flex justify-end gap-2 items-center h-20">
-                      <Skeleton className="h-9 w-9 rounded-xl" />
-                      <Skeleton className="h-9 w-9 rounded-xl" />
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : checkIns && checkIns.length > 0 ? (
-                checkIns.map((ci) => (
-                  <TableRow key={ci.id} className="hover:bg-slate-50/50 transition-colors border-b last:border-0 group h-20">
-                    <TableCell className="px-8">
-                      <div className="flex items-center gap-3">
-                        <div className="h-9 w-9 rounded-xl bg-slate-100 flex items-center justify-center font-bold text-slate-600 group-hover:bg-primary group-hover:text-white transition-all">
-                          {ci.staff_name.charAt(0)}
-                        </div>
-                        <span className="font-bold text-[#1A1A1A]">{ci.staff_name}</span>
+                 <TableRow><TableCell colSpan={5} className="text-center py-10">Syncing database...</TableCell></TableRow>
+              ) : pendingCheckIns.length > 0 ? (
+                pendingCheckIns.map((ci) => (
+                  <TableRow key={`${ci.staff_id}-${ci.dateStr}`} className="h-20 group border-b last:border-0 hover:bg-slate-50/50 transition-colors">
+                    <TableCell className="px-8 font-bold text-[#1A1A1A]">{ci.staff_name}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2 text-slate-600 font-medium">
+                        <Clock className="h-4 w-4 text-slate-300" />
+                        {ci.timestamp ? format(new Date(ci.timestamp), 'hh:mm a') : '---'}
                       </div>
                     </TableCell>
                     <TableCell>
-                        <div className="flex items-center gap-2 font-semibold text-slate-700">
-                          <Clock className="h-3.5 w-3.5 text-slate-400" />
-                          {ci.timestamp ? format(ci.timestamp.toDate(), 'hh:mm a') : '---'}
-                        </div>
+                      <div className="flex items-center gap-2 text-slate-500">
+                        <MapPin className="h-3.5 w-3.5 text-accent" />
+                        {ci.location || "Office"}
+                      </div>
                     </TableCell>
                     <TableCell>
-                        <div className="flex items-center gap-2 text-slate-600">
-                            <MapPin className="h-3.5 w-3.5 text-accent" />
-                            <span className="font-medium">{ci.location || "Main Office"}</span>
-                        </div>
+                      <Badge className="bg-orange-50 text-orange-600 border-none font-bold">Pending Approval</Badge>
                     </TableCell>
-                    <TableCell>{getStatusBadge(ci.status)}</TableCell>
                     <TableCell className="text-right px-8">
-                      {ci.status === 'pending' ? (
-                        <div className="flex justify-end gap-2">
-                          <Button 
-                            variant="outline" 
-                            size="icon" 
-                            className="h-10 w-10 border-[#22C55E]/20 text-[#22C55E] hover:bg-[#22C55E] hover:text-white rounded-xl shadow-sm transition-all"
-                            onClick={() => handleStatusUpdate(ci, 'approved')}
-                          >
-                            <Check className="h-5 w-5" />
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="icon" 
-                            className="h-10 w-10 border-red-100 text-red-600 hover:bg-red-600 hover:text-white rounded-xl shadow-sm transition-all"
-                            onClick={() => handleStatusUpdate(ci, 'rejected')}
-                          >
-                            <X className="h-5 w-5" />
-                          </Button>
-                        </div>
-                      ) : (
-                        <span className="text-xs text-slate-400 font-medium italic">Action Completed</span>
-                      )}
+                      <Button 
+                        onClick={() => handleAuthorize(ci)}
+                        className="bg-[#22C55E] hover:bg-[#1ea34d] font-bold rounded-xl shadow-lg shadow-[#22C55E]/20"
+                      >
+                        Authorize
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
                   <TableCell colSpan={5} className="h-60 text-center">
-                    <div className="flex flex-col items-center justify-center gap-3 text-slate-300">
+                    <div className="flex flex-col items-center gap-3 text-slate-300">
                       <UserCheck className="h-12 w-12" />
-                      <p className="text-lg font-bold text-slate-400">No activity logged for this period.</p>
+                      <p className="text-lg font-bold text-slate-400">All arrivals have been authorized.</p>
                     </div>
                   </TableCell>
                 </TableRow>

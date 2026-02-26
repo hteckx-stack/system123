@@ -14,6 +14,25 @@ export type Staff = {
   status: 'pending' | 'active' | 'inactive';
 };
 
+export type LoginRequest = {
+  id: string;
+  staffName: string;
+  staffId: string;
+  deviceModel: string;
+  deviceId: string;
+  timestamp: Timestamp;
+};
+
+export type Task = {
+  id: string;
+  title: string;
+  description: string;
+  staff_id: string;
+  staff_name: string;
+  status: 'pending' | 'in-progress' | 'completed';
+  createdAt: Timestamp;
+};
+
 export type Document = {
   id: string;
   staffName: string;
@@ -48,9 +67,10 @@ export type CheckIn = {
   id: string;
   staff_id: string;
   staff_name: string;
-  timestamp: Timestamp;
+  timestamp: number;
   status: 'pending' | 'approved' | 'rejected';
   location?: string;
+  dateStr?: string; // used for path mapping
 };
 
 export type TopicType = 'Contract' | 'Payslip' | 'Leave' | 'Announcement' | 'General';

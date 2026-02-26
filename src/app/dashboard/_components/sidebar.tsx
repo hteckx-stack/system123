@@ -1,3 +1,4 @@
+
 "use client"
 
 import Link from "next/link"
@@ -14,6 +15,7 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
+  ClipboardList,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -24,7 +26,8 @@ import { useState } from "react"
 
 const navItems = [
   { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { title: "Staff Approvals", href: "/dashboard/staff", icon: Users },
+  { title: "Staff Directory", href: "/dashboard/staff", icon: Users },
+  { title: "Task Assignments", href: "/dashboard/tasks", icon: ClipboardList },
   { title: "Arrival Logs", href: "/dashboard/check-ins", icon: Clock },
   { title: "Leave Requests", href: "/dashboard/leave-requests", icon: CalendarDays },
   { title: "Communications", href: "/dashboard/messages", icon: MessageSquare },
@@ -80,14 +83,13 @@ export function Sidebar() {
       </nav>
 
       <div className="p-4 border-t border-white/10">
-        <Button
-          variant="ghost"
-          className="w-full justify-start text-white/70 hover:text-white hover:bg-white/10 gap-3 px-3"
+        <button
+          className="flex w-full items-center gap-3 px-3 py-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
           onClick={handleLogout}
         >
           <LogOut className="h-5 w-5 shrink-0" />
           {!isCollapsed && <span className="font-medium">Logout</span>}
-        </Button>
+        </button>
       </div>
 
       <button

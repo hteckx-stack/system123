@@ -6,129 +6,69 @@
       "description": "Represents a user's profile in the system.",
       "type": "object",
       "properties": {
-        "name": {
-          "type": "string",
-          "description": "The user's full name."
-        },
-        "email": {
-          "type": "string",
-          "format": "email",
-          "description": "The user's email address."
-        },
-        "phone": {
-          "type": "string",
-          "description": "The user's phone number."
-        },
-        "position": {
-          "type": "string",
-          "description": "The user's position in the company."
-        },
-        "department": {
-          "type": "string",
-          "description": "The department the user belongs to."
-        },
-        "photoUrl": {
-          "type": "string",
-          "format": "uri",
-          "description": "URL for the user's profile picture."
-        },
-        "role": {
-          "type": "string",
-          "enum": [
-            "admin",
-            "staff"
-          ],
-          "description": "The user's role in the system."
-        },
-        "status": {
-          "type": "string",
-          "enum": [
-            "pending",
-            "active",
-            "inactive"
-          ],
-          "description": "The user's status."
-        }
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "phone": { "type": "string" },
+        "position": { "type": "string" },
+        "department": { "type": "string" },
+        "photoUrl": { "type": "string", "format": "uri" },
+        "role": { "type": "string", "enum": ["admin", "staff"] },
+        "status": { "type": "string", "enum": ["pending", "active", "inactive"] }
       },
-      "required": [
-        "name",
-        "email",
-        "status",
-        "role"
-      ]
+      "required": ["name", "email", "status", "role"]
+    },
+    "LoginRequest": {
+      "title": "Login Request",
+      "description": "A request from a device to log in a staff member.",
+      "type": "object",
+      "properties": {
+        "staffName": { "type": "string" },
+        "staffId": { "type": "string" },
+        "deviceModel": { "type": "string" },
+        "deviceId": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["staffName", "staffId", "deviceModel", "timestamp"]
+    },
+    "Task": {
+      "title": "Task",
+      "description": "A task assigned to a staff member.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "staff_id": { "type": "string" },
+        "staff_name": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "in-progress", "completed"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "staff_id", "status", "createdAt"]
     },
     "Document": {
       "title": "Document",
       "description": "Represents a document uploaded or generated for a staff member.",
       "type": "object",
       "properties": {
-        "staffName": {
-          "type": "string",
-          "description": "Name of the staff member the document belongs to."
-        },
-        "staffId": {
-          "type": "string",
-          "description": "ID of the staff member."
-        },
-        "type": {
-          "type": "string",
-          "description": "Type of the document (e.g., Contract, Payslip)."
-        },
-        "fileName": {
-          "type": "string",
-          "description": "The name of the document file."
-        },
-        "date": {
-          "type": "string",
-          "format": "date",
-          "description": "The date the document was created/uploaded."
-        }
+        "staffName": { "type": "string" },
+        "staffId": { "type": "string" },
+        "type": { "type": "string" },
+        "fileName": { "type": "string" },
+        "date": { "type": "string", "format": "date" }
       },
-      "required": [
-        "staffName",
-        "staffId",
-        "type",
-        "fileName",
-        "date"
-      ]
+      "required": ["staffName", "staffId", "type", "fileName", "date"]
     },
     "Announcement": {
       "title": "Announcement",
       "description": "Represents an announcement sent to staff members.",
       "type": "object",
       "properties": {
-        "title": {
-          "type": "string",
-          "description": "The title of the announcement."
-        },
-        "message": {
-          "type": "string",
-          "description": "The content of the announcement."
-        },
-        "recipientIds": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "An array of staff user IDs who received the announcement."
-        },
-        "recipientCount": {
-          "type": "number",
-          "description": "The number of recipients."
-        },
-        "sentAt": {
-          "type": "string",
-          "format": "date-time",
-          "description": "The timestamp when the announcement was sent."
-        }
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "recipientIds": { "type": "array", "items": { "type": "string" } },
+        "recipientCount": { "type": "number" },
+        "sentAt": { "type": "string", "format": "date-time" }
       },
-      "required": [
-        "title",
-        "message",
-        "recipientIds",
-        "recipientCount",
-        "sentAt"
-      ]
+      "required": ["title", "message", "sentAt"]
     },
     "LeaveRequest": {
       "title": "Leave Request",
@@ -145,19 +85,6 @@
         "created_at": { "type": "string", "format": "date-time" }
       },
       "required": ["staff_id", "name", "start_date", "end_date", "reason", "type", "status", "created_at"]
-    },
-    "CheckIn": {
-      "title": "Check In",
-      "description": "Represents a staff member's morning check-in.",
-      "type": "object",
-      "properties": {
-        "staff_id": { "type": "string" },
-        "staff_name": { "type": "string" },
-        "timestamp": { "type": "string", "format": "date-time" },
-        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
-        "location": { "type": "string" }
-      },
-      "required": ["staff_id", "staff_name", "timestamp", "status"]
     },
     "Conversation": {
       "title": "Conversation",
@@ -184,94 +111,43 @@
         "timestamp": { "type": "string", "format": "date-time" }
       },
       "required": ["conversation_id", "sender_id", "sender_role", "message", "timestamp"]
-    },
-    "ActivityLog": {
-      "title": "Activity Log",
-      "description": "A log of important system actions.",
-      "type": "object",
-      "properties": {
-        "action": { "type": "string" },
-        "details": { "type": "string" },
-        "user_id": { "type": "string" },
-        "user_name": { "type": "string" },
-        "timestamp": { "type": "string", "format": "date-time" }
-      },
-      "required": ["action", "details", "user_id", "timestamp"]
-    },
-    "Notification": {
-      "title": "Notification",
-      "description": "A notification for a user about a system event.",
-      "type": "object",
-      "properties": {
-        "userId": { "type": "string" },
-        "title": { "type": "string" },
-        "message": { "type": "string" },
-        "type": { "type": "string", "enum": ["leave", "checkin", "message", "signup"] },
-        "read": { "type": "boolean" },
-        "createdAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["userId", "title", "message", "read", "createdAt"]
     }
   },
   "auth": {
-    "providers": [
-      "email"
-    ]
+    "providers": ["email"]
   },
   "firestore": {
     "/users/{userId}": {
-      "schema": {
-        "$ref": "#/entities/UserProfile"
-      },
-      "description": "Stores user profile information."
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Stores user profiles."
+    },
+    "/login_requests/{requestId}": {
+      "schema": { "$ref": "#/entities/LoginRequest" },
+      "description": "Stores security login requests."
+    },
+    "/tasks/{taskId}": {
+      "schema": { "$ref": "#/entities/Task" },
+      "description": "Stores assigned tasks."
     },
     "/documents/{documentId}": {
-      "schema": {
-        "$ref": "#/entities/Document"
-      },
-      "description": "Stores documents associated with staff members."
+      "schema": { "$ref": "#/entities/Document" },
+      "description": "Stores documents."
     },
     "/announcements/{announcementId}": {
-      "schema": {
-        "$ref": "#/entities/Announcement"
-      },
-      "description": "Stores all announcements sent to staff."
+      "schema": { "$ref": "#/entities/Announcement" },
+      "description": "Stores announcement history."
     },
     "/leave_requests/{requestId}": {
-      "schema": {
-        "$ref": "#/entities/LeaveRequest"
-      },
-      "description": "Stores leave requests."
-    },
-    "/check_ins/{checkInId}": {
-      "schema": {
-        "$ref": "#/entities/CheckIn"
-      },
-      "description": "Stores morning check-ins."
+      "schema": { "$ref": "#/entities/LeaveRequest" },
+      "description": "Stores leave applications."
     },
     "/conversations/{conversationId}": {
-      "schema": {
-        "$ref": "#/entities/Conversation"
-      },
-      "description": "Stores conversation metadata."
+      "schema": { "$ref": "#/entities/Conversation" },
+      "description": "Stores chat metadata."
     },
     "/messages/{messageId}": {
-      "schema": {
-        "$ref": "#/entities/Message"
-      },
-      "description": "Stores chat messages."
-    },
-    "/activity_logs/{logId}": {
-      "schema": {
-        "$ref": "#/entities/ActivityLog"
-      },
-      "description": "Stores audit logs."
-    },
-    "/notifications/{notificationId}": {
-      "schema": {
-        "$ref": "#/entities/Notification"
-      },
-      "description": "Stores system notifications."
+      "schema": { "$ref": "#/entities/Message" },
+      "description": "Stores individual messages."
     }
   }
 }
