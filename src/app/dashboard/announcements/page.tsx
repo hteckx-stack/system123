@@ -126,7 +126,10 @@ export default function AnnouncementsPage() {
           </h2>
           <div className="space-y-4">
             {loading ? (
-              <Skeleton className="h-28 w-full rounded-2xl" />
+              <div className="space-y-4">
+                <Skeleton className="h-28 w-full rounded-2xl" />
+                <Skeleton className="h-28 w-full rounded-2xl" />
+              </div>
             ) : sentAnnouncements?.map(ann => (
               <Card key={ann.id} className="border-none shadow-soft rounded-2xl bg-white overflow-hidden border-l-4 border-l-[#0D47A1]">
                 <CardHeader className="p-5 pb-0">
