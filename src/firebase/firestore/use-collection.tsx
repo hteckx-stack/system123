@@ -28,7 +28,7 @@ export function useCollection<T extends DocumentData>(query: Query<T> | null) {
 
         let unsubscribe: (() => void) | undefined;
 
-        // Small delay to ensure the backend has fully registered the auth state
+        // Increased delay to 500ms to ensure the backend has fully registered the auth state
         // before the first request is sent. This prevents permission race conditions.
         const timeoutId = setTimeout(() => {
             unsubscribe = onSnapshot(query, 
@@ -62,7 +62,7 @@ export function useCollection<T extends DocumentData>(query: Query<T> | null) {
                     setLoading(false);
                 }
             );
-        }, 150); // Slightly increased delay for stability
+        }, 500); 
 
         return () => {
             clearTimeout(timeoutId);

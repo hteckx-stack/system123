@@ -1,37 +1,46 @@
-
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Megaphone, Clock, CalendarDays, ShieldCheck, Smartphone, Check, X } from "lucide-react"
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useCollection, useFirestore, useUser } from "@/firebase";
 import { useMemo } from "react";
 import { collection, query, where, doc, writeBatch } from "firebase/firestore";
-import type { Staff, LoginRequest } from "@/lib/types";
+import { useCollection, useFirestore, useUser } from "@/firebase";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { logActivity } from "@/firebase/firestore/activity-logs";
 import { useToast } from "@/hooks/use-toast";
+import { logActivity } from "@/firebase/firestore/activity-logs";
+import { 
+  Megaphone, 
+  Clock, 
+  CalendarDays, 
+  ShieldCheck, 
+  Smartphone, 
+  Check, 
+  X,
+  UserCheck,
+  MessageSquare
+} from "lucide-react";
+import Link from 'next/link';
+import type { Staff, LoginRequest } from "@/lib/types";
 
 export default function Dashboard() {
   const firestore = useFirestore();
   const { user: currentUser } = useUser();
   const { toast } = useToast();
 
-  // Robust recapture of any staff member awaiting approval
+  // Prompt 1: Fetch users from 'staff' collection where approved is false
   const staffQuery = useMemo(() => query(
     collection(firestore, "users"), 
     where("role", "==", "staff")
   ), [firestore]);
   
-  const { data: staffList, loading: staffLoading } = useCollection<Staff>(staffQuery);
+  const { data: staffList, loading: onboardingLoading } = useCollection<Staff>(staffQuery);
 
-  // Filter pending users client-side to ensure all are captured
+  // Filter pending users client-side for maximum reliability
   const pendingUsers = useMemo(() => staffList?.filter(s => s.approved === false), [staffList]);
 
-  // Fetch device login requests to link with staff profiles
+  // Prompt 1: Include second list for 'login_requests'
   const loginRequestsQuery = useMemo(() => collection(firestore, "login_requests"), [firestore]);
   const { data: loginRequests, loading: loginsLoading } = useCollection<LoginRequest>(loginRequestsQuery);
 
@@ -41,7 +50,7 @@ export default function Dashboard() {
     try {
       const batch = writeBatch(firestore);
       
-      // 1. Sets approved = true
+      // 1. Sets approved = true and status = active
       batch.update(doc(firestore, "users", staff.id), { 
         approved: true, 
         status: "active" 
@@ -54,18 +63,18 @@ export default function Dashboard() {
       
       await batch.commit();
       
-      // 3. Notifies the user via audit log
+      // 3. Log activity
       await logActivity(
         firestore,
         currentUser.uid,
         currentUser.displayName || "Admin",
         "Staff Approved",
-        `Approved access for ${staff.name} and cleared device request.`
+        `Authorized mobile access for ${staff.name}.`
       );
 
       toast({
         title: "Access Authorized",
-        description: `${staff.name} can now log into the mobile app.`,
+        description: `${staff.name} can now bypass the WaitingApproval screen.`,
       });
     } catch (error) {
       toast({
@@ -93,7 +102,7 @@ export default function Dashboard() {
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col gap-1">
         <h1 className="text-3xl font-bold tracking-tight text-[#1A1A1A]">Admin Command Center</h1>
-        <p className="text-[#6B7280]">Real-time "Source of Truth" for Staff App approvals and status.</p>
+        <p className="text-[#6B7280]">Source of Truth for Staff App synchronization and security.</p>
       </div>
 
       <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-7">
@@ -111,7 +120,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent className="pt-6">
                 <div className="space-y-4">
-                  {staffLoading || loginsLoading ? (
+                  {onboardingLoading || loginsLoading ? (
                     <div className="space-y-4">
                       <Skeleton className="h-20 w-full rounded-2xl" />
                       <Skeleton className="h-20 w-full rounded-2xl" />
@@ -131,7 +140,7 @@ export default function Dashboard() {
                                     <p className="font-bold text-[#1A1A1A]">{staff.name}</p>
                                     <div className="flex items-center gap-2 text-[10px] text-[#6B7280] font-bold uppercase tracking-wider">
                                         <Smartphone className="h-3.5 w-3.5" />
-                                        {matchingReq ? `${matchingReq.deviceModel} (ID: ${matchingReq.deviceId.substring(0,8)}...)` : "Awaiting device request..."}
+                                        {matchingReq ? `${matchingReq.deviceModel} (${matchingReq.deviceId.substring(0,8)}...)` : "Awaiting device request..."}
                                     </div>
                                 </div>
                             </div>
@@ -170,7 +179,7 @@ export default function Dashboard() {
         <Card className="lg:col-span-3 border-none shadow-soft bg-white rounded-3xl overflow-hidden">
           <CardHeader className="bg-slate-50 border-b pb-6">
             <CardTitle className="text-xl text-[#0D47A1]">Quick Actions</CardTitle>
-            <CardDescription>Instant administrative controls.</CardDescription>
+            <CardDescription>Administrative shortcuts.</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 pt-6">
              <Link href="/dashboard/tasks">
@@ -178,7 +187,7 @@ export default function Dashboard() {
                     <div className="bg-blue-50 p-2.5 rounded-xl group-hover:bg-white transition-colors">
                       <CalendarDays className="h-5 w-5 text-blue-500" />
                     </div>
-                    <span className="font-bold text-slate-700">Task Creator</span>
+                    <span className="font-bold text-slate-700">Duty Creator</span>
                 </Button>
              </Link>
              <Link href="/dashboard/announcements">
