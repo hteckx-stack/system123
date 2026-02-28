@@ -32,7 +32,6 @@ export default function SignupPage() {
   const signupImage = PlaceHolderImages.find(p => p.id === 'login-splash');
 
   // Prevent automatic redirect on auth state change during signup process
-  // We want to handle redirection manually after Firestore write is complete
   useEffect(() => {
     if (!loading && user && !isSubmitting) {
       router.push('/dashboard');
@@ -56,7 +55,7 @@ export default function SignupPage() {
           photoURL: photoUrl
       });
       
-      const newStaffData = {
+      const userData = {
           name,
           email,
           role,
@@ -69,7 +68,7 @@ export default function SignupPage() {
       };
       
       // Update Firestore User Profile - CRITICAL: must wait for this
-      await updateUser(firestore, authUser.uid, newStaffData);
+      await updateUser(firestore, authUser.uid, userData);
 
       if (role === 'staff') {
         await addNotification(firestore, {
