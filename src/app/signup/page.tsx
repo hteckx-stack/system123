@@ -86,6 +86,8 @@ export default function SignupPage() {
           description = "This email address is already in use.";
       } else if (error.code === 'auth/weak-password') {
           description = "The password is too weak.";
+      } else if (error.code?.includes('app-check')) {
+          description = "Security verification failed. Please check App Check configuration.";
       }
       
       toast({

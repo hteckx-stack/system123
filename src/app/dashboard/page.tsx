@@ -13,7 +13,6 @@ import {
   Megaphone, 
   Clock, 
   CalendarDays, 
-  ShieldCheck, 
   Smartphone, 
   Check, 
   X,
