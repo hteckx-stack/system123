@@ -9,10 +9,9 @@ export type Staff = {
   email: string;
   position: string;
   department: string;
-  photoUrl: string;
   role: 'admin' | 'staff';
   status: 'pending' | 'active' | 'inactive';
-  approved: boolean; // Field requested for Staff App logic
+  approved: boolean;
 };
 
 export type LoginRequest = {

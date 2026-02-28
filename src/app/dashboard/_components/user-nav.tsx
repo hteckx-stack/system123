@@ -1,5 +1,6 @@
+
 "use client"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -36,37 +37,39 @@ export function UserNav() {
 
   const displayName = userProfile?.name || user?.displayName || "Admin"
   const displayEmail = userProfile?.email || user?.email
-  const photoURL = userProfile?.photoUrl || user?.photoURL || ""
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-          <Avatar className="h-9 w-9">
-            <AvatarImage src={photoURL} alt={displayName} />
-            <AvatarFallback>
+        <Button variant="ghost" className="relative h-10 w-10 rounded-xl bg-white/10 hover:bg-white/20">
+          <Avatar className="h-8 w-8">
+            <AvatarFallback className="bg-white text-primary font-bold">
               {displayName?.[0].toUpperCase() || "A"}
             </AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="end" forceMount>
-        <DropdownMenuLabel className="font-normal">
+      <DropdownMenuContent className="w-56 rounded-xl border-none shadow-2xl" align="end" forceMount>
+        <DropdownMenuLabel className="font-normal p-4">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{displayName}</p>
-            <p className="text-xs leading-none text-muted-foreground">
+            <p className="text-sm font-bold leading-none text-slate-900">{displayName}</p>
+            <p className="text-xs leading-none text-slate-500 font-medium">
               {displayEmail}
             </p>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuGroup>
-          <DropdownMenuItem onSelect={() => router.push("/dashboard/settings")}>
+        <DropdownMenuGroup className="p-1">
+          <DropdownMenuItem onSelect={() => router.push("/dashboard/settings")} className="rounded-lg font-medium">
             Settings
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleLogout}>Log out</DropdownMenuItem>
+        <div className="p-1">
+          <DropdownMenuItem onClick={handleLogout} className="rounded-lg font-bold text-red-600 focus:text-red-700 focus:bg-red-50">
+            Log out
+          </DropdownMenuItem>
+        </div>
       </DropdownMenuContent>
     </DropdownMenu>
   )

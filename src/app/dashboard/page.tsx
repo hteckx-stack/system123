@@ -8,7 +8,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { logActivity } from "@/firebase/firestore/activity-logs";
 import { 
@@ -18,7 +17,8 @@ import {
   ShieldCheck, 
   Smartphone, 
   Check, 
-  X
+  X,
+  UserCheck
 } from "lucide-react";
 import Link from 'next/link';
 import type { Staff, LoginRequest } from "@/lib/types";
@@ -28,18 +28,14 @@ export default function Dashboard() {
   const { user: currentUser } = useUser();
   const { toast } = useToast();
 
-  // Fetch users from 'users' collection where role is staff
   const staffQuery = useMemo(() => query(
     collection(firestore, "users"), 
     where("role", "==", "staff")
   ), [firestore]);
   
   const { data: staffList, loading: onboardingLoading } = useCollection<Staff>(staffQuery);
-
-  // Filter pending users client-side for maximum reliability
   const pendingUsers = useMemo(() => staffList?.filter(s => s.approved !== true), [staffList]);
 
-  // Fetch login requests
   const loginRequestsQuery = useMemo(() => collection(firestore, "login_requests"), [firestore]);
   const { data: loginRequests, loading: loginsLoading } = useCollection<LoginRequest>(loginRequestsQuery);
 
@@ -48,39 +44,14 @@ export default function Dashboard() {
     
     try {
       const batch = writeBatch(firestore);
-      
-      // 1. Sets approved = true and status = active
-      batch.update(doc(firestore, "users", staff.id), { 
-        approved: true, 
-        status: "active" 
-      });
-      
-      // 2. Deletes the corresponding login request
-      if (loginReqId) {
-        batch.delete(doc(firestore, "login_requests", loginReqId));
-      }
-      
+      batch.update(doc(firestore, "users", staff.id), { approved: true, status: "active" });
+      if (loginReqId) batch.delete(doc(firestore, "login_requests", loginReqId));
       await batch.commit();
       
-      // 3. Log activity
-      await logActivity(
-        firestore,
-        currentUser.uid,
-        currentUser.displayName || "Admin",
-        "Staff Approved",
-        `Authorized mobile access for ${staff.name}.`
-      );
-
-      toast({
-        title: "Access Authorized",
-        description: `${staff.name} can now bypass the WaitingApproval screen.`,
-      });
+      await logActivity(firestore, currentUser.uid, currentUser.displayName || "Admin", "Staff Approved", `Authorized mobile access for ${staff.name}.`);
+      toast({ title: "Access Authorized", description: `${staff.name} is now approved.` });
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Action Failed",
-        description: "Could not approve registration.",
-      });
+      toast({ variant: "destructive", title: "Action Failed" });
     }
   };
 
@@ -117,10 +88,10 @@ export default function Dashboard() {
                   </Badge>
                 </div>
             </CardHeader>
-            <CardContent className="pt-6">
-                <div className="space-y-4">
+            <CardContent className="pt-6 px-0">
+                <div className="divide-y">
                   {onboardingLoading || loginsLoading ? (
-                    <div className="space-y-4">
+                    <div className="space-y-4 p-6">
                       <Skeleton className="h-20 w-full rounded-2xl" />
                       <Skeleton className="h-20 w-full rounded-2xl" />
                     </div>
@@ -129,17 +100,16 @@ export default function Dashboard() {
                       {pendingUsers?.map(staff => {
                         const matchingReq = loginRequests?.find(r => r.staffId === staff.id);
                         return (
-                          <div key={staff.id} className="flex items-center justify-between p-4 rounded-2xl border border-slate-50 bg-white hover:border-[#1976D2]/20 transition-all shadow-sm group">
+                          <div key={staff.id} className="flex items-center justify-between p-6 hover:bg-slate-50 transition-all">
                             <div className="flex items-center gap-4">
-                                <Avatar className="h-12 w-12 border-2 border-slate-100 shadow-sm">
-                                    <AvatarImage src={staff.photoUrl} />
-                                    <AvatarFallback className="bg-primary/5 text-primary font-bold">{staff.name.charAt(0)}</AvatarFallback>
-                                </Avatar>
+                                <div className="h-12 w-12 bg-slate-100 rounded-xl flex items-center justify-center font-bold text-lg text-primary">
+                                    {staff.name.charAt(0)}
+                                </div>
                                 <div>
                                     <p className="font-bold text-[#1A1A1A]">{staff.name}</p>
                                     <div className="flex items-center gap-2 text-[10px] text-[#6B7280] font-bold uppercase tracking-wider">
                                         <Smartphone className="h-3.5 w-3.5" />
-                                        {matchingReq ? `${matchingReq.deviceModel} (${matchingReq.deviceId.substring(0,8)}...)` : "Awaiting device request..."}
+                                        {matchingReq ? matchingReq.deviceModel : "Awaiting device request..."}
                                     </div>
                                 </div>
                             </div>
@@ -164,9 +134,9 @@ export default function Dashboard() {
                         )
                       })}
                       {(!pendingUsers || pendingUsers.length === 0) && (
-                        <div className="py-16 text-center text-slate-300">
-                          <ShieldCheck className="h-12 w-12 mx-auto opacity-10 mb-3" />
-                          <p className="font-medium">All registration requests have been cleared.</p>
+                        <div className="py-20 text-center text-slate-300">
+                          <UserCheck className="h-12 w-12 mx-auto opacity-10 mb-3" />
+                          <p className="font-medium">No pending registration requests.</p>
                         </div>
                       )}
                     </>
@@ -177,8 +147,8 @@ export default function Dashboard() {
 
         <Card className="lg:col-span-3 border-none shadow-soft bg-white rounded-3xl overflow-hidden">
           <CardHeader className="bg-slate-50 border-b pb-6">
-            <CardTitle className="text-xl text-[#0D47A1]">Quick Actions</CardTitle>
-            <CardDescription>Administrative shortcuts.</CardDescription>
+            <CardTitle className="text-xl text-[#0D47A1]">Shortcuts</CardTitle>
+            <CardDescription>Administrative actions.</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 pt-6">
              <Link href="/dashboard/tasks">
@@ -186,7 +156,7 @@ export default function Dashboard() {
                     <div className="bg-blue-50 p-2.5 rounded-xl group-hover:bg-white transition-colors">
                       <CalendarDays className="h-5 w-5 text-blue-500" />
                     </div>
-                    <span className="font-bold text-slate-700">Duty Creator</span>
+                    <span className="font-bold text-slate-700 uppercase tracking-widest text-[10px]">Duty Creator</span>
                 </Button>
              </Link>
              <Link href="/dashboard/announcements">
@@ -194,7 +164,7 @@ export default function Dashboard() {
                     <div className="bg-orange-50 p-2.5 rounded-xl group-hover:bg-white transition-colors">
                       <Megaphone className="h-5 w-5 text-orange-500" />
                     </div>
-                    <span className="font-bold text-slate-700">Broadcast Center</span>
+                    <span className="font-bold text-slate-700 uppercase tracking-widest text-[10px]">Broadcast Center</span>
                 </Button>
              </Link>
              <Link href="/dashboard/check-ins">
@@ -202,7 +172,7 @@ export default function Dashboard() {
                     <div className="bg-green-50 p-2.5 rounded-xl group-hover:bg-white transition-colors">
                       <Clock className="h-5 w-5 text-green-500" />
                     </div>
-                    <span className="font-bold text-slate-700">Attendance Feed</span>
+                    <span className="font-bold text-slate-700 uppercase tracking-widest text-[10px]">Attendance Feed</span>
                 </Button>
              </Link>
           </CardContent>

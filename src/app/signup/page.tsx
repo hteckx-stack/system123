@@ -5,10 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useRouter } from 'next/navigation';
-import { User as UserIcon, Mail, KeyRound } from 'lucide-react';
-import Image from 'next/image';
+import { User as UserIcon, Mail, KeyRound, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
-import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { useAuth, useFirestore, useUser } from '@/firebase';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
@@ -28,10 +26,7 @@ export default function SignupPage() {
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<'admin' | 'staff'>('staff');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  const signupImage = PlaceHolderImages.find(p => p.id === 'login-splash');
 
-  // Redirect if already logged in and not currently submitting
   useEffect(() => {
     if (!loading && user && !isSubmitting) {
       router.push('/dashboard');
@@ -44,35 +39,26 @@ export default function SignupPage() {
 
     setIsSubmitting(true);
     try {
-      // 1. Create the Authentication user
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const authUser = userCredential.user;
 
-      const photoUrl = `https://picsum.photos/seed/${authUser.uid}/100/100`;
-
-      // 2. Update Auth Profile
       await updateProfile(authUser, {
-          displayName: name,
-          photoURL: photoUrl
+          displayName: name
       });
       
-      // 3. Prepare user data for Firestore
       const userData = {
           name,
           email,
           role,
           status: role === 'admin' ? 'active' : 'pending' as const,
           approved: role === 'admin',
-          photoUrl,
           department: "Not Assigned",
           position: role === 'admin' ? 'Administrator' : 'Not Assigned',
           phone: ""
       };
       
-      // 4. Create Firestore User Profile
       await updateUser(firestore, authUser.uid, userData);
 
-      // 5. Notify admin for new staff registration
       if (role === 'staff') {
         try {
           await addNotification(firestore, {
@@ -83,7 +69,7 @@ export default function SignupPage() {
               read: false
           });
         } catch (notifErr) {
-          console.warn("Notification error ignored for UX fluidity:", notifErr);
+          console.warn("Notification error ignored:", notifErr);
         }
       }
 
@@ -92,7 +78,6 @@ export default function SignupPage() {
         description: role === 'admin' ? "Welcome to the Admin Portal!" : "Your registration is awaiting approval.",
       });
 
-      // 6. Redirect to dashboard
       router.push('/dashboard');
     } catch (error: any) {
       setIsSubmitting(false);
@@ -102,8 +87,6 @@ export default function SignupPage() {
           description = "This email address is already in use.";
       } else if (error.code === 'auth/weak-password') {
           description = "The password is too weak.";
-      } else if (error.code === 'permission-denied') {
-          description = "Database permissions denied. Please check security rules.";
       }
       
       toast({
@@ -123,64 +106,60 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="w-full lg:grid lg:min-h-screen lg:grid-cols-2">
-      <div className="flex items-center justify-center py-12">
-        <div className="mx-auto grid w-[350px] gap-6">
-          <div className="grid gap-2 text-center">
-            <h1 className="text-3xl font-bold">Portal Access</h1>
-            <p className="text-muted-foreground text-sm">Create an account to manage the Staff App</p>
+    <div className="flex min-h-screen items-center justify-center bg-slate-50 p-4">
+      <div className="mx-auto w-full max-w-[420px] space-y-6">
+        <div className="bg-white p-8 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100">
+          <div className="flex flex-col items-center gap-4 text-center mb-8">
+            <div className="bg-primary text-white p-3 rounded-2xl shadow-lg shadow-primary/20">
+              <ShieldCheck className="h-8 w-8" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight text-slate-900">Portal Access</h1>
+              <p className="text-slate-500 text-sm mt-1">Create an account for staff management</p>
+            </div>
           </div>
-          <form onSubmit={handleSignUp} className="grid gap-4">
+          <form onSubmit={handleSignUp} className="grid gap-5">
             <div className="grid gap-2">
-                <Label htmlFor="name">Full Name</Label>
+                <Label htmlFor="name" className="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1">Full Name</Label>
                 <div className="relative">
-                    <UserIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input id="name" placeholder="John Doe" required className="pl-10" value={name} onChange={(e) => setName(e.target.value)} />
+                    <UserIcon className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                    <Input id="name" placeholder="John Doe" required className="pl-10 h-12 rounded-xl" value={name} onChange={(e) => setName(e.target.value)} />
                 </div>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1">Email Address</Label>
                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input id="email" type="email" placeholder="admin@bluelink.com" required className="pl-10" value={email} onChange={(e) => setEmail(e.target.value)} />
+                  <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                  <Input id="email" type="email" placeholder="admin@bluelink.com" required className="pl-10 h-12 rounded-xl" value={email} onChange={(e) => setEmail(e.target.value)} />
                 </div>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="role">Register as</Label>
+              <Label htmlFor="role" className="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1">Register as</Label>
                <Select value={role} onValueChange={(val: 'admin' | 'staff') => setRole(val)}>
-                  <SelectTrigger id="role">
+                  <SelectTrigger id="role" className="h-12 rounded-xl">
                     <SelectValue placeholder="Select a role" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="rounded-xl">
                     <SelectItem value="admin">Administrator</SelectItem>
                     <SelectItem value="staff">Staff Member</SelectItem>
                   </SelectContent>
                </Select>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1">Password</Label>
               <div className="relative">
-                <KeyRound className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input id="password" type="password" required className="pl-10" value={password} onChange={(e) => setPassword(e.target.value)} />
+                <KeyRound className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                <Input id="password" type="password" required className="pl-10 h-12 rounded-xl" value={password} onChange={(e) => setPassword(e.target.value)} />
               </div>
             </div>
-            <Button type="submit" disabled={isSubmitting} className="w-full h-11">
+            <Button type="submit" disabled={isSubmitting} className="w-full h-12 rounded-xl font-bold text-lg shadow-lg shadow-primary/20">
               {isSubmitting ? "Creating Account..." : "Create Account"}
             </Button>
-            <div className="text-center text-sm">
-                Already have an account? <Link href="/login" className="underline font-bold">Log in</Link>
+            <div className="text-center text-sm font-medium text-slate-500 pt-2">
+                Already have an account? <Link href="/login" className="text-primary hover:underline font-bold">Log in</Link>
             </div>
           </form>
         </div>
-      </div>
-       <div className="hidden bg-muted lg:block">
-         {signupImage && <Image
-          src={signupImage.imageUrl}
-          alt="Office"
-          width={1920}
-          height={1080}
-          className="h-full w-full object-cover"
-        />}
       </div>
     </div>
   );

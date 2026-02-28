@@ -1,20 +1,19 @@
+
 "use client"
 
 import type { ColumnDef } from "@tanstack/react-table"
 import type { Staff } from "@/lib/types"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { DataTableRowActions } from "./data-table-row-actions"
 
 export const getColumns = (onEdit: (staff: Staff) => void): ColumnDef<Staff>[] => [
   {
-    accessorKey: "photoUrl",
+    id: "initials",
     header: "",
     cell: ({ row }) => (
-      <Avatar className="h-9 w-9">
-        <AvatarImage src={row.original.photoUrl} alt={row.original.name} />
-        <AvatarFallback>{row.original.name.charAt(0)}</AvatarFallback>
-      </Avatar>
+      <div className="h-8 w-8 rounded-lg bg-slate-100 flex items-center justify-center font-bold text-xs text-primary">
+        {row.original.name.charAt(0)}
+      </div>
     ),
     enableSorting: false,
     enableHiding: false,
@@ -23,7 +22,7 @@ export const getColumns = (onEdit: (staff: Staff) => void): ColumnDef<Staff>[] =
     accessorKey: "name",
     header: "Name",
     cell: ({ row }) => (
-      <div className="font-medium">{row.original.name}</div>
+      <div className="font-semibold text-slate-900">{row.original.name}</div>
     ),
   },
   {
@@ -47,15 +46,15 @@ export const getColumns = (onEdit: (staff: Staff) => void): ColumnDef<Staff>[] =
     header: "Status",
     cell: ({ row }) => {
       const status = row.original.status;
-      if (status === "pending") {
-        return (
-          <Badge variant="outline" className="border-yellow-500/50 text-yellow-700 bg-yellow-50 dark:text-yellow-400 dark:bg-yellow-900/30">
-            pending
-          </Badge>
-        )
-      }
       return (
-        <Badge variant={status === "active" ? "secondary" : "destructive"} className={status === "active" ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" : ""}>
+        <Badge 
+          variant="outline" 
+          className={`capitalize border-none font-bold text-[10px] tracking-widest px-2.5 py-0.5 ${
+            status === "active" ? "bg-green-50 text-green-600" : 
+            status === "pending" ? "bg-orange-50 text-orange-600" : 
+            "bg-red-50 text-red-600"
+          }`}
+        >
           {status}
         </Badge>
       )

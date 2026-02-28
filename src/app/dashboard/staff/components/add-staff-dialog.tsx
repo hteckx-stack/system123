@@ -47,7 +47,6 @@ export function AddStaffDialog({ open, onOpenChange }: AddStaffDialogProps) {
     setIsSaving(true)
     
     try {
-      // Concatenate names for the backend
       const fullName = [formData.firstName, formData.middleName, formData.lastName]
         .filter(Boolean)
         .join(" ");
@@ -60,22 +59,21 @@ export function AddStaffDialog({ open, onOpenChange }: AddStaffDialogProps) {
         department: formData.department,
         status: 'pending',
         role: 'staff',
-        approved: false, // Ensure they appear in the pending queue
-        photoUrl: `https://picsum.photos/seed/${formData.email}/100/100`
+        approved: false,
       };
 
       await addUser(firestore, newStaffData)
       
       toast({
-        title: "Staff Added",
-        description: `${fullName} has been added. They will still need to sign up with ${formData.email} to create an account.`,
+        title: "Staff Profile Created",
+        description: `${fullName} has been added to the register.`,
       })
       onOpenChange(false)
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Failed to Add Staff",
-        description: "Could not add staff member. Please try again.",
+        title: "Registration Failed",
+        description: "Could not create staff profile. Please try again.",
       })
     } finally {
       setIsSaving(false)
@@ -101,134 +99,51 @@ export function AddStaffDialog({ open, onOpenChange }: AddStaffDialogProps) {
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[550px] p-0 border-none shadow-2xl rounded-3xl overflow-hidden">
         <DialogHeader className="bg-primary p-8 text-white">
-          <DialogTitle className="text-2xl font-bold">Add New Staff Member</DialogTitle>
+          <DialogTitle className="text-2xl font-bold">New Staff Registration</DialogTitle>
           <DialogDescription className="text-white/70">
-            Create a new staff profile. Names will be combined for the global directory.
+            Enter employee details to create their official management record.
           </DialogDescription>
         </DialogHeader>
         <form id="add-staff-form" onSubmit={handleFormSubmit} className="p-8 space-y-5 bg-white">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="firstName" className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">
-                First Name
-              </Label>
-              <Input
-                id="firstName"
-                name="firstName"
-                value={formData.firstName}
-                onChange={handleChange}
-                placeholder="Jane"
-                className="rounded-xl border-slate-200 bg-slate-50/50 focus-visible:ring-primary/20 h-11"
-                required
-              />
+              <Label htmlFor="firstName" className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">First Name</Label>
+              <Input id="firstName" name="firstName" value={formData.firstName} onChange={handleChange} placeholder="Jane" className="rounded-xl h-11" required />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="lastName" className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">
-                Last Name
-              </Label>
-              <Input
-                id="lastName"
-                name="lastName"
-                value={formData.lastName}
-                onChange={handleChange}
-                placeholder="Doe"
-                className="rounded-xl border-slate-200 bg-slate-50/50 focus-visible:ring-primary/20 h-11"
-                required
-              />
+              <Label htmlFor="lastName" className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">Last Name</Label>
+              <Input id="lastName" name="lastName" value={formData.lastName} onChange={handleChange} placeholder="Doe" className="rounded-xl h-11" required />
             </div>
           </div>
-          
           <div className="space-y-2">
-            <Label htmlFor="middleName" className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">
-              Middle Name <span className="text-slate-300 font-normal italic">(Optional)</span>
-            </Label>
-            <Input
-              id="middleName"
-              name="middleName"
-              value={formData.middleName}
-              onChange={handleChange}
-              placeholder="Maria"
-              className="rounded-xl border-slate-200 bg-slate-50/50 focus-visible:ring-primary/20 h-11"
-            />
+            <Label htmlFor="middleName" className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">Middle Name (Optional)</Label>
+            <Input id="middleName" name="middleName" value={formData.middleName} onChange={handleChange} placeholder="Maria" className="rounded-xl h-11" />
           </div>
-          
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">
-                Email Address
-              </Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleChange}
-                placeholder="jane.doe@company.com"
-                className="rounded-xl border-slate-200 bg-slate-50/50 focus-visible:ring-primary/20 h-11"
-                required
-              />
+              <Label htmlFor="email" className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">Email</Label>
+              <Input id="email" name="email" type="email" value={formData.email} onChange={handleChange} placeholder="jane.doe@company.com" className="rounded-xl h-11" required />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="phone" className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">
-                Phone Number
-              </Label>
-              <Input
-                id="phone"
-                name="phone"
-                type="tel"
-                value={formData.phone}
-                onChange={handleChange}
-                placeholder="+260977123456"
-                pattern="^\+260\d{9}$"
-                title="Enter a valid Zambian phone number (e.g. +260977123456)"
-                className="rounded-xl border-slate-200 bg-slate-50/50 focus-visible:ring-primary/20 h-11"
-              />
+              <Label htmlFor="phone" className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">Phone</Label>
+              <Input id="phone" name="phone" type="tel" value={formData.phone} onChange={handleChange} placeholder="+260..." className="rounded-xl h-11" />
             </div>
           </div>
-
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="position" className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">
-                Position
-              </Label>
-              <Input
-                id="position"
-                name="position"
-                value={formData.position}
-                onChange={handleChange}
-                placeholder="Project Manager"
-                className="rounded-xl border-slate-200 bg-slate-50/50 focus-visible:ring-primary/20 h-11"
-                required
-              />
+              <Label htmlFor="position" className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">Position</Label>
+              <Input id="position" name="position" value={formData.position} onChange={handleChange} placeholder="Officer" className="rounded-xl h-11" required />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="department" className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">
-                Department
-              </Label>
-              <Input
-                id="department"
-                name="department"
-                value={formData.department}
-                onChange={handleChange}
-                placeholder="Operations"
-                className="rounded-xl border-slate-200 bg-slate-50/50 focus-visible:ring-primary/20 h-11"
-                required
-              />
+              <Label htmlFor="department" className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">Department</Label>
+              <Input id="department" name="department" value={formData.department} onChange={handleChange} placeholder="Ops" className="rounded-xl h-11" required />
             </div>
           </div>
         </form>
         <DialogFooter className="bg-slate-50 p-6 px-8 border-t flex items-center justify-end gap-3">
-           <Button
-            type="button"
-            variant="ghost"
-            onClick={() => onOpenChange(false)}
-            disabled={isSaving}
-            className="rounded-xl text-slate-500 hover:bg-slate-200/50 font-bold"
-          >
-            Cancel
-          </Button>
-          <Button type="submit" form="add-staff-form" disabled={isSaving} className="rounded-xl px-8 font-bold shadow-lg shadow-primary/20 h-11">
-            {isSaving ? "Creating Account..." : "Add Staff Member"}
+          <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} disabled={isSaving} className="rounded-xl font-bold">Cancel</Button>
+          <Button type="submit" form="add-staff-form" disabled={isSaving} className="rounded-xl px-8 font-bold h-11">
+            {isSaving ? "Registering..." : "Add to Directory"}
           </Button>
         </DialogFooter>
       </DialogContent>

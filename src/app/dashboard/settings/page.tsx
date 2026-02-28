@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
@@ -6,11 +7,9 @@ import {
   useFirestore,
   useDoc,
   useAuth,
-  useStorage,
 } from "@/firebase"
 import { doc } from "firebase/firestore"
 import { updateProfile } from "firebase/auth"
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -24,14 +23,13 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import { updateUser } from "@/firebase/firestore/users"
 import type { Staff } from "@/lib/types"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Skeleton } from "@/components/ui/skeleton"
+import { User } from "lucide-react"
 
 export default function SettingsPage() {
   const { user, loading: userLoading } = useUser()
   const auth = useAuth()
   const firestore = useFirestore()
-  const storage = useStorage()
   const { toast } = useToast()
 
   const userDocRef = useMemo(
@@ -41,46 +39,22 @@ export default function SettingsPage() {
   const { data: userProfile, loading: profileLoading } = useDoc<Staff>(userDocRef)
 
   const [formData, setFormData] = useState<Partial<Staff>>({})
-  const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [isUpdating, setIsUpdating] = useState(false)
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
 
   useEffect(() => {
     if (userProfile) {
       setFormData(userProfile)
     } else if (user) {
-      // Pre-fill with auth data if no profile exists yet
       setFormData({
         name: user.displayName || "",
         email: user.email || "",
-        photoUrl: user.photoURL || "",
       })
     }
   }, [userProfile, user])
 
-  // Clean up the object URL to avoid memory leaks
-  useEffect(() => {
-    return () => {
-      if (photoPreview) {
-        URL.revokeObjectURL(photoPreview)
-      }
-    }
-  }, [photoPreview])
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
-  }
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0]
-      setPhotoFile(file)
-      if (photoPreview) {
-        URL.revokeObjectURL(photoPreview)
-      }
-      setPhotoPreview(URL.createObjectURL(file))
-    }
   }
 
   const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -90,15 +64,6 @@ export default function SettingsPage() {
     setIsUpdating(true)
 
     try {
-        let newPhotoUrl = formData.photoUrl
-
-        if (photoFile) {
-            const storageRef = ref(storage, `profile-pictures/${user.uid}`)
-            const snapshot = await uploadBytes(storageRef, photoFile)
-            newPhotoUrl = await getDownloadURL(snapshot.ref)
-            setPhotoFile(null) // Reset file input state
-        }
-
         const updatedFirestoreFields: Partial<Staff> = {}
         const fieldsToCompare: (keyof Staff)[] = [
             "name",
@@ -115,11 +80,7 @@ export default function SettingsPage() {
             }
         })
 
-        if (newPhotoUrl && newPhotoUrl !== userProfile?.photoUrl) {
-            updatedFirestoreFields.photoUrl = newPhotoUrl
-        }
-
-        if (Object.keys(updatedFirestoreFields).length === 0 && !photoFile) {
+        if (Object.keys(updatedFirestoreFields).length === 0) {
             toast({
                 title: "No Changes",
                 description: "You haven't made any changes to your profile.",
@@ -128,12 +89,9 @@ export default function SettingsPage() {
             return
         }
         
-        const authUpdates: { displayName?: string; photoURL?: string } = {}
+        const authUpdates: { displayName?: string } = {}
         if (updatedFirestoreFields.name !== undefined) {
             authUpdates.displayName = updatedFirestoreFields.name
-        }
-        if (updatedFirestoreFields.photoUrl !== undefined) {
-            authUpdates.photoURL = updatedFirestoreFields.photoUrl
         }
 
         if (auth.currentUser && Object.keys(authUpdates).length > 0) {
@@ -164,103 +122,61 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-[#0D47A1]">Account Settings</h1>
         <p className="text-muted-foreground">
-          Manage your account settings and profile information.
+          Manage your profile information and contact details.
         </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Profile</CardTitle>
-          <CardDescription>
-            This is how others will see you on the site.
-          </CardDescription>
+      <Card className="border-none shadow-soft rounded-3xl overflow-hidden bg-white">
+        <CardHeader className="bg-slate-50 border-b pb-6">
+          <div className="flex items-center gap-3">
+            <User className="h-5 w-5 text-[#0D47A1]" />
+            <div>
+              <CardTitle className="text-xl">Profile Details</CardTitle>
+              <CardDescription>
+                Public identity for administrative interactions.
+              </CardDescription>
+            </div>
+          </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-8">
           {loading ? (
             <div className="space-y-6">
-              <div className="flex items-center space-x-4">
-                <Skeleton className="h-20 w-20 rounded-full" />
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-48" />
-                  <Skeleton className="h-4 w-32" />
-                </div>
-              </div>
               <div className="grid gap-4 sm:grid-cols-2 mt-6">
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-20" />
-                  <Skeleton className="h-10 w-full" />
-                </div>
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-20" />
-                  <Skeleton className="h-10 w-full" />
-                </div>
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-20" />
-                  <Skeleton className="h-10 w-full" />
-                </div>
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-20" />
-                  <Skeleton className="h-10 w-full" />
-                </div>
+                <Skeleton className="h-12 w-full rounded-xl" />
+                <Skeleton className="h-12 w-full rounded-xl" />
+                <Skeleton className="h-12 w-full rounded-xl" />
+                <Skeleton className="h-12 w-full rounded-xl" />
               </div>
             </div>
           ) : (
-            <form onSubmit={handleFormSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="photo" className="cursor-pointer">
-                  <span className="text-sm font-medium">Profile Photo</span>
-                   <p className="text-sm text-muted-foreground">
-                    Click the image to upload a new profile picture.
-                  </p>
-                  <div className="pt-2">
-                  <Avatar className="h-24 w-24">
-                    <AvatarImage
-                      src={photoPreview || formData.photoUrl || ""}
-                      alt={formData.name || ""}
-                    />
-                    <AvatarFallback>
-                      {formData.name?.charAt(0).toUpperCase() ||
-                        user?.email?.charAt(0).toUpperCase() ||
-                        "A"}
-                    </AvatarFallback>
-                  </Avatar>
-                  </div>
-                </Label>
-                <Input
-                  id="photo"
-                  name="photo"
-                  type="file"
-                  onChange={handleFileChange}
-                  accept="image/*"
-                  className="hidden"
-                />
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
+            <form onSubmit={handleFormSubmit} className="space-y-8">
+              <div className="grid gap-6 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
+                  <Label htmlFor="name" className="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1">Full Name</Label>
                   <Input
                     id="name"
                     name="name"
                     value={formData.name || ""}
                     onChange={handleChange}
                     required
+                    className="h-12 rounded-xl"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email" className="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1">Email</Label>
                   <Input
                     id="email"
                     name="email"
                     value={formData.email || ""}
                     onChange={handleChange}
                     disabled
+                    className="h-12 rounded-xl bg-slate-50 border-slate-200"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Phone</Label>
+                  <Label htmlFor="phone" className="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1">Phone</Label>
                   <Input
                     id="phone"
                     name="phone"
@@ -268,35 +184,38 @@ export default function SettingsPage() {
                     value={formData.phone || ""}
                     onChange={handleChange}
                     placeholder="+260977123456"
-                    pattern="^\+260\d{9}$"
-                    title="Enter a valid Zambian phone number (e.g. +260977123456)"
+                    className="h-12 rounded-xl"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="position">Position</Label>
+                  <Label htmlFor="position" className="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1">Position</Label>
                   <Input
                     id="position"
                     name="position"
                     value={formData.position || ""}
                     onChange={handleChange}
                     placeholder="e.g. Lead Developer"
+                    className="h-12 rounded-xl"
                   />
                 </div>
                 <div className="space-y-2 sm:col-span-2">
-                  <Label htmlFor="department">Department</Label>
+                  <Label htmlFor="department" className="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1">Department</Label>
                   <Input
                     id="department"
                     name="department"
                     value={formData.department || ""}
                     onChange={handleChange}
                     placeholder="e.g. Engineering"
+                    className="h-12 rounded-xl"
                   />
                 </div>
               </div>
 
-              <Button type="submit" disabled={isUpdating}>
-                {isUpdating ? "Saving..." : "Save Changes"}
-              </Button>
+              <div className="flex justify-end pt-4">
+                <Button type="submit" disabled={isUpdating} className="h-12 px-8 rounded-xl font-bold bg-[#0D47A1] shadow-lg shadow-primary/20 min-w-[160px]">
+                  {isUpdating ? "Saving..." : "Update Profile"}
+                </Button>
+              </div>
             </form>
           )}
         </CardContent>
