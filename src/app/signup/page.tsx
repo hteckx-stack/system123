@@ -31,7 +31,7 @@ export default function SignupPage() {
   
   const signupImage = PlaceHolderImages.find(p => p.id === 'login-splash');
 
-  // Prevent automatic redirect on auth state change during signup process
+  // Redirect if already logged in and not currently submitting
   useEffect(() => {
     if (!loading && user && !isSubmitting) {
       router.push('/dashboard');
@@ -69,10 +69,10 @@ export default function SignupPage() {
           phone: ""
       };
       
-      // 4. Update Firestore User Profile - CRITICAL: must wait for this
+      // 4. Create Firestore User Profile
       await updateUser(firestore, authUser.uid, userData);
 
-      // 5. Add a notification for admins if a new staff member signs up
+      // 5. Notify admin for new staff registration
       if (role === 'staff') {
         try {
           await addNotification(firestore, {
@@ -83,16 +83,16 @@ export default function SignupPage() {
               read: false
           });
         } catch (notifErr) {
-          console.warn("Notification could not be sent, but signup was successful.");
+          console.warn("Notification error ignored for UX fluidity.");
         }
       }
 
       toast({
         title: "Account Created",
-        description: role === 'admin' ? "Welcome, Admin!" : "Your account is pending approval from an administrator.",
+        description: role === 'admin' ? "Welcome to the Admin Portal!" : "Your registration is awaiting approval.",
       });
 
-      // 6. Manual redirect after successful setup
+      // 6. Redirect to dashboard
       router.push('/dashboard');
     } catch (error: any) {
       setIsSubmitting(false);
@@ -100,11 +100,9 @@ export default function SignupPage() {
       if (error.code === 'auth/email-already-in-use') {
           description = "This email address is already in use.";
       } else if (error.code === 'auth/weak-password') {
-          description = "The password is too weak. Please use at least 6 characters.";
+          description = "The password is too weak.";
       } else if (error.code === 'permission-denied') {
-          description = "Security Rules blocked the user profile creation.";
-      } else {
-          description = error.message || description;
+          description = "Database permissions denied.";
       }
       
       toast({
@@ -118,14 +116,8 @@ export default function SignupPage() {
   if (loading) {
       return (
         <div className="flex h-screen items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="animate-pulse-subtle text-primary">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" fill="currentColor" />
-            <path d="M12.5 12.5H17v-1h-4.5V7H11v5.5H7v1h4V17h1.5v-4.5z" fill="currentColor" />
-          </svg>
-          <p className="text-lg font-medium text-muted-foreground">Loading...</p>
+          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
         </div>
-      </div>
       )
   }
 
@@ -134,65 +126,48 @@ export default function SignupPage() {
       <div className="flex items-center justify-center py-12">
         <div className="mx-auto grid w-[350px] gap-6">
           <div className="grid gap-2 text-center">
-            <div className="mb-4 flex justify-center">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-primary">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" fill="currentColor" />
-                    <path d="M12.5 12.5H17v-1h-4.5V7H11v5.5H7v1h4V17h1.5v-4.5z" fill="currentColor" />
-                </svg>
-            </div>
-            <h1 className="text-3xl font-bold">Sign Up</h1>
-            <p className="text-balance text-muted-foreground">Create an account to get started</p>
+            <h1 className="text-3xl font-bold">Portal Access</h1>
+            <p className="text-muted-foreground text-sm">Create an account to manage the Staff App</p>
           </div>
           <form onSubmit={handleSignUp} className="grid gap-4">
             <div className="grid gap-2">
                 <Label htmlFor="name">Full Name</Label>
                 <div className="relative">
-                    <UserIcon className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-                    <Input id="name" placeholder="John Doe" required className="pl-10 rounded-xl" value={name} onChange={(e) => setName(e.target.value)} />
+                    <UserIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input id="name" placeholder="John Doe" required className="pl-10" value={name} onChange={(e) => setName(e.target.value)} />
                 </div>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-                  <Input id="email" type="email" placeholder="name@example.com" required className="pl-10 rounded-xl" value={email} onChange={(e) => setEmail(e.target.value)} />
+                  <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input id="email" type="email" placeholder="admin@bluelink.com" required className="pl-10" value={email} onChange={(e) => setEmail(e.target.value)} />
                 </div>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="role">Register as</Label>
                <Select value={role} onValueChange={(val: 'admin' | 'staff') => setRole(val)}>
-                  <SelectTrigger id="role" className="w-full rounded-xl">
+                  <SelectTrigger id="role">
                     <SelectValue placeholder="Select a role" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="admin">
-                        <div className="flex items-center gap-2">
-                            <ShieldCheck className="h-4 w-4" />
-                            <span>Admin</span>
-                        </div>
-                    </SelectItem>
-                    <SelectItem value="staff">
-                        <div className="flex items-center gap-2">
-                            <Users className="h-4 w-4" />
-                            <span>Staff</span>
-                        </div>
-                    </SelectItem>
+                    <SelectItem value="admin">Administrator</SelectItem>
+                    <SelectItem value="staff">Staff Member</SelectItem>
                   </SelectContent>
                </Select>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="password">Password</Label>
               <div className="relative">
-                <KeyRound className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-                <Input id="password" type="password" required className="pl-10 rounded-xl" value={password} onChange={(e) => setPassword(e.target.value)} />
+                <KeyRound className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input id="password" type="password" required className="pl-10" value={password} onChange={(e) => setPassword(e.target.value)} />
               </div>
             </div>
-            <Button type="submit" disabled={isSubmitting} className="w-full rounded-xl h-11 bg-[#0D47A1] font-bold">
-              {isSubmitting ? "Creating..." : "Create Account"}
+            <Button type="submit" disabled={isSubmitting} className="w-full h-11">
+              {isSubmitting ? "Creating Account..." : "Create Account"}
             </Button>
-            <div className="mt-4 text-center text-sm">
-                Already have an account?{" "}
-                <Link href="/login" className="underline">Log in</Link>
+            <div className="text-center text-sm">
+                Already have an account? <Link href="/login" className="underline font-bold">Log in</Link>
             </div>
           </form>
         </div>
@@ -200,11 +175,10 @@ export default function SignupPage() {
        <div className="hidden bg-muted lg:block">
          {signupImage && <Image
           src={signupImage.imageUrl}
-          alt="Image"
+          alt="Office"
           width={1920}
           height={1080}
           className="h-full w-full object-cover"
-          data-ai-hint={signupImage.imageHint}
         />}
       </div>
     </div>
