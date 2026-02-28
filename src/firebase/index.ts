@@ -38,6 +38,7 @@ export function initializeFirebase(): FirebaseInstances {
 
   if (typeof window !== 'undefined') {
     // Set the debug token provided by the user for development/preview environments
+    // This MUST be set before initializeAppCheck is called.
     (self as any).FIREBASE_APPCHECK_DEBUG_TOKEN = 'AB7D027F-F89C-44CB-A54A-04825C64BF94';
     
     try {
@@ -46,7 +47,7 @@ export function initializeFirebase(): FirebaseInstances {
         isTokenAutoRefreshEnabled: true,
       });
     } catch (e) {
-      console.warn("App Check initialization skipped or failed:", e);
+      console.warn("App Check initialization failed:", e);
     }
   }
 

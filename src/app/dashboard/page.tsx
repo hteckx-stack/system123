@@ -6,6 +6,7 @@ import { useCollection, useFirestore, useUser } from "@/firebase";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from '@/components/ui/button';
 import { useToast } from "@/hooks/use-toast";
 import { logActivity } from "@/firebase/firestore/activity-logs";
@@ -100,9 +101,11 @@ export default function Dashboard() {
                         return (
                           <div key={staff.id} className="flex items-center justify-between p-6 hover:bg-slate-50 transition-all">
                             <div className="flex items-center gap-4">
-                                <div className="h-12 w-12 bg-slate-100 rounded-xl flex items-center justify-center font-bold text-lg text-primary">
+                                <Avatar className="h-12 w-12 rounded-xl border-2 border-slate-100">
+                                  <AvatarFallback className="bg-primary/5 text-primary font-bold">
                                     {staff.name.charAt(0)}
-                                </div>
+                                  </AvatarFallback>
+                                </Avatar>
                                 <div>
                                     <p className="font-bold text-[#1A1A1A]">{staff.name}</p>
                                     <div className="flex items-center gap-2 text-[10px] text-[#6B7280] font-bold uppercase tracking-wider">
