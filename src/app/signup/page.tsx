@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useRouter } from 'next/navigation';
-import { User as UserIcon, Mail, KeyRound, ShieldCheck, Users } from 'lucide-react';
+import { User as UserIcon, Mail, KeyRound } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { PlaceHolderImages } from "@/lib/placeholder-images";
@@ -83,7 +83,7 @@ export default function SignupPage() {
               read: false
           });
         } catch (notifErr) {
-          console.warn("Notification error ignored for UX fluidity.");
+          console.warn("Notification error ignored for UX fluidity:", notifErr);
         }
       }
 
@@ -96,13 +96,14 @@ export default function SignupPage() {
       router.push('/dashboard');
     } catch (error: any) {
       setIsSubmitting(false);
+      console.error("Signup process failed:", error);
       let description = "An unexpected error occurred.";
       if (error.code === 'auth/email-already-in-use') {
           description = "This email address is already in use.";
       } else if (error.code === 'auth/weak-password') {
           description = "The password is too weak.";
       } else if (error.code === 'permission-denied') {
-          description = "Database permissions denied.";
+          description = "Database permissions denied. Please check security rules.";
       }
       
       toast({

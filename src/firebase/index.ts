@@ -33,7 +33,7 @@ export function initializeFirebase(): FirebaseInstances {
   const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
   
   if (typeof window !== 'undefined') {
-    // Initializing App Check with the provided reCAPTCHA v3 token
+    // Initializing App Check with the provided standard reCAPTCHA token
     initializeAppCheck(app, {
       provider: new ReCaptchaV3Provider('AB7D027F-F89C-44CB-A54A-04825C64BF94'),
       isTokenAutoRefreshEnabled: true
