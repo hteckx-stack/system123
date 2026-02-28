@@ -44,17 +44,19 @@ export default function SignupPage() {
 
     setIsSubmitting(true);
     try {
+      // 1. Create the Authentication user
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const authUser = userCredential.user;
 
       const photoUrl = `https://picsum.photos/seed/${authUser.uid}/100/100`;
 
-      // Update Auth Profile
+      // 2. Update Auth Profile
       await updateProfile(authUser, {
           displayName: name,
           photoURL: photoUrl
       });
       
+      // 3. Prepare user data for Firestore
       const userData = {
           name,
           email,
@@ -67,17 +69,22 @@ export default function SignupPage() {
           phone: ""
       };
       
-      // Update Firestore User Profile - CRITICAL: must wait for this
+      // 4. Update Firestore User Profile - CRITICAL: must wait for this
       await updateUser(firestore, authUser.uid, userData);
 
+      // 5. Add a notification for admins if a new staff member signs up
       if (role === 'staff') {
-        await addNotification(firestore, {
-            userId: 'admin',
-            title: 'New Staff Registration',
-            message: `${name} has signed up and is awaiting approval.`,
-            type: 'signup',
-            read: false
-        });
+        try {
+          await addNotification(firestore, {
+              userId: 'admin',
+              title: 'New Staff Registration',
+              message: `${name} has signed up and is awaiting approval.`,
+              type: 'signup',
+              read: false
+          });
+        } catch (notifErr) {
+          console.warn("Notification could not be sent, but signup was successful.");
+        }
       }
 
       toast({
@@ -85,7 +92,7 @@ export default function SignupPage() {
         description: role === 'admin' ? "Welcome, Admin!" : "Your account is pending approval from an administrator.",
       });
 
-      // Manual redirect after successful setup
+      // 6. Manual redirect after successful setup
       router.push('/dashboard');
     } catch (error: any) {
       setIsSubmitting(false);
@@ -93,8 +100,13 @@ export default function SignupPage() {
       if (error.code === 'auth/email-already-in-use') {
           description = "This email address is already in use.";
       } else if (error.code === 'auth/weak-password') {
-          description = "The password is too weak. Please use at least 6 characters."
+          description = "The password is too weak. Please use at least 6 characters.";
+      } else if (error.code === 'permission-denied') {
+          description = "Security Rules blocked the user profile creation.";
+      } else {
+          description = error.message || description;
       }
+      
       toast({
         variant: 'destructive',
         title: 'Sign Up Failed',

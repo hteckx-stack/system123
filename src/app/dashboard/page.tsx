@@ -18,9 +18,7 @@ import {
   ShieldCheck, 
   Smartphone, 
   Check, 
-  X,
-  UserCheck,
-  MessageSquare
+  X
 } from "lucide-react";
 import Link from 'next/link';
 import type { Staff, LoginRequest } from "@/lib/types";
