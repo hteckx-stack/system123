@@ -33,9 +33,14 @@ export function initializeFirebase(): FirebaseInstances {
   const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
   
   if (typeof window !== 'undefined') {
-    // Initializing App Check with the provided standard reCAPTCHA token
+    // Set the App Check Debug Token provided by the user.
+    // This allows the client to bypass standard reCAPTCHA verification in development.
+    (window as any).FIREBASE_APPCHECK_DEBUG_TOKEN = 'AB7D027F-F89C-44CB-A54A-04825C64BF94';
+
+    // Initialize App Check. Even with a debug token, a provider must be initialized.
+    // Standard reCAPTCHA v3 uses ReCaptchaV3Provider.
     initializeAppCheck(app, {
-      provider: new ReCaptchaV3Provider('AB7D027F-F89C-44CB-A54A-04825C64BF94'),
+      provider: new ReCaptchaV3Provider('6LcO_...placeholder_site_key...'),
       isTokenAutoRefreshEnabled: true
     });
   }
