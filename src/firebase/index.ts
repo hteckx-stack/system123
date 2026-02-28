@@ -1,4 +1,3 @@
-
 'use client';
 
 import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
@@ -33,7 +32,7 @@ export function initializeFirebase(): FirebaseInstances {
   const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
   
   if (typeof window !== 'undefined') {
-    // The debug token must be set on self/window BEFORE initializeAppCheck is called.
+    // Set the debug token on self/window BEFORE initializeAppCheck is called.
     (self as any).FIREBASE_APPCHECK_DEBUG_TOKEN = 'AB7D027F-F89C-44CB-A54A-04825C64BF94';
 
     // Initialize App Check with standard reCAPTCHA v3.

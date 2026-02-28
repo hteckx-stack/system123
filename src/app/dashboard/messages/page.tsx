@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useMemo, useEffect, useRef } from "react"
@@ -12,7 +11,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Send, Search, Filter, MessageSquare, ArrowLeft } from "lucide-react"
+import { Send, Search, MessageSquare, ArrowLeft } from "lucide-react"
 import { sendMessage } from "@/firebase/firestore/messages"
 import { cn } from "@/lib/utils"
 import { formatDistanceToNow } from "date-fns"

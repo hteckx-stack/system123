@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -87,6 +86,8 @@ export default function SignupPage() {
           description = "This email address is already in use.";
       } else if (error.code === 'auth/weak-password') {
           description = "The password is too weak.";
+      } else if (error.code === 'auth/firebase-app-check-token-is-invalid') {
+          description = "App Check verification failed. Please check your token.";
       }
       
       toast({

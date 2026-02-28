@@ -1,4 +1,3 @@
-
 "use client"
 
 import type { Staff } from "@/lib/types"
@@ -30,7 +29,6 @@ import {
   UserCheck,
   MessageSquare,
   Building2,
-  User,
 } from "lucide-react"
 import { useAuth, useFirestore, useUser } from "@/firebase"
 import { sendPasswordResetEmail } from "firebase/auth"
@@ -71,7 +69,7 @@ export function StaffCard({ staff, onEdit }: StaffCardProps) {
   const handleApprove = async () => {
     if (!staff.id || !currentUser) return
     try {
-        await updateUser(firestore, staff.id, { status: "active" })
+        await updateUser(firestore, staff.id, { status: "active", approved: true })
         await logActivity(
             firestore,
             currentUser.uid,
@@ -136,8 +134,8 @@ export function StaffCard({ staff, onEdit }: StaffCardProps) {
     <Card className="border-none shadow-soft hover:shadow-xl transition-all duration-300 rounded-3xl group overflow-hidden bg-white">
       <CardHeader className="pb-4">
         <div className="flex items-start justify-between">
-          <div className="h-16 w-16 bg-slate-50 border-2 border-slate-100 rounded-2xl flex items-center justify-center group-hover:bg-primary/5 group-hover:border-primary/20 transition-all duration-300 shadow-sm">
-            <span className="text-2xl font-bold text-primary">{staff.name.charAt(0)}</span>
+          <div className="h-12 w-12 bg-slate-50 border-2 border-slate-100 rounded-2xl flex items-center justify-center group-hover:bg-primary/5 group-hover:border-primary/20 transition-all duration-300 shadow-sm font-bold text-primary">
+            {staff.name.charAt(0)}
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
