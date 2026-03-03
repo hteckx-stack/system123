@@ -37,9 +37,10 @@ export function initializeFirebase(): FirebaseInstances {
   const database = getDatabase(app);
 
   if (typeof window !== 'undefined') {
-    // Set the debug token provided by the user for development/preview environments
-    // This MUST be set before initializeAppCheck is called.
-    (self as any).FIREBASE_APPCHECK_DEBUG_TOKEN = 'AB7D027F-F89C-44CB-A54A-04825C64BF94';
+    // Correctly setting the debug token on both self and window to ensure the SDK picks it up
+    const debugToken = 'AB7D027F-F89C-44CB-A54A-04825C64BF94';
+    (self as any).FIREBASE_APPCHECK_DEBUG_TOKEN = debugToken;
+    (window as any).FIREBASE_APPCHECK_DEBUG_TOKEN = debugToken;
     
     try {
       initializeAppCheck(app, {
