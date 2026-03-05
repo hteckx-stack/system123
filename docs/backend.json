@@ -11,7 +11,6 @@
         "phone": { "type": "string" },
         "position": { "type": "string" },
         "department": { "type": "string" },
-        "photoUrl": { "type": "string", "format": "uri" },
         "role": { "type": "string", "enum": ["admin", "staff"] },
         "status": { "type": "string", "enum": ["pending", "active", "inactive"] }
       },

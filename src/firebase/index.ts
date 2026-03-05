@@ -1,3 +1,4 @@
+
 'use client';
 
 import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
@@ -29,6 +30,13 @@ export function initializeFirebase(): FirebaseInstances {
     return firebaseCache;
   }
 
+  // Set the debug token before any App Check initialization
+  if (typeof window !== 'undefined') {
+    const debugToken = 'AB7D027F-F89C-44CB-A54A-04825C64BF94';
+    (self as any).FIREBASE_APPCHECK_DEBUG_TOKEN = debugToken;
+    (window as any).FIREBASE_APPCHECK_DEBUG_TOKEN = debugToken;
+  }
+
   const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
   
   const auth = getAuth(app);
@@ -37,11 +45,6 @@ export function initializeFirebase(): FirebaseInstances {
   const database = getDatabase(app);
 
   if (typeof window !== 'undefined') {
-    // Correctly setting the debug token on both self and window to ensure the SDK picks it up
-    const debugToken = 'AB7D027F-F89C-44CB-A54A-04825C64BF94';
-    (self as any).FIREBASE_APPCHECK_DEBUG_TOKEN = debugToken;
-    (window as any).FIREBASE_APPCHECK_DEBUG_TOKEN = debugToken;
-    
     try {
       initializeAppCheck(app, {
         provider: new ReCaptchaV3Provider('6LcVm94qAAAAAK6v7v_Vf_X8n7zP_V_V_V_V_V_V'),
