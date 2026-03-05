@@ -1,4 +1,3 @@
-
 'use client';
 
 import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
@@ -33,8 +32,8 @@ export function initializeFirebase(): FirebaseInstances {
   // Set the debug token before any App Check initialization
   if (typeof window !== 'undefined') {
     const debugToken = 'AB7D027F-F89C-44CB-A54A-04825C64BF94';
-    (self as any).FIREBASE_APPCHECK_DEBUG_TOKEN = debugToken;
     (window as any).FIREBASE_APPCHECK_DEBUG_TOKEN = debugToken;
+    (self as any).FIREBASE_APPCHECK_DEBUG_TOKEN = debugToken;
   }
 
   const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);

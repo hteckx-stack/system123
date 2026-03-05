@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -88,7 +87,7 @@ export default function SignupPage() {
       } else if (error.code === 'auth/weak-password') {
           description = "The password is too weak.";
       } else if (error.code?.includes('app-check')) {
-          description = "Security verification failed. Please ensure you are authorized.";
+          description = "Security verification failed. App Check token error.";
       }
       
       toast({
