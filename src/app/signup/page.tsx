@@ -38,6 +38,7 @@ export default function SignupPage() {
 
     setIsSubmitting(true);
     try {
+      // Create the Authentication user
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const authUser = userCredential.user;
 
@@ -86,8 +87,8 @@ export default function SignupPage() {
           description = "This email address is already in use.";
       } else if (error.code === 'auth/weak-password') {
           description = "The password is too weak.";
-      } else if (error.code?.includes('app-check')) {
-          description = "Security verification failed. App Check token error.";
+      } else if (error.code === 'auth/firebase-app-check-token-is-invalid') {
+          description = "Security check failed. Please refresh and try again.";
       }
       
       toast({
@@ -131,7 +132,7 @@ export default function SignupPage() {
               <Label htmlFor="email" className="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1">Email Address</Label>
                <div className="relative">
                   <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-                  <Input id="email" type="email" placeholder="admin@bluelink.com" required className="pl-10 h-12 rounded-xl" value={email} onChange={(e) => setEmail(e.target.value)} />
+                  <Input id="email" type="email" placeholder="admin@example.com" required className="pl-10 h-12 rounded-xl" value={email} onChange={(e) => setEmail(e.target.value)} />
                 </div>
             </div>
             <div className="grid gap-2">
