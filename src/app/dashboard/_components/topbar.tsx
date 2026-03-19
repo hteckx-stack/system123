@@ -1,4 +1,3 @@
-
 "use client"
 
 import { UserNav } from "./user-nav"
@@ -22,7 +21,6 @@ const navItems = [
   { title: "Staff", href: "/dashboard/staff" },
   { title: "Leave Requests", href: "/dashboard/leave-requests" },
   { title: "Chat Hub", href: "/dashboard/chat" },
-  { title: "Documents", href: "/dashboard/documents" },
   { title: "Audit Trail", href: "/dashboard/activity" },
 ]
 

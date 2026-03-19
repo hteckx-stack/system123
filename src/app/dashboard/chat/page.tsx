@@ -1,12 +1,11 @@
-
 "use client"
 
 import { useState, useMemo, useEffect, useRef } from "react"
 import { collection, query, orderBy, where, onSnapshot, addDoc, serverTimestamp as firestoreTimestamp } from "firebase/firestore"
 import { ref, push, serverTimestamp as rtdbTimestamp } from "firebase/database"
 import { useFirestore, useCollection, useUser, useDatabase } from "@/firebase"
-import type { Conversation, Message, Announcement } from "@/lib/types"
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import type { Conversation, Message, Announcement, Document, Staff } from "@/lib/types"
+import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -16,17 +15,27 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Send, Search, MessageSquare, ArrowLeft, Megaphone, Clock, History as LucideHistory } from "lucide-react"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { Send, Search, MessageSquare, ArrowLeft, Megaphone, Clock, History as LucideHistory, FileText, Download, Plus } from "lucide-react"
 import { sendMessage } from "@/firebase/firestore/messages"
+import { addDocument } from "@/firebase/firestore/documents"
 import { cn } from "@/lib/utils"
 import { formatDistanceToNow } from "date-fns"
 import { useToast } from "@/hooks/use-toast"
+
+const placeholderTemplates = {
+  contract: `CONTRACT OF EMPLOYMENT\n\nBETWEEN:\n[Company Name]\n\nAND:\n{{staffName}}\n\nThis contract is effective from {{date}}.\n...`,
+  payslip: `[Company Logo]\n\nPAYSLIP\n\nStaff Name: {{staffName}}\nMonth: {{month}}\nAmount: \${{amount}}\n\nThis is a summary of your payment.\n...`,
+  warning: `WARNING LETTER\n\nDate: {{date}}\nTo: {{staffName}}\n\nThis letter serves as a formal warning regarding...`
+}
 
 export default function ChatHubPage() {
   const firestore = useFirestore()
   const database = useDatabase()
   const { user } = useUser()
   const { toast } = useToast()
+  
   const [selectedConvId, setSelectedConvId] = useState<string | null>(null)
   const [topicFilter, setTopicFilter] = useState<string>("all")
   const [newMessage, setNewMessage] = useState("")
@@ -40,7 +49,22 @@ export default function ChatHubPage() {
   const [broadcastMessage, setBroadcastMessage] = useState("")
   const [isBroadcasting, setIsBroadcasting] = useState(false)
 
-  // Conversations query
+  // Document State
+  const [selectedStaffId, setSelectedStaffId] = useState<string>("")
+  const [documentType, setDocumentType] = useState<string>("")
+  const [file, setFile] = useState<File | null>(null)
+  const [uploading, setUploading] = useState(false)
+  
+  const [templateStaffId, setTemplateStaffId] = useState<string>("")
+  const [templateDocType, setTemplateDocType] = useState<string>("")
+  const [payslipAmount, setPayslipAmount] = useState<string>("")
+  const [generating, setGenerating] = useState(false)
+
+  const [contractTemplate, setContractTemplate] = useState(placeholderTemplates.contract)
+  const [payslipTemplate, setPayslipTemplate] = useState(placeholderTemplates.payslip)
+  const [warningTemplate, setWarningTemplate] = useState(placeholderTemplates.warning)
+
+  // Data Queries
   const convQuery = useMemo(() => {
     if (topicFilter !== "all") {
       return query(collection(firestore, "conversations"), where("topic", "==", topicFilter))
@@ -50,12 +74,17 @@ export default function ChatHubPage() {
 
   const { data: rawConversations, loading: convsLoading } = useCollection<Conversation>(convQuery)
 
-  // Broadcasts query
   const announcementsQuery = useMemo(() => query(
     collection(firestore, "announcements"), 
     orderBy("sentAt", "desc")
   ), [firestore])
   const { data: sentAnnouncements, loading: broadcastsLoading } = useCollection<Announcement>(announcementsQuery)
+
+  const staffQuery = useMemo(() => collection(firestore, "users"), [firestore])
+  const { data: staffList, loading: staffLoading } = useCollection<Staff>(staffQuery)
+
+  const documentsQuery = useMemo(() => query(collection(firestore, "documents"), orderBy("date", "desc")), [firestore])
+  const { data: documents, loading: documentsLoading } = useCollection<Document>(documentsQuery)
 
   const conversations = useMemo(() => {
     if (!rawConversations) return null;
@@ -113,7 +142,6 @@ export default function ChatHubPage() {
 
     setIsBroadcasting(true)
     try {
-      // 1. Instant Push to Realtime Database
       const rtdbRef = ref(database, 'announcements');
       await push(rtdbRef, {
         title: broadcastTitle,
@@ -122,7 +150,6 @@ export default function ChatHubPage() {
         timestamp: rtdbTimestamp()
       });
 
-      // 2. Log to Firestore for history
       await addDoc(collection(firestore, "announcements"), {
         title: broadcastTitle,
         message: broadcastMessage,
@@ -146,6 +173,72 @@ export default function ChatHubPage() {
     }
   }
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setFile(e.target.files[0])
+    }
+  }
+
+  const handleUploadSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!selectedStaffId || !documentType || !file) {
+      toast({ variant: "destructive", title: "Incomplete Form", description: "All fields are required." })
+      return
+    }
+
+    setUploading(true)
+    try {
+        const staffMember = staffList?.find(s => s.id === selectedStaffId);
+        if (staffMember) {
+          const newDocument: Omit<Document, 'id'> = {
+            staffId: staffMember.id,
+            staffName: staffMember.name,
+            type: documentType,
+            fileName: file.name,
+            date: new Date().toISOString().split('T')[0],
+          };
+          await addDocument(firestore, newDocument);
+        }
+        toast({ title: "Document Uploaded!", description: `${file.name} sent to ${staffMember?.name}.` })
+        setSelectedStaffId("")
+        setDocumentType("")
+        setFile(null)
+    } catch (error) {
+        toast({ variant: "destructive", title: "Upload Failed" })
+    } finally {
+        setUploading(false)
+    }
+  }
+
+  const handleGenerateSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!templateStaffId || !templateDocType) return
+    
+    setGenerating(true)
+    try {
+        const staffMember = staffList?.find(s => s.id === templateStaffId);
+        if (staffMember) {
+            const docName = `${templateDocType.toLowerCase().replace(' ', '-')}-${staffMember.name.toLowerCase().split(' ').join('-')}.pdf`;
+            const newDocument: Omit<Document, 'id'> = {
+                staffId: staffMember.id,
+                staffName: staffMember.name,
+                type: templateDocType,
+                fileName: docName,
+                date: new Date().toISOString().split('T')[0],
+            };
+            await addDocument(firestore, newDocument);
+            toast({ title: "Document Generated!", description: `${templateDocType} sent to ${staffMember.name}.` });
+        }
+        setTemplateStaffId("")
+        setTemplateDocType("")
+        setPayslipAmount("")
+    } catch (error) {
+        toast({ variant: "destructive", title: "Generation Failed" });
+    } finally {
+        setGenerating(false)
+    }
+  }
+
   const getTopicColor = (topic: string) => {
     switch (topic) {
       case 'Contract': return 'bg-blue-50 text-blue-700'
@@ -158,15 +251,18 @@ export default function ChatHubPage() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-10rem)] gap-6 animate-in fade-in duration-500">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-[#0D47A1]">Chat Hub</h1>
-        <p className="text-[#6B7280]">Centralized communication for direct messages and broadcasts.</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-[#0D47A1]">Chat Hub</h1>
+          <p className="text-[#6B7280]">Centralized messaging, broadcasts, and official documents.</p>
+        </div>
       </div>
 
       <Tabs defaultValue="messages" className="flex-1 flex flex-col overflow-hidden">
         <TabsList className="bg-white p-1 rounded-xl shadow-soft border border-slate-100 self-start mb-4">
           <TabsTrigger value="messages" className="rounded-lg font-bold px-6">Direct Messages</TabsTrigger>
           <TabsTrigger value="broadcasts" className="rounded-lg font-bold px-6">Broadcasts</TabsTrigger>
+          <TabsTrigger value="documents" className="rounded-lg font-bold px-6">Files & Documents</TabsTrigger>
         </TabsList>
 
         <TabsContent value="messages" className="flex-1 flex flex-col overflow-hidden m-0">
@@ -397,6 +493,185 @@ export default function ChatHubPage() {
                   ))}
                 </div>
               </ScrollArea>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="documents" className="flex-1 overflow-hidden m-0">
+          <div className="grid gap-6 lg:grid-cols-12 h-full overflow-hidden">
+            <div className="lg:col-span-4 flex flex-col gap-6 overflow-hidden">
+              <Card className="border-none shadow-soft rounded-3xl bg-white overflow-hidden flex flex-col">
+                <CardHeader className="bg-primary p-6 text-white">
+                  <div className="flex items-center gap-3">
+                    <Plus className="h-5 w-5" />
+                    <CardTitle className="text-lg">Create & Send</CardTitle>
+                  </div>
+                </CardHeader>
+                <ScrollArea className="flex-1">
+                  <CardContent className="p-6">
+                    <Tabs defaultValue="upload">
+                      <TabsList className="grid w-full grid-cols-2 mb-6">
+                        <TabsTrigger value="upload" className="text-xs font-bold">Upload</TabsTrigger>
+                        <TabsTrigger value="template" className="text-xs font-bold">Template</TabsTrigger>
+                      </TabsList>
+                      <TabsContent value="upload" className="m-0 space-y-4">
+                        <form onSubmit={handleUploadSubmit} className="space-y-4">
+                          <div className="space-y-2">
+                            <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Select Staff</Label>
+                            <Select value={selectedStaffId} onValueChange={setSelectedStaffId}>
+                              <SelectTrigger className="h-11 rounded-xl bg-slate-50 border-none">
+                                <SelectValue placeholder="Staff Member" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {staffList?.filter(s => s.status === 'active').map(s => (
+                                  <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Doc Type</Label>
+                            <Select value={documentType} onValueChange={setDocumentType}>
+                              <SelectTrigger className="h-11 rounded-xl bg-slate-50 border-none">
+                                <SelectValue placeholder="Type" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Payslip">Payslip</SelectItem>
+                                <SelectItem value="Warning Letter">Warning Letter</SelectItem>
+                                <SelectItem value="Contract">Contract</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">File</Label>
+                            <Input type="file" onChange={handleFileChange} className="h-11 rounded-xl border-dashed" />
+                          </div>
+                          <Button disabled={uploading} className="w-full rounded-xl h-11 font-bold">
+                            {uploading ? "Sending..." : "Send Document"}
+                          </Button>
+                        </form>
+                      </TabsContent>
+                      <TabsContent value="template" className="m-0 space-y-4">
+                        <form onSubmit={handleGenerateSubmit} className="space-y-4">
+                          <div className="space-y-2">
+                            <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Select Staff</Label>
+                            <Select value={templateStaffId} onValueChange={setTemplateStaffId}>
+                              <SelectTrigger className="h-11 rounded-xl bg-slate-50 border-none">
+                                <SelectValue placeholder="Staff Member" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {staffList?.filter(s => s.status === 'active').map(s => (
+                                  <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Template</Label>
+                            <Select value={templateDocType} onValueChange={setTemplateDocType}>
+                              <SelectTrigger className="h-11 rounded-xl bg-slate-50 border-none">
+                                <SelectValue placeholder="Choose Template" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Contract">Contract</SelectItem>
+                                <SelectItem value="Payslip">Payslip</SelectItem>
+                                <SelectItem value="Warning Letter">Warning Letter</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <Button disabled={generating} className="w-full rounded-xl h-11 font-bold">
+                            {generating ? "Generating..." : "Generate & Send"}
+                          </Button>
+                        </form>
+                      </TabsContent>
+                    </Tabs>
+                  </CardContent>
+                </ScrollArea>
+              </Card>
+            </div>
+
+            <div className="lg:col-span-8 flex flex-col gap-6 overflow-hidden">
+              <Card className="border-none shadow-soft rounded-3xl bg-white overflow-hidden flex flex-col">
+                <CardHeader className="bg-slate-50 border-b flex flex-row items-center justify-between p-6">
+                  <div className="flex items-center gap-3">
+                    <FileText className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-lg">Document Registry</CardTitle>
+                  </div>
+                  <Badge variant="outline" className="font-bold text-[10px] tracking-widest">
+                    {documents?.length || 0} RECORDS
+                  </Badge>
+                </CardHeader>
+                <ScrollArea className="flex-1">
+                  <Table>
+                    <TableHeader className="bg-slate-50/50">
+                      <TableRow className="h-12 uppercase text-[10px] tracking-widest font-bold">
+                        <TableHead className="px-6">Recipient</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>File</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead className="text-right px-6">Action</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {documentsLoading ? (
+                        Array.from({ length: 5 }).map((_, i) => (
+                          <TableRow key={i}>
+                            <TableCell colSpan={5} className="p-4"><Skeleton className="h-8 w-full" /></TableCell>
+                          </TableRow>
+                        ))
+                      ) : documents && documents.length > 0 ? (
+                        documents.map((doc) => (
+                          <TableRow key={doc.id} className="h-16 hover:bg-slate-50/50">
+                            <TableCell className="px-6 font-bold text-slate-900">{doc.staffName}</TableCell>
+                            <TableCell>
+                              <Badge className="bg-slate-100 text-slate-600 border-none text-[9px] font-bold">
+                                {doc.type}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-xs text-slate-500 max-w-[150px] truncate">{doc.fileName}</TableCell>
+                            <TableCell className="text-xs font-medium text-slate-400">{doc.date}</TableCell>
+                            <TableCell className="text-right px-6">
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-primary">
+                                <Download className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={5} className="h-40 text-center text-slate-300">
+                            No documents archived yet.
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </ScrollArea>
+              </Card>
+
+              <Card className="border-none shadow-soft rounded-3xl bg-white overflow-hidden">
+                <CardHeader className="bg-slate-50 border-b p-6">
+                  <CardTitle className="text-lg font-bold">System Templates</CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <Accordion type="single" collapsible className="w-full">
+                    <AccordionItem value="contract" className="border-none">
+                      <AccordionTrigger className="px-6 hover:no-underline font-bold text-sm">Contract Template</AccordionTrigger>
+                      <AccordionContent className="px-6 pb-6">
+                        <Textarea value={contractTemplate} onChange={(e) => setContractTemplate(e.target.value)} className="min-h-[150px] text-xs font-mono mb-4" />
+                        <Button size="sm" onClick={() => toast({ title: "Template Saved" })} className="rounded-lg h-9">Update Template</Button>
+                      </AccordionContent>
+                    </AccordionItem>
+                    <AccordionItem value="payslip" className="border-none border-t">
+                      <AccordionTrigger className="px-6 hover:no-underline font-bold text-sm">Payslip Template</AccordionTrigger>
+                      <AccordionContent className="px-6 pb-6">
+                        <Textarea value={payslipTemplate} onChange={(e) => setPayslipTemplate(e.target.value)} className="min-h-[150px] text-xs font-mono mb-4" />
+                        <Button size="sm" onClick={() => toast({ title: "Template Saved" })} className="rounded-lg h-9">Update Template</Button>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </TabsContent>

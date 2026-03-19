@@ -1,4 +1,3 @@
-
 "use client"
 
 import Link from "next/link"
@@ -6,7 +5,6 @@ import { usePathname } from "next/navigation"
 import {
   LayoutDashboard,
   Users,
-  FileText,
   History as LucideHistory,
   CalendarDays,
   MessageSquare,
@@ -15,7 +13,6 @@ import {
   ChevronRight,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
 import { useAuth } from "@/firebase"
 import { signOut } from "firebase/auth"
 import { useRouter } from "next/navigation"
@@ -26,7 +23,6 @@ const navItems = [
   { title: "Staff", href: "/dashboard/staff", icon: Users },
   { title: "Leave Requests", href: "/dashboard/leave-requests", icon: CalendarDays },
   { title: "Chat Hub", href: "/dashboard/chat", icon: MessageSquare },
-  { title: "Documents", href: "/dashboard/documents", icon: FileText },
   { title: "Audit Trail", href: "/dashboard/activity", icon: LucideHistory },
 ]
 
