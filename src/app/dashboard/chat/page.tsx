@@ -5,7 +5,7 @@ import { collection, query, orderBy, where, onSnapshot, addDoc, serverTimestamp 
 import { ref, push, serverTimestamp as rtdbTimestamp } from "firebase/database"
 import { useFirestore, useCollection, useUser, useDatabase } from "@/firebase"
 import type { Conversation, Message, Announcement, Document, Staff } from "@/lib/types"
-import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -57,12 +57,10 @@ export default function ChatHubPage() {
   
   const [templateStaffId, setTemplateStaffId] = useState<string>("")
   const [templateDocType, setTemplateDocType] = useState<string>("")
-  const [payslipAmount, setPayslipAmount] = useState<string>("")
   const [generating, setGenerating] = useState(false)
 
   const [contractTemplate, setContractTemplate] = useState(placeholderTemplates.contract)
   const [payslipTemplate, setPayslipTemplate] = useState(placeholderTemplates.payslip)
-  const [warningTemplate, setWarningTemplate] = useState(placeholderTemplates.warning)
 
   // Data Queries
   const convQuery = useMemo(() => {
@@ -81,7 +79,7 @@ export default function ChatHubPage() {
   const { data: sentAnnouncements, loading: broadcastsLoading } = useCollection<Announcement>(announcementsQuery)
 
   const staffQuery = useMemo(() => collection(firestore, "users"), [firestore])
-  const { data: staffList, loading: staffLoading } = useCollection<Staff>(staffQuery)
+  const { data: staffList } = useCollection<Staff>(staffQuery)
 
   const documentsQuery = useMemo(() => query(collection(firestore, "documents"), orderBy("date", "desc")), [firestore])
   const { data: documents, loading: documentsLoading } = useCollection<Document>(documentsQuery)
@@ -231,7 +229,6 @@ export default function ChatHubPage() {
         }
         setTemplateStaffId("")
         setTemplateDocType("")
-        setPayslipAmount("")
     } catch (error) {
         toast({ variant: "destructive", title: "Generation Failed" });
     } finally {
@@ -265,6 +262,7 @@ export default function ChatHubPage() {
           <TabsTrigger value="documents" className="rounded-lg font-bold px-6">Files & Documents</TabsTrigger>
         </TabsList>
 
+        {/* MESSAGES TAB CONTENT (EXISTING) */}
         <TabsContent value="messages" className="flex-1 flex flex-col overflow-hidden m-0">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
              <div className="flex items-center gap-3">
@@ -419,6 +417,7 @@ export default function ChatHubPage() {
           </div>
         </TabsContent>
 
+        {/* BROADCASTS TAB CONTENT (REDESIGNED) */}
         <TabsContent value="broadcasts" className="flex-1 overflow-hidden m-0">
           <div className="grid gap-8 lg:grid-cols-12 h-full">
             <Card className="lg:col-span-5 border-none shadow-soft rounded-3xl overflow-hidden bg-white flex flex-col">
@@ -497,6 +496,7 @@ export default function ChatHubPage() {
           </div>
         </TabsContent>
 
+        {/* FILES & DOCUMENTS TAB CONTENT (REDESIGNED) */}
         <TabsContent value="documents" className="flex-1 overflow-hidden m-0">
           <div className="grid gap-6 lg:grid-cols-12 h-full overflow-hidden">
             <div className="lg:col-span-4 flex flex-col gap-6 overflow-hidden">
