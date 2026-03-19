@@ -42,7 +42,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/table"; // Fixed import if necessary, but assuming standard component table
+} from "@/components/ui/table";
 import { formatDistanceToNow, format } from "date-fns";
 
 export default function Dashboard() {
