@@ -12,7 +12,8 @@
         "position": { "type": "string" },
         "department": { "type": "string" },
         "role": { "type": "string", "enum": ["admin", "staff"] },
-        "status": { "type": "string", "enum": ["pending", "active", "inactive"] }
+        "status": { "type": "string", "enum": ["pending", "active", "inactive"] },
+        "approved": { "type": "boolean" }
       },
       "required": ["name", "email", "status", "role"]
     },
@@ -110,6 +111,33 @@
         "timestamp": { "type": "string", "format": "date-time" }
       },
       "required": ["conversation_id", "sender_id", "sender_role", "message", "timestamp"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "System notification for users.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "type": { "type": "string", "enum": ["leave", "checkin", "message", "signup"] },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "message", "type", "read", "createdAt"]
+    },
+    "ActivityLog": {
+      "title": "Activity Log",
+      "description": "Log of system activities.",
+      "type": "object",
+      "properties": {
+        "action": { "type": "string" },
+        "details": { "type": "string" },
+        "user_id": { "type": "string" },
+        "user_name": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["action", "details", "user_id", "user_name", "timestamp"]
     }
   },
   "auth": {
@@ -147,6 +175,14 @@
     "/messages/{messageId}": {
       "schema": { "$ref": "#/entities/Message" },
       "description": "Stores individual messages."
+    },
+    "/notifications/{notificationId}": {
+      "schema": { "$ref": "#/entities/Notification" },
+      "description": "Stores notifications."
+    },
+    "/activity_logs/{logId}": {
+      "schema": { "$ref": "#/entities/ActivityLog" },
+      "description": "Stores system audit logs."
     }
   }
 }
