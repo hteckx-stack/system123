@@ -14,7 +14,6 @@ import {
   Menu,
   CalendarDays,
   MessageSquare,
-  Clock,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
@@ -28,12 +27,10 @@ import { Button } from "@/components/ui/button"
 
 const navItems: NavItem[] = [
   { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard, variant: "ghost" },
-  { title: "Check-ins", href: "/dashboard/check-ins", icon: Clock, variant: "ghost" },
   { title: "Staff", href: "/dashboard/staff", icon: Users, variant: "ghost" },
   { title: "Leave Requests", href: "/dashboard/leave-requests", icon: CalendarDays, variant: "ghost" },
   { title: "Messages", href: "/dashboard/messages", icon: MessageSquare, variant: "ghost" },
   { title: "Documents", href: "/dashboard/documents", icon: FileText, variant: "ghost" },
-  { title: "Announcements", href: "/dashboard/announcements", icon: Megaphone, variant: "ghost" },
   { title: "Activity", href: "/dashboard/activity", icon: LucideHistory, variant: "ghost" },
 ]
 

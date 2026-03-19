@@ -10,7 +10,6 @@ import {
   History as LucideHistory,
   CalendarDays,
   MessageSquare,
-  Clock,
   LogOut,
   ChevronLeft,
   ChevronRight,
@@ -25,7 +24,6 @@ import { useState } from "react"
 const navItems = [
   { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { title: "Staff Management", href: "/dashboard/staff", icon: Users },
-  { title: "Arrival Logs", href: "/dashboard/check-ins", icon: Clock },
   { title: "Leave Requests", href: "/dashboard/leave-requests", icon: CalendarDays },
   { title: "Chat Hub", href: "/dashboard/chat", icon: MessageSquare },
   { title: "Documents", href: "/dashboard/documents", icon: FileText },
