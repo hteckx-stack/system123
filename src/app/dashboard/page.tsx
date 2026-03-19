@@ -93,7 +93,7 @@ export default function Dashboard() {
     total: staffList?.length || 0,
     active: staffList?.filter(s => s.status === 'active').length || 0,
     pending: staffList?.filter(s => s.approved !== true).length || 0,
-    checkedIn: 0 // In a real app, this would be derived from a specific active_sessions collection
+    checkedIn: 0
   }), [staffList]);
 
   const handleApproveAccess = async (staff: Staff, loginReqId?: string) => {
@@ -127,7 +127,6 @@ export default function Dashboard() {
         <p className="text-[#6B7280]">Real-time synchronization and security oversight for the Staff Ecosystem.</p>
       </div>
 
-      {/* Row 1: Quick Stats */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card className="border-none shadow-soft rounded-2xl bg-white overflow-hidden">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -172,10 +171,7 @@ export default function Dashboard() {
       </div>
 
       <div className="grid gap-8 lg:grid-cols-7">
-        {/* Main Column */}
         <div className="lg:col-span-4 space-y-8">
-          
-          {/* Pending Check-ins Big Card */}
           <Card className="border-none shadow-soft bg-white rounded-3xl overflow-hidden border-t-4 border-t-primary">
             <CardHeader className="bg-slate-50 border-b">
               <div className="flex items-center justify-between">
@@ -230,7 +226,6 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          {/* Registration Approvals Panel */}
           <Card className="border-none shadow-soft bg-white rounded-3xl overflow-hidden">
             <CardHeader className="bg-slate-50 border-b">
               <CardTitle className="text-xl text-[#0D47A1]">Login Registration Requests</CardTitle>
@@ -238,7 +233,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y">
-                {onboardingLoading ? (
+                {loginsLoading ? (
                   <div className="p-6 space-y-4">
                     <Skeleton className="h-16 w-full rounded-xl" />
                     <Skeleton className="h-16 w-full rounded-xl" />
@@ -280,10 +275,7 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {/* Sidebar Column */}
         <div className="lg:col-span-3 space-y-8">
-          
-          {/* Recent Announcements Slider */}
           <Card className="border-none shadow-soft bg-white rounded-3xl overflow-hidden">
             <CardHeader className="bg-slate-50 border-b">
               <CardTitle className="text-lg text-primary flex items-center gap-2">
@@ -323,7 +315,6 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          {/* Quick Actions Card */}
           <Card className="border-none shadow-soft bg-white rounded-3xl overflow-hidden">
             <CardHeader className="bg-slate-50 border-b">
               <CardTitle className="text-lg text-primary">Admin Shortcuts</CardTitle>

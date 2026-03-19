@@ -69,7 +69,7 @@ export default function SignupPage() {
               read: false
           });
         } catch (notifErr) {
-          console.warn("Notification error ignored:", notifErr);
+          // Non-critical failure
         }
       }
 
@@ -81,19 +81,21 @@ export default function SignupPage() {
       router.push('/dashboard');
     } catch (error: any) {
       setIsSubmitting(false);
-      console.error("Signup process failed:", error);
+      let title = "Sign Up Failed";
       let description = "An unexpected error occurred.";
+
       if (error.code === 'auth/email-already-in-use') {
-          description = "This email address is already in use.";
+          title = "Email Registered";
+          description = "This email is already linked to an account. Please try logging in.";
       } else if (error.code === 'auth/weak-password') {
-          description = "The password is too weak.";
-      } else if (error.code === 'auth/firebase-app-check-token-is-invalid') {
-          description = "Security check failed. Please refresh and try again.";
+          description = "Your password should be at least 6 characters long.";
+      } else if (error.code === 'auth/invalid-email') {
+          description = "The email address provided is invalid.";
       }
       
       toast({
         variant: 'destructive',
-        title: 'Sign Up Failed',
+        title,
         description,
       });
     }
