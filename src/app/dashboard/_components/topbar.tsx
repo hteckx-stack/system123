@@ -21,8 +21,9 @@ const navItems = [
   { title: "Dashboard", href: "/dashboard" },
   { title: "Staff", href: "/dashboard/staff" },
   { title: "Leave Requests", href: "/dashboard/leave-requests" },
-  { title: "Chat", href: "/dashboard/chat" },
+  { title: "Chat Hub", href: "/dashboard/chat" },
   { title: "Documents", href: "/dashboard/documents" },
+  { title: "Audit Trail", href: "/dashboard/activity" },
 ]
 
 export function Topbar() {

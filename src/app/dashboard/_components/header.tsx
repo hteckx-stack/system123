@@ -9,7 +9,6 @@ import {
   LayoutDashboard,
   Users,
   FileText,
-  Megaphone,
   History as LucideHistory,
   Menu,
   CalendarDays,
@@ -29,9 +28,9 @@ const navItems: NavItem[] = [
   { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard, variant: "ghost" },
   { title: "Staff", href: "/dashboard/staff", icon: Users, variant: "ghost" },
   { title: "Leave Requests", href: "/dashboard/leave-requests", icon: CalendarDays, variant: "ghost" },
-  { title: "Messages", href: "/dashboard/messages", icon: MessageSquare, variant: "ghost" },
+  { title: "Chat Hub", href: "/dashboard/chat", icon: MessageSquare, variant: "ghost" },
   { title: "Documents", href: "/dashboard/documents", icon: FileText, variant: "ghost" },
-  { title: "Activity", href: "/dashboard/activity", icon: LucideHistory, variant: "ghost" },
+  { title: "Audit Trail", href: "/dashboard/activity", icon: LucideHistory, variant: "ghost" },
 ]
 
 export function AppHeader() {

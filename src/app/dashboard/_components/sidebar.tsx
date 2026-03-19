@@ -23,7 +23,7 @@ import { useState } from "react"
 
 const navItems = [
   { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { title: "Staff Management", href: "/dashboard/staff", icon: Users },
+  { title: "Staff", href: "/dashboard/staff", icon: Users },
   { title: "Leave Requests", href: "/dashboard/leave-requests", icon: CalendarDays },
   { title: "Chat Hub", href: "/dashboard/chat", icon: MessageSquare },
   { title: "Documents", href: "/dashboard/documents", icon: FileText },
@@ -44,7 +44,7 @@ export function Sidebar() {
   return (
     <aside 
       className={cn(
-        "hidden md:flex flex-col h-screen bg-[#0A3578] text-white transition-all duration-300 relative",
+        "hidden md:flex flex-col h-screen bg-[#0A3578] text-white transition-all duration-300 relative shrink-0",
         isCollapsed ? "w-20" : "w-64"
       )}
     >
