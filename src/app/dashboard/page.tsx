@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
@@ -22,7 +23,8 @@ import {
   Users,
   MapPin,
   ShieldCheck,
-  ChevronRight
+  ChevronRight,
+  MessageSquare
 } from "lucide-react";
 import Link from 'next/link';
 import type { Staff, LoginRequest, Announcement, CheckIn } from "@/lib/types";
@@ -326,10 +328,10 @@ export default function Dashboard() {
                       <span className="font-bold text-slate-700 text-xs uppercase tracking-widest">Assign Duties</span>
                   </Button>
                </Link>
-               <Link href="/dashboard/announcements">
+               <Link href="/dashboard/chat">
                   <Button variant="outline" className="w-full justify-start gap-3 h-14 rounded-xl border-slate-100 hover:bg-slate-50">
-                      <Megaphone className="h-5 w-5 text-orange-500" />
-                      <span className="font-bold text-slate-700 text-xs uppercase tracking-widest">Broadcast Tool</span>
+                      <MessageSquare className="h-5 w-5 text-orange-500" />
+                      <span className="font-bold text-slate-700 text-xs uppercase tracking-widest">Chat Hub</span>
                   </Button>
                </Link>
                <Link href="/dashboard/staff">

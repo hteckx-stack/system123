@@ -7,7 +7,6 @@ import {
   LayoutDashboard,
   Users,
   FileText,
-  Megaphone,
   History as LucideHistory,
   CalendarDays,
   MessageSquare,
@@ -30,9 +29,8 @@ const navItems = [
   { title: "Task Assignments", href: "/dashboard/tasks", icon: ClipboardList },
   { title: "Arrival Logs", href: "/dashboard/check-ins", icon: Clock },
   { title: "Leave Requests", href: "/dashboard/leave-requests", icon: CalendarDays },
-  { title: "Communications", href: "/dashboard/messages", icon: MessageSquare },
+  { title: "Chat", href: "/dashboard/chat", icon: MessageSquare },
   { title: "Documents", href: "/dashboard/documents", icon: FileText },
-  { title: "Announcements", href: "/dashboard/announcements", icon: Megaphone },
   { title: "Audit Trail", href: "/dashboard/activity", icon: LucideHistory },
 ]
 

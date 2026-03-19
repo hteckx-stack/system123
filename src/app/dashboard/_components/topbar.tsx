@@ -22,9 +22,8 @@ const navItems = [
   { title: "Staff", href: "/dashboard/staff" },
   { title: "Check-ins", href: "/dashboard/check-ins" },
   { title: "Leave Requests", href: "/dashboard/leave-requests" },
-  { title: "Messages", href: "/dashboard/messages" },
+  { title: "Chat", href: "/dashboard/chat" },
   { title: "Documents", href: "/dashboard/documents" },
-  { title: "Announcements", href: "/dashboard/announcements" },
 ]
 
 export function Topbar() {
@@ -33,7 +32,7 @@ export function Topbar() {
 
   const getPageTitle = () => {
     const item = navItems.find(i => i.href === pathname)
-    return item ? item.title : "EMPLOYEE APP"
+    return item ? item.title : "ADMIN PORTAL"
   }
 
   return (
@@ -47,7 +46,7 @@ export function Topbar() {
           </SheetTrigger>
           <SheetContent side="left" className="bg-[#0A3578] text-white border-none">
             <SheetHeader>
-              <SheetTitle className="text-white text-left text-2xl font-bold mb-8">EMPLOYEE APP</SheetTitle>
+              <SheetTitle className="text-white text-left text-2xl font-bold mb-8">ADMIN PORTAL</SheetTitle>
             </SheetHeader>
             <nav className="flex flex-col gap-2">
               {navItems.map((item) => (
@@ -65,7 +64,7 @@ export function Topbar() {
             </nav>
           </SheetContent>
         </Sheet>
-        <span className="font-bold text-lg">EMPLOYEE APP</span>
+        <span className="font-bold text-lg">ADMIN PORTAL</span>
       </div>
 
       <div className="hidden md:flex items-center gap-4 flex-1">
@@ -84,8 +83,8 @@ export function Topbar() {
           variant="ghost" 
           size="icon" 
           className="text-white hover:bg-white/10"
-          onClick={() => router.push('/dashboard/messages')}
-          title="Message Center"
+          onClick={() => router.push('/dashboard/chat')}
+          title="Chat Hub"
         >
           <MessageSquare className="h-5 w-5" />
         </Button>
