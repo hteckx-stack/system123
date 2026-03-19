@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import {
   LayoutDashboard,
   Users,
@@ -11,18 +11,32 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/firebase"
 import { signOut } from "firebase/auth"
-import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
 
 const navItems = [
   { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { title: "Staff", href: "/dashboard/staff", icon: Users },
   { title: "Leave Requests", href: "/dashboard/leave-requests", icon: CalendarDays },
-  { title: "Chat Hub", href: "/dashboard/chat", icon: MessageSquare },
+  { 
+    title: "Chat Hub", 
+    href: "/dashboard/chat", 
+    icon: MessageSquare,
+    subItems: [
+        { title: "Direct Messages", href: "/dashboard/chat?tab=messages" },
+        { title: "Broadcasts", href: "/dashboard/chat?tab=broadcasts" },
+        { title: "Files & Documents", href: "/dashboard/chat?tab=documents" },
+    ]
+  },
   { title: "Audit Trail", href: "/dashboard/activity", icon: LucideHistory },
 ]
 
@@ -31,6 +45,13 @@ export function Sidebar() {
   const auth = useAuth()
   const router = useRouter()
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const [isChatOpen, setIsChatOpen] = useState(false)
+
+  useEffect(() => {
+    if (pathname.startsWith("/dashboard/chat")) {
+        setIsChatOpen(true)
+    }
+  }, [pathname])
 
   const handleLogout = async () => {
     await signOut(auth)
@@ -48,28 +69,91 @@ export function Sidebar() {
         <div className="bg-white text-[#0A3578] p-1.5 rounded-lg shadow-sm shrink-0">
           <LayoutDashboard className="h-6 w-6" />
         </div>
-        {!isCollapsed && <span className="text-xl font-bold tracking-tight">ADMIN PORTAL</span>}
+        {!isCollapsed && <span className="text-xl font-bold tracking-tight text-white">ADMIN PORTAL</span>}
       </div>
 
       <nav className="flex-1 px-3 space-y-1">
-        {navItems.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={cn(
-              "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all group",
-              pathname === item.href
-                ? "bg-[#1976D2] text-white shadow-lg shadow-black/10"
-                : "text-white/70 hover:bg-white/10 hover:text-white"
-            )}
-          >
-            <item.icon className={cn(
-              "h-5 w-5 shrink-0",
-              pathname === item.href ? "text-white" : "group-hover:text-white"
-            )} />
-            {!isCollapsed && <span className="font-medium">{item.title}</span>}
-          </Link>
-        ))}
+        {navItems.map((item) => {
+          const isActive = pathname === item.href || (item.subItems && pathname.startsWith(item.href))
+          
+          if (item.subItems) {
+            return (
+                <Collapsible
+                    key={item.href}
+                    open={isChatOpen}
+                    onOpenChange={setIsChatOpen}
+                    className="w-full"
+                >
+                    <div className={cn(
+                        "flex items-center justify-between w-full px-3 py-2.5 rounded-lg transition-all group cursor-pointer",
+                        isActive ? "bg-[#1976D2] text-white" : "text-white/70 hover:bg-white/10 hover:text-white"
+                    )}>
+                        <div 
+                            className="flex items-center gap-3 flex-1"
+                            onClick={() => {
+                                router.push(item.href)
+                                if (isCollapsed) setIsCollapsed(false)
+                                setIsChatOpen(true)
+                            }}
+                        >
+                            <item.icon className={cn(
+                                "h-5 w-5 shrink-0",
+                                isActive ? "text-white" : "group-hover:text-white"
+                            )} />
+                            {!isCollapsed && <span className="font-medium">{item.title}</span>}
+                        </div>
+                        {!isCollapsed && (
+                            <CollapsibleTrigger asChild>
+                                <button className="p-1 hover:bg-white/10 rounded-md transition-colors">
+                                    <ChevronDown className={cn("h-4 w-4 transition-transform duration-200", isChatOpen && "rotate-180")} />
+                                </button>
+                            </CollapsibleTrigger>
+                        )}
+                    </div>
+                    <CollapsibleContent className="space-y-1 mt-1 px-4">
+                        {!isCollapsed && item.subItems.map((sub) => {
+                            const isSubActive = pathname === "/dashboard/chat" && 
+                                (typeof window !== 'undefined' ? (window.location.search === sub.href.split('?')[1] || (window.location.search === '' && sub.href.includes('tab=messages'))) : false);
+
+                            return (
+                                <Link
+                                    key={sub.href}
+                                    href={sub.href}
+                                    className={cn(
+                                        "flex items-center gap-3 px-3 py-2 rounded-lg text-[11px] transition-all",
+                                        isSubActive
+                                            ? "text-white font-bold bg-white/10"
+                                            : "text-white/40 hover:text-white hover:bg-white/5"
+                                    )}
+                                >
+                                    {sub.title}
+                                </Link>
+                            )
+                        })}
+                    </CollapsibleContent>
+                </Collapsible>
+            )
+          }
+
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all group",
+                isActive
+                  ? "bg-[#1976D2] text-white shadow-lg shadow-black/10"
+                  : "text-white/70 hover:bg-white/10 hover:text-white"
+              )}
+            >
+              <item.icon className={cn(
+                "h-5 w-5 shrink-0",
+                isActive ? "text-white" : "group-hover:text-white"
+              )} />
+              {!isCollapsed && <span className="font-medium">{item.title}</span>}
+            </Link>
+          )
+        })}
       </nav>
 
       <div className="p-4 border-t border-white/10">

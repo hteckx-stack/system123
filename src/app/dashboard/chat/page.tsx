@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect, useRef } from "react"
+import { useState, useMemo, useEffect, useRef, Suspense } from "react"
 import { collection, query, orderBy, where, onSnapshot, addDoc, serverTimestamp as firestoreTimestamp } from "firebase/firestore"
 import { ref, push, serverTimestamp as rtdbTimestamp } from "firebase/database"
 import { useFirestore, useCollection, useUser, useDatabase } from "@/firebase"
@@ -23,6 +23,7 @@ import { addDocument } from "@/firebase/firestore/documents"
 import { cn } from "@/lib/utils"
 import { formatDistanceToNow } from "date-fns"
 import { useToast } from "@/hooks/use-toast"
+import { useSearchParams } from "next/navigation"
 
 const placeholderTemplates = {
   contract: `CONTRACT OF EMPLOYMENT\n\nBETWEEN:\n[Company Name]\n\nAND:\n{{staffName}}\n\nThis contract is effective from {{date}}.\n...`,
@@ -31,11 +32,22 @@ const placeholderTemplates = {
 }
 
 export default function ChatHubPage() {
+  return (
+    <Suspense fallback={<Skeleton className="w-full h-full" />}>
+      <ChatHubContent />
+    </Suspense>
+  )
+}
+
+function ChatHubContent() {
   const firestore = useFirestore()
   const database = useDatabase()
   const { user } = useUser()
   const { toast } = useToast()
+  const searchParams = useSearchParams()
+  const tabParam = searchParams.get('tab')
   
+  const [activeTab, setActiveTab] = useState("messages")
   const [selectedConvId, setSelectedConvId] = useState<string | null>(null)
   const [topicFilter, setTopicFilter] = useState<string>("all")
   const [newMessage, setNewMessage] = useState("")
@@ -61,6 +73,12 @@ export default function ChatHubPage() {
 
   const [contractTemplate, setContractTemplate] = useState(placeholderTemplates.contract)
   const [payslipTemplate, setPayslipTemplate] = useState(placeholderTemplates.payslip)
+
+  useEffect(() => {
+    if (tabParam && ["messages", "broadcasts", "documents"].includes(tabParam)) {
+      setActiveTab(tabParam)
+    }
+  }, [tabParam])
 
   // Data Queries
   const convQuery = useMemo(() => {
@@ -253,7 +271,7 @@ export default function ChatHubPage() {
         <p className="text-[#6B7280] text-[10px] font-medium uppercase tracking-wider">Messaging & Official Documents</p>
       </div>
 
-      <Tabs defaultValue="messages" className="flex-1 flex flex-col overflow-hidden">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
         <TabsList className="bg-white p-1 rounded-xl shadow-soft border border-slate-100 self-start mb-1.5 ml-1">
           <TabsTrigger value="messages" className="rounded-lg font-bold px-4 h-8 text-xs">Direct Messages</TabsTrigger>
           <TabsTrigger value="broadcasts" className="rounded-lg font-bold px-4 h-8 text-xs">Broadcasts</TabsTrigger>

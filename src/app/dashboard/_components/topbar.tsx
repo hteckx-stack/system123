@@ -2,7 +2,7 @@
 
 import { UserNav } from "./user-nav"
 import { NotificationsPopover } from "./notifications-popover"
-import { Menu, Search, MessageSquare } from "lucide-react"
+import { Menu, Search, MessageSquare, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -15,18 +15,33 @@ import {
 import { usePathname, useRouter } from "next/navigation"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
+import { useState } from "react"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
 
 const navItems = [
   { title: "Dashboard", href: "/dashboard" },
   { title: "Staff", href: "/dashboard/staff" },
   { title: "Leave Requests", href: "/dashboard/leave-requests" },
-  { title: "Chat Hub", href: "/dashboard/chat" },
+  { 
+    title: "Chat Hub", 
+    href: "/dashboard/chat",
+    subItems: [
+        { title: "Direct Messages", href: "/dashboard/chat?tab=messages" },
+        { title: "Broadcasts", href: "/dashboard/chat?tab=broadcasts" },
+        { title: "Files & Documents", href: "/dashboard/chat?tab=documents" },
+    ]
+  },
   { title: "Audit Trail", href: "/dashboard/activity" },
 ]
 
 export function Topbar() {
   const pathname = usePathname()
   const router = useRouter()
+  const [isChatOpen, setIsChatOpen] = useState(pathname.startsWith("/dashboard/chat"))
 
   const getPageTitle = () => {
     const item = navItems.find(i => i.href === pathname)
@@ -47,18 +62,60 @@ export function Topbar() {
               <SheetTitle className="text-white text-left text-2xl font-bold mb-8">ADMIN PORTAL</SheetTitle>
             </SheetHeader>
             <nav className="flex flex-col gap-2">
-              {navItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    "px-4 py-3 rounded-lg transition-all",
-                    pathname === item.href ? "bg-[#1976D2]" : "hover:bg-white/10"
-                  )}
-                >
-                  {item.title}
-                </Link>
-              ))}
+              {navItems.map((item) => {
+                const isActive = pathname === item.href
+                if (item.subItems) {
+                    return (
+                        <Collapsible
+                            key={item.href}
+                            open={isChatOpen}
+                            onOpenChange={setIsChatOpen}
+                            className="w-full"
+                        >
+                            <div className={cn(
+                                "flex items-center justify-between px-4 py-3 rounded-lg transition-all",
+                                isActive ? "bg-[#1976D2]" : "hover:bg-white/10"
+                            )}>
+                                <Link 
+                                    href={item.href}
+                                    className="flex-1"
+                                    onClick={() => setIsChatOpen(true)}
+                                >
+                                    {item.title}
+                                </Link>
+                                <CollapsibleTrigger asChild>
+                                    <button className="p-1">
+                                        <ChevronDown className={cn("h-4 w-4 transition-transform", isChatOpen && "rotate-180")} />
+                                    </button>
+                                </CollapsibleTrigger>
+                            </div>
+                            <CollapsibleContent className="flex flex-col gap-1 mt-1 pl-4">
+                                {item.subItems.map(sub => (
+                                    <Link
+                                        key={sub.href}
+                                        href={sub.href}
+                                        className="px-4 py-2 rounded-lg text-sm text-white/60 hover:text-white hover:bg-white/5"
+                                    >
+                                        {sub.title}
+                                    </Link>
+                                ))}
+                            </CollapsibleContent>
+                        </Collapsible>
+                    )
+                }
+                return (
+                    <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                        "px-4 py-3 rounded-lg transition-all",
+                        pathname === item.href ? "bg-[#1976D2]" : "hover:bg-white/10"
+                    )}
+                    >
+                    {item.title}
+                    </Link>
+                )
+              })}
             </nav>
           </SheetContent>
         </Sheet>
