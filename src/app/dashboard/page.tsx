@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
@@ -43,7 +42,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from "@/table"; // Fixed import if necessary, but assuming standard component table
 import { formatDistanceToNow, format } from "date-fns";
 
 export default function Dashboard() {
@@ -52,12 +51,11 @@ export default function Dashboard() {
   const { user: currentUser } = useUser();
   const { toast } = useToast();
 
-  // Data Fetching: Users
-  const staffQuery = useMemo(() => query(
-    collection(firestore, "users"), 
-    where("role", "==", "staff")
+  // Data Fetching: All users (to find pending ones)
+  const usersQuery = useMemo(() => query(
+    collection(firestore, "users")
   ), [firestore]);
-  const { data: staffList, loading: staffLoading } = useCollection<Staff>(staffQuery);
+  const { data: allUsers, loading: staffLoading } = useCollection<Staff>(usersQuery);
 
   // Data Fetching: Login Requests
   const loginRequestsQuery = useMemo(() => collection(firestore, "login_requests"), [firestore]);
@@ -104,11 +102,11 @@ export default function Dashboard() {
   }, [database]);
 
   const stats = useMemo(() => ({
-    total: staffList?.length || 0,
-    active: staffList?.filter(s => s.status === 'active').length || 0,
-    pending: staffList?.filter(s => s.status === 'pending').length || 0,
+    total: allUsers?.length || 0,
+    active: allUsers?.filter(s => s.status === 'active').length || 0,
+    pending: allUsers?.filter(s => s.status === 'pending').length || 0,
     liveCheckins: pendingCheckIns.length
-  }), [staffList, pendingCheckIns]);
+  }), [allUsers, pendingCheckIns]);
 
   const handleApproveAccess = async (staff: Staff, loginReqId?: string) => {
     if (!staff.id || !currentUser) return;
@@ -117,7 +115,7 @@ export default function Dashboard() {
       batch.update(doc(firestore, "users", staff.id), { approved: true, status: "active" });
       if (loginReqId) batch.delete(doc(firestore, "login_requests", loginReqId));
       await batch.commit();
-      await logActivity(firestore, currentUser.uid, currentUser.displayName || "Admin", "Staff Approved", `Authorized mobile access for ${staff.name}.`);
+      await logActivity(firestore, currentUser.uid, currentUser.displayName || "Admin", "Access Approved", `Authorized ${staff.role} access for ${staff.name}.`);
       toast({ title: "Access Authorized", description: `${staff.name} is now approved.` });
     } catch (error) {
       toast({ variant: "destructive", title: "Action Failed" });
@@ -145,7 +143,7 @@ export default function Dashboard() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {[
           { title: "Total Registry", value: stats.total, icon: Users, color: "text-blue-500", label: "Profiles recorded" },
-          { title: "Active Personnel", value: stats.active, icon: ShieldCheck, color: "text-green-500", label: "Authorized mobile users" },
+          { title: "Active Personnel", value: stats.active, icon: ShieldCheck, color: "text-green-500", label: "Authorized users" },
           { title: "Pending Review", value: stats.pending, icon: UserPlus, color: "text-orange-500", label: "Awaiting registration approval" },
           { title: "Live Arrivals", value: stats.liveCheckins, icon: Clock, color: "text-primary", label: "Awaiting GPS authorization" },
         ].map((stat, i) => (
@@ -255,11 +253,11 @@ export default function Dashboard() {
 
       {/* Bottom Grid: Reg Requests, Broadcasts, Shortcuts */}
       <div className="grid gap-8 lg:grid-cols-3">
-        {/* Registration Approvals */}
+        {/* Registration Approvals (Admins & Staff) */}
         <Card className="border-none shadow-soft bg-white rounded-3xl overflow-hidden">
           <CardHeader className="bg-slate-50 border-b flex flex-row items-center justify-between py-5">
-            <CardTitle className="text-base font-bold text-[#0D47A1]">Mobile Registrations</CardTitle>
-            <Badge variant="outline" className="text-[9px] font-bold tracking-widest">{staffList?.filter(s => s.status === 'pending').length || 0} PENDING</Badge>
+            <CardTitle className="text-base font-bold text-[#0D47A1]">Pending Registrations</CardTitle>
+            <Badge variant="outline" className="text-[9px] font-bold tracking-widest">{allUsers?.filter(s => s.status === 'pending').length || 0} PENDING</Badge>
           </CardHeader>
           <CardContent className="p-0">
             <div className="divide-y divide-slate-50">
@@ -268,8 +266,8 @@ export default function Dashboard() {
                   <Skeleton className="h-12 w-full rounded-xl" />
                   <Skeleton className="h-12 w-full rounded-xl" />
                 </div>
-              ) : staffList?.filter(s => s.status === 'pending').length ? (
-                staffList.filter(s => s.status === 'pending').slice(0, 3).map(staff => {
+              ) : allUsers?.filter(s => s.status === 'pending').length ? (
+                allUsers.filter(s => s.status === 'pending').slice(0, 3).map(staff => {
                   const matchingReq = loginRequests?.find(r => r.staffId === staff.id);
                   return (
                     <div key={staff.id} className="flex items-center justify-between p-5 hover:bg-slate-50 transition-all">
@@ -283,7 +281,7 @@ export default function Dashboard() {
                           <p className="font-bold text-sm text-slate-900">{staff.name}</p>
                           <div className="text-[9px] text-slate-400 font-bold uppercase tracking-widest flex items-center gap-1">
                             <Smartphone className="h-2.5 w-2.5" />
-                            {matchingReq ? matchingReq.deviceModel : "Web Portal"}
+                            {staff.role.toUpperCase()} • {matchingReq ? matchingReq.deviceModel : "Web Portal"}
                           </div>
                         </div>
                       </div>
@@ -388,7 +386,7 @@ export default function Dashboard() {
       <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-4 flex items-start gap-3">
         <AlertCircle className="h-5 w-5 text-[#0D47A1] shrink-0 mt-0.5" />
         <p className="text-sm text-[#0D47A1]/80 leading-relaxed">
-          <strong>Security Protocol:</strong> Authorizing an arrival enables the "Check Out" button and operations console in the Staff Mobile App instantly. This portal is the primary Source of Truth for authentication.
+          <strong>Security Protocol:</strong> Authorizing an arrival or registration enables the staff member's profile and mobile app console. This portal is the primary Source of Truth for authentication.
         </p>
       </div>
     </div>

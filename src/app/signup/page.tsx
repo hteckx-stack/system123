@@ -31,10 +31,9 @@ export default function SignupPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!loading && user && !isSubmitting) {
-      router.push('/dashboard');
-    }
-  }, [user, loading, router, isSubmitting]);
+    // We don't redirect immediately if they are logged in but pending
+    // The AuthGuard in dashboard handles redirects to login if not authorized
+  }, [user, loading]);
 
   const handleSignUp = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -49,49 +48,49 @@ export default function SignupPage() {
           displayName: name
       });
       
+      // ALL users start as pending and require admin approval
       const userData = {
           name,
           email,
           role,
-          status: role === 'admin' ? 'active' : 'pending' as const,
-          approved: role === 'admin',
-          department: role === 'admin' ? 'Administration' : (department || "Not Assigned"),
-          position: role === 'admin' ? 'Administrator' : (position || "Not Assigned"),
+          status: 'pending' as const,
+          approved: false,
+          department: department || (role === 'admin' ? "Administration" : "Not Assigned"),
+          position: position || (role === 'admin' ? "Administrator" : "Not Assigned"),
           phone: phone || ""
       };
       
       await updateUser(firestore, authUser.uid, userData);
 
-      if (role === 'staff') {
-        // 1. Create Login Request for Dashboard Approval
-        await addDoc(collection(firestore, "login_requests"), {
-            staffName: name,
-            staffId: authUser.uid,
-            deviceModel: "Web Portal Registration",
-            deviceId: "web-client",
-            timestamp: serverTimestamp()
-        });
+      // Create Login Request for Dashboard Approval for ALL roles
+      await addDoc(collection(firestore, "login_requests"), {
+          staffName: name,
+          staffId: authUser.uid,
+          deviceModel: role === 'admin' ? "Admin Portal Access" : "Web Portal Registration",
+          deviceId: "web-client",
+          timestamp: serverTimestamp()
+      });
 
-        // 2. Send Notification to Admins
-        try {
-          await addNotification(firestore, {
-              userId: 'admin',
-              title: 'New Staff Registration',
-              message: `${name} (${position}) has registered and is awaiting approval.`,
-              type: 'signup',
-              read: false
-          });
-        } catch (notifErr) {
-          // Non-critical failure
-        }
+      // Send Notification to existing Admins
+      try {
+        await addNotification(firestore, {
+            userId: 'admin',
+            title: `New ${role === 'admin' ? 'Admin' : 'Staff'} Registration`,
+            message: `${name} has registered as ${role} and is awaiting approval.`,
+            type: 'signup',
+            read: false
+        });
+      } catch (notifErr) {
+        // Non-critical failure
       }
 
       toast({
-        title: "Account Created",
-        description: role === 'admin' ? "Welcome to the Admin Portal!" : "Your registration has been submitted for approval.",
+        title: "Registration Submitted",
+        description: "Your account is awaiting administrative approval. Please contact a system manager.",
       });
 
-      router.push('/dashboard');
+      // Redirect to login since they can't access dashboard yet
+      router.push('/login');
     } catch (error: any) {
       setIsSubmitting(false);
       let title = "Sign Up Failed";
@@ -132,7 +131,7 @@ export default function SignupPage() {
             </div>
             <div>
               <h1 className="text-3xl font-bold tracking-tight text-slate-900">Portal Access</h1>
-              <p className="text-slate-500 text-sm mt-1">Create an account for staff management</p>
+              <p className="text-slate-500 text-sm mt-1">Request an account for staff management</p>
             </div>
           </div>
           <form onSubmit={handleSignUp} className="grid gap-4">
@@ -152,9 +151,8 @@ export default function SignupPage() {
                 </div>
             </div>
 
-            {role === 'staff' && (
-              <div className="grid grid-cols-2 gap-4">
-                 <div className="grid gap-1.5">
+            <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-1.5">
                     <Label htmlFor="phone" className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Phone Number</Label>
                     <div className="relative">
                       <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -175,8 +173,7 @@ export default function SignupPage() {
                       <Input id="position" placeholder="Security Officer" className="pl-10 h-11 rounded-xl" value={position} onChange={(e) => setPosition(e.target.value)} />
                     </div>
                 </div>
-              </div>
-            )}
+            </div>
 
             <div className="grid gap-1.5">
               <Label htmlFor="role" className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Register as</Label>
@@ -200,7 +197,7 @@ export default function SignupPage() {
             </div>
 
             <Button type="submit" disabled={isSubmitting} className="w-full h-12 rounded-xl font-bold text-lg shadow-lg shadow-primary/20 mt-2">
-              {isSubmitting ? "Creating Account..." : "Create Account"}
+              {isSubmitting ? "Submitting Request..." : "Request Access"}
             </Button>
             <div className="text-center text-sm font-medium text-slate-500 pt-2">
                 Already have an account? <Link href="/login" className="text-primary hover:underline font-bold">Log in</Link>

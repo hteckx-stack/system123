@@ -55,7 +55,7 @@ export function StaffCard({ staff, onEdit }: StaffCardProps) {
 
   const handleResetPassword = async () => {
     if (!staff.email) {
-      toast({ variant: "destructive", title: "Missing Email", description: "This staff member does not have an email." })
+      toast({ variant: "destructive", title: "Missing Email", description: "This member does not have an email." })
       return
     }
     try {
@@ -74,12 +74,12 @@ export function StaffCard({ staff, onEdit }: StaffCardProps) {
             firestore,
             currentUser.uid,
             currentUser.displayName || "Admin",
-            "Staff Approved",
-            `Accepted registration for ${staff.name} (${staff.email})`
+            "Access Approved",
+            `Accepted registration for ${staff.name} (${staff.email}) as ${staff.role}`
         );
         toast({ title: "Registration Accepted", description: `${staff.name} is now an active member.` })
     } catch {
-        toast({ variant: "destructive", title: "Error", description: "Failed to approve staff member." })
+        toast({ variant: "destructive", title: "Error", description: "Failed to approve member." })
     }
   }
 
@@ -91,7 +91,7 @@ export function StaffCard({ staff, onEdit }: StaffCardProps) {
             firestore,
             currentUser.uid,
             currentUser.displayName || "Admin",
-            "Staff Deactivated",
+            "Account Deactivated",
             `Deactivated account for ${staff.name}`
         );
         toast({ title: "Account Inactive", description: `${staff.name} has been marked as inactive.` })
@@ -108,7 +108,7 @@ export function StaffCard({ staff, onEdit }: StaffCardProps) {
             firestore,
             currentUser.uid,
             currentUser.displayName || "Admin",
-            "Staff Removed",
+            "Record Removed",
             `Rejected and deleted registration for ${staff.name}`
         );
         toast({ variant: "destructive", title: "Registration Denied", description: "Access has been denied and record removed." })
@@ -122,7 +122,7 @@ export function StaffCard({ staff, onEdit }: StaffCardProps) {
     setIsMessaging(true)
     try {
       await getOrCreateConversation(firestore, staff.id, staff.name)
-      router.push("/dashboard/messages")
+      router.push("/dashboard/chat")
     } catch {
       toast({ variant: "destructive", title: "Chat Error", description: "Could not open secure thread." })
     } finally {
@@ -182,7 +182,10 @@ export function StaffCard({ staff, onEdit }: StaffCardProps) {
           </DropdownMenu>
         </div>
         <div className="pt-3">
-          <CardTitle className="text-xl font-bold text-[#1A1A1A] truncate">{staff.name}</CardTitle>
+          <div className="flex items-center gap-2">
+            <CardTitle className="text-xl font-bold text-[#1A1A1A] truncate">{staff.name}</CardTitle>
+            <Badge variant="secondary" className="text-[8px] h-4 font-bold uppercase">{staff.role}</Badge>
+          </div>
           <CardDescription className="text-xs font-bold text-[#0D47A1] uppercase tracking-widest mt-0.5 truncate">{staff.position}</CardDescription>
         </div>
       </CardHeader>
