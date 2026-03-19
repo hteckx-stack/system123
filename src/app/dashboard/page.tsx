@@ -24,7 +24,8 @@ import {
   MapPin,
   ShieldCheck,
   ChevronRight,
-  MessageSquare
+  MessageSquare,
+  ClipboardList
 } from "lucide-react";
 import Link from 'next/link';
 import type { Staff, LoginRequest, Announcement, CheckIn } from "@/lib/types";
@@ -322,9 +323,9 @@ export default function Dashboard() {
               <CardTitle className="text-lg text-primary">Admin Shortcuts</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-3 pt-6">
-               <Link href="/dashboard/tasks">
+               <Link href="/dashboard/staff?tab=tasks">
                   <Button variant="outline" className="w-full justify-start gap-3 h-14 rounded-xl border-slate-100 hover:bg-slate-50">
-                      <CalendarDays className="h-5 w-5 text-blue-500" />
+                      <ClipboardList className="h-5 w-5 text-blue-500" />
                       <span className="font-bold text-slate-700 text-xs uppercase tracking-widest">Assign Duties</span>
                   </Button>
                </Link>

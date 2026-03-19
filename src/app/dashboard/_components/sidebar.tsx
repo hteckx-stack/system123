@@ -14,7 +14,6 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
-  ClipboardList,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -25,11 +24,10 @@ import { useState } from "react"
 
 const navItems = [
   { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { title: "Staff Directory", href: "/dashboard/staff", icon: Users },
-  { title: "Task Assignments", href: "/dashboard/tasks", icon: ClipboardList },
+  { title: "Staff Management", href: "/dashboard/staff", icon: Users },
   { title: "Arrival Logs", href: "/dashboard/check-ins", icon: Clock },
   { title: "Leave Requests", href: "/dashboard/leave-requests", icon: CalendarDays },
-  { title: "Chat", href: "/dashboard/chat", icon: MessageSquare },
+  { title: "Chat Hub", href: "/dashboard/chat", icon: MessageSquare },
   { title: "Documents", href: "/dashboard/documents", icon: FileText },
   { title: "Audit Trail", href: "/dashboard/activity", icon: LucideHistory },
 ]
