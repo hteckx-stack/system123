@@ -112,7 +112,7 @@ export default function ChatHubPage() {
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Message))
-      msgs.sort((a, b) => (a.timestamp?.toMillis() || 0) - (b.timestamp?.toMillis() || 0));
+      msgs.sort((a, b) => (a.timestamp?.toMillis() || 0) - (a.timestamp?.toMillis() || 0));
       setMessages(msgs)
       setMessagesLoading(false)
       setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100)
@@ -552,7 +552,7 @@ export default function ChatHubPage() {
                         <form onSubmit={handleGenerateSubmit} className="space-y-2">
                           <div className="space-y-1">
                             <Label className="text-[8px] font-bold uppercase tracking-widest text-slate-400">Select Staff</Label>
-                            <Select value={templateStaffId} onValueChange={settemplateStaffId}>
+                            <Select value={templateStaffId} onValueChange={setTemplateStaffId}>
                               <SelectTrigger className="h-9 rounded-xl bg-slate-50 border-none text-[11px]">
                                 <SelectValue placeholder="Staff Member" />
                               </SelectTrigger>
@@ -565,7 +565,7 @@ export default function ChatHubPage() {
                           </div>
                           <div className="space-y-1">
                             <Label className="text-[8px] font-bold uppercase tracking-widest text-slate-400">Template</Label>
-                            <Select value={templateDocType} onValueChange={settemplateDocType}>
+                            <Select value={templateDocType} onValueChange={setTemplateDocType}>
                               <SelectTrigger className="h-9 rounded-xl bg-slate-50 border-none text-[11px]">
                                 <SelectValue placeholder="Choose Template" />
                               </SelectTrigger>
