@@ -67,7 +67,7 @@ function ChatHubContent() {
     }
   }, [tabParam])
 
-  // Fetch ALL users (Staff and Admins) to ensure perfect messaging registry
+  // Fetch ALL users to ensure everyone in Firebase shows up for chatting
   const staffQuery = useMemo(() => query(collection(firestore, "users")), [firestore])
   const { data: staffList, loading: staffLoading } = useCollection<Staff>(staffQuery)
 
@@ -419,7 +419,7 @@ function ChatHubContent() {
               </CardHeader>
               <CardContent className="p-6">
                 <Tabs defaultValue="upload">
-                  <TabsList className="grid w-full grid-cols-2 mb-4 h-8 bg-slate-100 rounded-lg">
+                  <TabsList className="grid w-full grid-cols-2 mb-3 h-8 bg-slate-100 rounded-lg">
                     <TabsTrigger value="upload" className="text-[9px] font-bold rounded-md">Upload File</TabsTrigger>
                     <TabsTrigger value="template" className="text-[9px] font-bold rounded-md">Use Template</TabsTrigger>
                   </TabsList>

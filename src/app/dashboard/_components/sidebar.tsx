@@ -113,7 +113,7 @@ export function Sidebar() {
                     </div>
                     <CollapsibleContent className="space-y-1 mt-1 px-4">
                         {!isCollapsed && item.subItems.map((sub) => {
-                            // Check for active sub-tab based on search query in a way that works in client components
+                            // Simple check for sub-item active state
                             const isSubActive = pathname === "/dashboard/chat" && 
                                 (typeof window !== 'undefined' ? (window.location.search === sub.href.split('?')[1] || (window.location.search === '' && sub.href.includes('tab=messages'))) : false);
 

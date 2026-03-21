@@ -44,6 +44,7 @@ export default function Dashboard() {
   const { user: currentUser } = useUser();
   const { toast } = useToast();
 
+  // Robust User Registry Query: Fetch all users to identify pending accounts across systems
   const usersQuery = useMemo(() => query(
     collection(firestore, "users")
   ), [firestore]);
@@ -53,7 +54,7 @@ export default function Dashboard() {
   const [checkInsLoading, setCheckInsLoading] = useState(true);
 
   useEffect(() => {
-    // Attendance Monitor: Listen live to path /checkins for arrival authorisations
+    // Attendance Monitor: Listen live to path /checkins for arrival authorisations from the mobile app
     const checkinsRef = ref(database, 'checkins');
     const unsubscribe = onValue(checkinsRef, (snapshot) => {
       const data = snapshot.val();
