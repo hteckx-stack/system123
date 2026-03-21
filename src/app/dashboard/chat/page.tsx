@@ -14,7 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Send, Search, MessageSquare, ArrowLeft, Megaphone, User, Plus, FileText, Smartphone } from "lucide-react"
+import { Send, Search, MessageSquare, ArrowLeft, Megaphone, User, Plus, FileText } from "lucide-react"
 import { sendMessage, getOrCreateConversation } from "@/firebase/firestore/messages"
 import { addDocument } from "@/firebase/firestore/documents"
 import { cn } from "@/lib/utils"
@@ -67,7 +67,7 @@ function ChatHubContent() {
     }
   }, [tabParam])
 
-  // Fetch ALL users (Staff and Admins)
+  // Fetch ALL users (Staff and Admins) to ensure perfect messaging registry
   const staffQuery = useMemo(() => query(collection(firestore, "users")), [firestore])
   const { data: staffList, loading: staffLoading } = useCollection<Staff>(staffQuery)
 

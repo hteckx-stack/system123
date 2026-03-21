@@ -53,6 +53,7 @@ export default function Dashboard() {
   const [checkInsLoading, setCheckInsLoading] = useState(true);
 
   useEffect(() => {
+    // Attendance Monitor: Listen live to path /checkins for arrival authorisations
     const checkinsRef = ref(database, 'checkins');
     const unsubscribe = onValue(checkinsRef, (snapshot) => {
       const data = snapshot.val();
@@ -80,7 +81,7 @@ export default function Dashboard() {
     return () => unsubscribe();
   }, [database]);
 
-  // Capture all signups that are pending or not approved
+  // Capture all signups that are pending or not approved across external systems
   const pendingUsers = useMemo(() => 
     allUsers?.filter(s => s.status === 'pending' || s.approved === false) || [], 
     [allUsers]
@@ -98,11 +99,6 @@ export default function Dashboard() {
     try {
       const batch = writeBatch(firestore);
       batch.update(doc(firestore, "users", staff.id), { approved: true, status: "active" });
-      
-      // Clear associated login requests if any
-      const q = query(collection(firestore, "login_requests"), where("staffId", "==", staff.id));
-      const snaps = await writeBatch(firestore); // This is just a placeholder logic for the intent
-      
       await batch.commit();
       await logActivity(firestore, currentUser.uid, currentUser.displayName || "Admin", "Access Approved", `Authorized access for ${staff.name}.`);
       toast({ title: "Access Authorized", description: `${staff.name} is now approved.` });
