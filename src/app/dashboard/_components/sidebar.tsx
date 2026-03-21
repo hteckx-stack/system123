@@ -25,16 +25,16 @@ import {
 
 const navItems = [
   { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { title: "Staff", href: "/dashboard/staff", icon: Users },
+  { title: "Staff Directory", href: "/dashboard/staff", icon: Users },
   { title: "Leave Requests", href: "/dashboard/leave-requests", icon: CalendarDays },
   { 
     title: "Chat Hub", 
     href: "/dashboard/chat", 
     icon: MessageSquare,
     subItems: [
-        { title: "Direct Messages", href: "/dashboard/chat?tab=messages" },
+        { title: "Messaging", href: "/dashboard/chat?tab=messages" },
         { title: "Broadcasts", href: "/dashboard/chat?tab=broadcasts" },
-        { title: "Files & Documents", href: "/dashboard/chat?tab=documents" },
+        { title: "Documents", href: "/dashboard/chat?tab=documents" },
     ]
   },
   { title: "Audit Trail", href: "/dashboard/activity", icon: LucideHistory },
@@ -45,9 +45,8 @@ export function Sidebar() {
   const auth = useAuth()
   const router = useRouter()
   const [isCollapsed, setIsCollapsed] = useState(false)
-  const [isChatOpen, setIsChatOpen] = useState(false)
+  const [isChatOpen, setIsChatOpen] = useState(pathname.startsWith("/dashboard/chat"))
 
-  // Ensure dropdown is open if we are in a sub-route
   useEffect(() => {
     if (pathname.startsWith("/dashboard/chat")) {
         setIsChatOpen(true)
@@ -70,7 +69,7 @@ export function Sidebar() {
         <div className="bg-white text-[#0A3578] p-1.5 rounded-lg shadow-sm shrink-0">
           <LayoutDashboard className="h-6 w-6" />
         </div>
-        {!isCollapsed && <span className="text-xl font-bold tracking-tight text-white">ADMIN PORTAL</span>}
+        {!isCollapsed && <span className="text-xl font-bold tracking-tight text-white uppercase">Portal</span>}
       </div>
 
       <nav className="flex-1 px-3 space-y-1">
@@ -101,32 +100,23 @@ export function Sidebar() {
                                 "h-5 w-5 shrink-0",
                                 isActive ? "text-white" : "group-hover:text-white"
                             )} />
-                            {!isCollapsed && <span className="font-medium">{item.title}</span>}
+                            {!isCollapsed && <span className="font-medium text-xs font-bold uppercase tracking-wider">{item.title}</span>}
                         </div>
                         {!isCollapsed && (
                             <CollapsibleTrigger asChild>
                                 <button className="p-1 hover:bg-white/10 rounded-md transition-colors">
-                                    <ChevronDown className={cn("h-4 w-4 transition-transform duration-200", isChatOpen && "rotate-180")} />
+                                    <ChevronDown className={cn("h-3 w-3 transition-transform duration-200", isChatOpen && "rotate-180")} />
                                 </button>
                             </CollapsibleTrigger>
                         )}
                     </div>
                     <CollapsibleContent className="space-y-1 mt-1 px-4">
                         {!isCollapsed && item.subItems.map((sub) => {
-                            // Simple check for sub-item active state
-                            const isSubActive = pathname === "/dashboard/chat" && 
-                                (typeof window !== 'undefined' ? (window.location.search === sub.href.split('?')[1] || (window.location.search === '' && sub.href.includes('tab=messages'))) : false);
-
                             return (
                                 <Link
                                     key={sub.href}
                                     href={sub.href}
-                                    className={cn(
-                                        "flex items-center gap-3 px-3 py-2 rounded-lg text-[11px] transition-all",
-                                        isSubActive
-                                            ? "text-white font-bold bg-white/10"
-                                            : "text-white/40 hover:text-white hover:bg-white/5"
-                                    )}
+                                    className="flex items-center gap-3 px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest text-white/40 hover:text-white hover:bg-white/5 transition-all"
                                 >
                                     {sub.title}
                                 </Link>
@@ -152,7 +142,7 @@ export function Sidebar() {
                 "h-5 w-5 shrink-0",
                 isActive ? "text-white" : "group-hover:text-white"
               )} />
-              {!isCollapsed && <span className="font-medium">{item.title}</span>}
+              {!isCollapsed && <span className="font-medium text-xs font-bold uppercase tracking-wider">{item.title}</span>}
             </Link>
           )
         })}
@@ -164,7 +154,7 @@ export function Sidebar() {
           onClick={handleLogout}
         >
           <LogOut className="h-5 w-5 shrink-0" />
-          {!isCollapsed && <span className="font-medium">Logout</span>}
+          {!isCollapsed && <span className="font-bold text-xs uppercase tracking-wider">Logout</span>}
         </button>
       </div>
 

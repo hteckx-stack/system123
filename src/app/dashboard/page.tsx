@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
-import { collection, query, where, doc, writeBatch, orderBy, limit } from "firebase/firestore";
+import { collection, query, doc, writeBatch, orderBy, limit } from "firebase/firestore";
 import { useCollection, useFirestore, useUser, useDatabase } from "@/firebase";
 import { ref, onValue, update } from "firebase/database";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -14,20 +14,15 @@ import { logActivity } from "@/firebase/firestore/activity-logs";
 import { 
   Megaphone, 
   Clock, 
-  Smartphone, 
   X,
   UserCheck,
   Users,
-  MapPin,
   ShieldCheck,
-  MessageSquare,
-  ClipboardList,
   AlertCircle,
-  ChevronRight,
-  UserPlus
+  UserPlus,
+  RefreshCw
 } from "lucide-react";
-import Link from 'next/link';
-import type { Staff, LoginRequest, Announcement, CheckIn } from "@/lib/types";
+import type { Staff, CheckIn } from "@/lib/types";
 import {
   Table,
   TableBody,
@@ -36,7 +31,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatDistanceToNow, format } from "date-fns";
+import { format } from "date-fns";
 
 export default function Dashboard() {
   const firestore = useFirestore();
@@ -44,7 +39,7 @@ export default function Dashboard() {
   const { user: currentUser } = useUser();
   const { toast } = useToast();
 
-  // Robust User Registry Query: Fetch all users to identify pending accounts across systems
+  // Robust Registry Query: Fetch ALL profiles to capture external signups instantly
   const usersQuery = useMemo(() => query(
     collection(firestore, "users")
   ), [firestore]);
@@ -54,7 +49,7 @@ export default function Dashboard() {
   const [checkInsLoading, setCheckInsLoading] = useState(true);
 
   useEffect(() => {
-    // Attendance Monitor: Listen live to path /checkins for arrival authorisations from the mobile app
+    // Attendance Monitor: Live listener to Realtime Database /checkins
     const checkinsRef = ref(database, 'checkins');
     const unsubscribe = onValue(checkinsRef, (snapshot) => {
       const data = snapshot.val();
@@ -82,7 +77,7 @@ export default function Dashboard() {
     return () => unsubscribe();
   }, [database]);
 
-  // Capture all signups that are pending or not approved across external systems
+  // Capture all signups awaiting authorization across any system
   const pendingUsers = useMemo(() => 
     allUsers?.filter(s => s.status === 'pending' || s.approved === false) || [], 
     [allUsers]
@@ -132,15 +127,17 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-4 animate-in fade-in duration-500 pb-10">
-      <div className="flex flex-col gap-0">
+      <div className="flex flex-col gap-0 mb-2">
         <h1 className="text-2xl font-bold tracking-tight text-[#1A1A1A]">System Command Center</h1>
-        <p className="text-[#6B7280] text-[10px] font-bold uppercase tracking-widest">Real-time Synchronization Hub</p>
+        <p className="text-[#6B7280] text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5">
+          <RefreshCw className="h-3 w-3 animate-spin-slow" /> Live Synchronization Hub
+        </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {[
-          { title: "Total Registry", value: stats.total, icon: Users, color: "text-blue-500", label: "Profiles recorded" },
-          { title: "Active Personnel", value: stats.active, icon: ShieldCheck, color: "text-green-500", label: "Authorized users" },
+          { title: "Total Registry", value: stats.total, icon: Users, color: "text-blue-500", label: "Profiles synced" },
+          { title: "Active Staff", value: stats.active, icon: ShieldCheck, color: "text-green-500", label: "Authorized users" },
           { title: "Pending Review", value: stats.pending, icon: UserPlus, color: "text-orange-500", label: "Awaiting approval" },
           { title: "Live Arrivals", value: stats.liveCheckins, icon: Clock, color: "text-primary", label: "GPS Authorizations" },
         ].map((stat, i) => (
@@ -151,7 +148,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent className="px-6 pb-6">
               <div className="text-2xl font-bold text-slate-900">{stat.value}</div>
-              <p className="text-[9px] text-slate-500 mt-1 font-medium">{stat.label}</p>
+              <p className="text-[9px] text-slate-500 mt-1 font-bold uppercase tracking-wider">{stat.label}</p>
             </CardContent>
           </Card>
         ))}
@@ -164,7 +161,7 @@ export default function Dashboard() {
               <ShieldCheck className="h-5 w-5 text-primary" />
               <div>
                 <CardTitle className="text-sm font-bold uppercase tracking-wider">Attendance Monitor</CardTitle>
-                <CardDescription className="text-[10px]">Real-time GPS verification for Arrivals</CardDescription>
+                <CardDescription className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Real-time GPS arrivals</CardDescription>
               </div>
             </div>
           </CardHeader>
@@ -180,20 +177,20 @@ export default function Dashboard() {
               </TableHeader>
               <TableBody>
                 {checkInsLoading ? (
-                  <TableRow><TableCell colSpan={4} className="py-10 text-center text-[10px] font-bold uppercase text-slate-400 tracking-widest">Syncing logs...</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={4} className="py-20 text-center text-[10px] font-bold uppercase text-slate-300 tracking-widest">Syncing logs...</TableCell></TableRow>
                 ) : pendingCheckIns.length > 0 ? (
                   pendingCheckIns.map((ci) => (
                     <TableRow key={`${ci.staff_id}-${ci.dateStr}`} className="h-14 hover:bg-slate-50 transition-colors border-b last:border-0">
                       <TableCell className="px-8 font-bold text-slate-900 text-xs">{ci.staff_name}</TableCell>
-                      <TableCell className="text-slate-600 text-[11px] font-medium">{ci.timestamp ? format(new Date(ci.timestamp), 'hh:mm a') : '---'}</TableCell>
-                      <TableCell className="text-slate-500 text-[11px] font-medium">{ci.location || "Office Site"}</TableCell>
+                      <TableCell className="text-slate-600 text-[11px] font-bold">{ci.timestamp ? format(new Date(ci.timestamp), 'hh:mm a') : '---'}</TableCell>
+                      <TableCell className="text-slate-500 text-[11px] font-bold">{ci.location || "Office Site"}</TableCell>
                       <TableCell className="text-right px-8">
-                        <Button size="sm" onClick={() => handleAuthorizeCheckIn(ci)} className="bg-green-500 hover:bg-green-600 font-bold rounded-lg h-8 text-[10px]">Authorize</Button>
+                        <Button size="sm" onClick={() => handleAuthorizeCheckIn(ci)} className="bg-green-500 hover:bg-green-600 font-bold rounded-xl h-8 text-[10px] uppercase tracking-wider shadow-md shadow-green-500/10">Authorize</Button>
                       </TableCell>
                     </TableRow>
                   ))
                 ) : (
-                  <TableRow><TableCell colSpan={4} className="h-40 text-center text-slate-300 font-bold uppercase text-[10px] tracking-widest">All arrivals authorized</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={4} className="h-60 text-center text-slate-200 font-bold uppercase text-[10px] tracking-widest">All arrivals authorized</TableCell></TableRow>
                 )}
               </TableBody>
             </Table>
@@ -204,43 +201,46 @@ export default function Dashboard() {
           <CardHeader className="bg-slate-50 border-b py-4 px-6">
             <div className="flex items-center justify-between">
               <CardTitle className="text-xs font-bold uppercase tracking-wider text-slate-700">Pending Signups</CardTitle>
-              <Badge className="bg-orange-500 text-white font-bold text-[9px]">{pendingUsers.length}</Badge>
+              <Badge className="bg-orange-500 text-white font-bold text-[9px] h-5 min-w-[20px] justify-center">{pendingUsers.length}</Badge>
             </div>
           </CardHeader>
           <CardContent className="p-0">
             <div className="divide-y divide-slate-50">
               {staffLoading ? (
-                <div className="p-4"><Skeleton className="h-20 w-full" /></div>
+                <div className="p-6 space-y-4">
+                  <Skeleton className="h-12 w-full rounded-xl" />
+                  <Skeleton className="h-12 w-full rounded-xl" />
+                </div>
               ) : pendingUsers.length > 0 ? (
                 pendingUsers.map(staff => (
-                  <div key={staff.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-all">
+                  <div key={staff.id} className="p-5 flex items-center justify-between hover:bg-slate-50 transition-all">
                     <div className="flex items-center gap-3">
-                      <Avatar className="h-8 w-8 rounded-lg border">
-                        <AvatarFallback className="bg-primary/5 text-primary font-bold text-[10px]">{staff.name.charAt(0)}</AvatarFallback>
+                      <Avatar className="h-9 w-9 rounded-xl border-2 border-white shadow-sm">
+                        <AvatarFallback className="bg-primary text-white font-bold text-[10px]">{staff.name.charAt(0)}</AvatarFallback>
                       </Avatar>
                       <div>
                         <p className="font-bold text-xs text-slate-900">{staff.name}</p>
                         <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">{staff.role}</p>
                       </div>
                     </div>
-                    <div className="flex gap-1">
-                      <Button size="sm" className="bg-primary font-bold rounded-lg h-7 text-[9px] px-2" onClick={() => handleApproveAccess(staff)}>Approve</Button>
-                      <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-600 h-7 w-7 p-0" onClick={() => handleRejectAccess(staff)}><X className="h-3 w-3" /></Button>
+                    <div className="flex gap-1.5">
+                      <Button size="sm" className="bg-primary font-bold rounded-lg h-8 text-[9px] px-3 uppercase tracking-wider" onClick={() => handleApproveAccess(staff)}>Approve</Button>
+                      <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-600 h-8 w-8 p-0" onClick={() => handleRejectAccess(staff)}><X className="h-4 w-4" /></Button>
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="py-20 text-center text-slate-300 font-bold text-[9px] uppercase tracking-widest">No pending signups found</div>
+                <div className="py-24 text-center text-slate-200 font-bold text-[9px] uppercase tracking-widest">No pending signups</div>
               )}
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-3 flex items-start gap-3">
+      <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-4 flex items-start gap-3">
         <AlertCircle className="h-4 w-4 text-[#0D47A1] shrink-0 mt-0.5" />
         <p className="text-[10px] text-[#0D47A1]/80 font-bold uppercase tracking-widest leading-relaxed">
-          System Guard: This portal automatically captures signups from all external employee systems for your verification.
+          System Guard: This portal automatically captures signups from all external employee systems for your verification. All changes reflect in real-time.
         </p>
       </div>
     </div>
