@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useMemo, useEffect, useRef, Suspense } from "react"
@@ -15,7 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Send, Search, MessageSquare, ArrowLeft, Megaphone, User, Plus } from "lucide-react"
+import { Send, Search, MessageSquare, ArrowLeft, Megaphone, User, Plus, FileText, Smartphone } from "lucide-react"
 import { sendMessage, getOrCreateConversation } from "@/firebase/firestore/messages"
 import { addDocument } from "@/firebase/firestore/documents"
 import { cn } from "@/lib/utils"
@@ -368,69 +367,69 @@ function ChatHubContent() {
           </div>
         </TabsContent>
 
-        <TabsContent value="broadcasts" className="flex-1 overflow-auto m-0 pt-2">
+        <TabsContent value="broadcasts" className="flex-1 overflow-auto m-0 pt-0">
           <Card className="max-w-xl mx-auto border-none shadow-soft rounded-3xl overflow-hidden bg-white">
-            <CardHeader className="bg-[#0D47A1] text-white py-4 px-8">
+            <CardHeader className="bg-[#0D47A1] text-white py-3 px-8">
               <div className="flex items-center gap-3">
-                <Megaphone className="h-5 w-5" />
-                <CardTitle className="text-sm font-bold uppercase tracking-wider">Compose Global Broadcast</CardTitle>
+                <Megaphone className="h-4 w-4" />
+                <CardTitle className="text-[10px] font-bold uppercase tracking-widest">Compose Global Broadcast</CardTitle>
               </div>
             </CardHeader>
             <CardContent className="space-y-4 pt-6 px-10">
-              <div className="space-y-1.5">
-                <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Announcement Title</Label>
+              <div className="space-y-1">
+                <Label className="text-[9px] font-bold uppercase tracking-widest text-slate-400 ml-1">Announcement Title</Label>
                 <Input 
                   placeholder="e.g. System Maintenance Tomorrow" 
                   value={broadcastTitle}
                   onChange={(e) => setBroadcastTitle(e.target.value)}
-                  className="h-10 rounded-xl bg-slate-50 border-slate-200 font-bold text-[13px]"
+                  className="h-9 rounded-xl bg-slate-50 border-none font-bold text-[12px]"
                 />
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Message Content</Label>
+              <div className="space-y-1">
+                <Label className="text-[9px] font-bold uppercase tracking-widest text-slate-400 ml-1">Message Content</Label>
                 <Textarea 
                   placeholder="Enter details for all employee app home screens..." 
-                  className="min-h-[150px] rounded-2xl bg-slate-50 border-slate-200 p-4 text-[13px] leading-relaxed"
+                  className="min-h-[120px] rounded-2xl bg-slate-50 border-none p-4 text-[12px] leading-relaxed"
                   value={broadcastMessage}
                   onChange={(e) => setBroadcastMessage(e.target.value)}
                 />
               </div>
             </CardContent>
-            <CardFooter className="bg-slate-50 border-t p-6">
+            <CardFooter className="bg-slate-50 border-t p-4 px-10">
               <Button 
                 onClick={handleBroadcast} 
                 disabled={isBroadcasting}
-                className="w-full h-12 bg-[#0D47A1] rounded-2xl font-bold text-base gap-3 shadow-lg shadow-[#0D47A1]/20 hover:bg-[#0A3578]"
+                className="w-full h-10 bg-[#0D47A1] rounded-xl font-bold text-sm gap-2 shadow-lg shadow-[#0D47A1]/20 hover:bg-[#0A3578]"
               >
-                <Send className="h-4 w-4" />
+                <Send className="h-3.5 w-3.5" />
                 {isBroadcasting ? "Broadcasting..." : "Push to All Devices"}
               </Button>
             </CardFooter>
           </Card>
         </TabsContent>
 
-        <TabsContent value="documents" className="flex-1 overflow-auto m-0 pt-2">
+        <TabsContent value="documents" className="flex-1 overflow-auto m-0 pt-0">
           <div className="grid gap-4 max-w-4xl mx-auto">
             <Card className="border-none shadow-soft rounded-3xl bg-white overflow-hidden">
-              <CardHeader className="bg-primary p-4 px-8 text-white">
+              <CardHeader className="bg-primary p-3 px-8 text-white">
                 <div className="flex items-center gap-3">
-                  <Plus className="h-4 w-4" />
-                  <CardTitle className="text-sm font-bold uppercase tracking-wider">Create & Send Official Documents</CardTitle>
+                  <Plus className="h-3.5 w-3.5" />
+                  <CardTitle className="text-[10px] font-bold uppercase tracking-widest">Create & Send Official Documents</CardTitle>
                 </div>
               </CardHeader>
               <CardContent className="p-6">
                 <Tabs defaultValue="upload">
-                  <TabsList className="grid w-full grid-cols-2 mb-6 h-9 bg-slate-100 rounded-xl">
-                    <TabsTrigger value="upload" className="text-[10px] font-bold rounded-lg">Upload File</TabsTrigger>
-                    <TabsTrigger value="template" className="text-[10px] font-bold rounded-lg">Use Template</TabsTrigger>
+                  <TabsList className="grid w-full grid-cols-2 mb-4 h-8 bg-slate-100 rounded-lg">
+                    <TabsTrigger value="upload" className="text-[9px] font-bold rounded-md">Upload File</TabsTrigger>
+                    <TabsTrigger value="template" className="text-[9px] font-bold rounded-md">Use Template</TabsTrigger>
                   </TabsList>
                   
                   <TabsContent value="upload" className="m-0 space-y-4">
-                    <form onSubmit={handleUploadSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <form onSubmit={handleUploadSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div className="space-y-1">
-                        <Label className="text-[9px] font-bold uppercase tracking-widest text-slate-400 ml-1">Recipient</Label>
+                        <Label className="text-[8px] font-bold uppercase tracking-widest text-slate-400 ml-1">Recipient</Label>
                         <Select value={selectedStaffId} onValueChange={setSelectedStaffId}>
-                          <SelectTrigger className="h-9 rounded-xl bg-slate-50 border-none font-bold text-[11px]">
+                          <SelectTrigger className="h-9 rounded-xl bg-slate-50 border-none text-[11px]">
                             <SelectValue placeholder="Select Staff" />
                           </SelectTrigger>
                           <SelectContent className="rounded-xl">
@@ -441,9 +440,9 @@ function ChatHubContent() {
                         </Select>
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-[9px] font-bold uppercase tracking-widest text-slate-400 ml-1">Type</Label>
+                        <Label className="text-[8px] font-bold uppercase tracking-widest text-slate-400 ml-1">Type</Label>
                         <Select value={documentType} onValueChange={setDocumentType}>
-                          <SelectTrigger className="h-9 rounded-xl bg-slate-50 border-none font-bold text-[11px]">
+                          <SelectTrigger className="h-9 rounded-xl bg-slate-50 border-none text-[11px]">
                             <SelectValue placeholder="Classification" />
                           </SelectTrigger>
                           <SelectContent className="rounded-xl">
@@ -454,21 +453,21 @@ function ChatHubContent() {
                         </Select>
                       </div>
                       <div className="space-y-1 md:col-span-2">
-                        <Label className="text-[9px] font-bold uppercase tracking-widest text-slate-400 ml-1">File Attachment</Label>
-                        <Input type="file" onChange={(e) => setFile(e.target.files?.[0] || null)} className="h-10 rounded-xl border-dashed border-2 pt-2 text-[10px]" />
+                        <Label className="text-[8px] font-bold uppercase tracking-widest text-slate-400 ml-1">File Attachment</Label>
+                        <Input type="file" onChange={(e) => setFile(e.target.files?.[0] || null)} className="h-9 rounded-xl border-dashed border-2 pt-1 text-[10px]" />
                       </div>
-                      <Button disabled={uploading} className="md:col-span-2 rounded-xl h-11 font-bold text-sm shadow-lg shadow-primary/10">
+                      <Button disabled={uploading} className="md:col-span-2 rounded-xl h-10 font-bold text-xs shadow-lg shadow-primary/10">
                         {uploading ? "Uploading..." : "Dispatch Document"}
                       </Button>
                     </form>
                   </TabsContent>
 
                   <TabsContent value="template" className="m-0 space-y-4">
-                    <form onSubmit={handleGenerateSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <form onSubmit={handleGenerateSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div className="space-y-1">
-                        <Label className="text-[9px] font-bold uppercase tracking-widest text-slate-400 ml-1">Target Recipient</Label>
+                        <Label className="text-[8px] font-bold uppercase tracking-widest text-slate-400 ml-1">Select Staff</Label>
                         <Select value={templateStaffId} onValueChange={setTemplateStaffId}>
-                          <SelectTrigger className="h-9 rounded-xl bg-slate-50 border-none font-bold text-[11px]">
+                          <SelectTrigger className="h-9 rounded-xl bg-slate-50 border-none text-[11px]">
                             <SelectValue placeholder="Choose employee" />
                           </SelectTrigger>
                           <SelectContent className="rounded-xl">
@@ -479,9 +478,9 @@ function ChatHubContent() {
                         </Select>
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-[9px] font-bold uppercase tracking-widest text-slate-400 ml-1">Select Template</Label>
+                        <Label className="text-[8px] font-bold uppercase tracking-widest text-slate-400 ml-1">Select Template</Label>
                         <Select value={templateDocType} onValueChange={setTemplateDocType}>
-                          <SelectTrigger className="h-9 rounded-xl bg-slate-50 border-none font-bold text-[11px]">
+                          <SelectTrigger className="h-9 rounded-xl bg-slate-50 border-none text-[11px]">
                             <SelectValue placeholder="Template type" />
                           </SelectTrigger>
                           <SelectContent className="rounded-xl">
@@ -491,7 +490,7 @@ function ChatHubContent() {
                           </SelectContent>
                         </Select>
                       </div>
-                      <Button disabled={generating} className="md:col-span-2 rounded-xl h-11 font-bold text-sm shadow-lg shadow-primary/10">
+                      <Button disabled={generating} className="md:col-span-2 rounded-xl h-10 font-bold text-xs shadow-lg shadow-primary/10">
                         {generating ? "Generating..." : "Generate & Dispatch"}
                       </Button>
                     </form>
