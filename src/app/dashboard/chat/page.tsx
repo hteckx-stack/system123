@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useMemo, useEffect, useRef, Suspense } from "react"
@@ -14,7 +15,6 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Send, Search, MessageSquare, ArrowLeft, Megaphone, User, Plus } from "lucide-react"
 import { sendMessage, getOrCreateConversation } from "@/firebase/firestore/messages"
 import { addDocument } from "@/firebase/firestore/documents"
@@ -25,7 +25,7 @@ import { useSearchParams } from "next/navigation"
 
 export default function ChatHubPage() {
   return (
-    <Suspense fallback={<Skeleton className="w-full h-[600px] rounded-3xl" />}>
+    <Suspense fallback={<div className="p-8"><Skeleton className="w-full h-[500px] rounded-3xl" /></div>}>
       <ChatHubContent />
     </Suspense>
   )
@@ -62,16 +62,13 @@ function ChatHubContent() {
   const [templateDocType, setTemplateDocType] = useState<string>("")
   const [generating, setGenerating] = useState(false)
 
-  const [contractTemplate, setContractTemplate] = useState("Official Contract Template Content...")
-  const [payslipTemplate, setPayslipTemplate] = useState("Official Payslip Template Content...")
-
   useEffect(() => {
     if (tabParam && ["messages", "broadcasts", "documents"].includes(tabParam)) {
       setActiveTab(tabParam)
     }
   }, [tabParam])
 
-  // Data Queries: Fetch ALL users so the list is never empty
+  // Fetch ALL users (Staff and Admins) to show in the directory
   const staffQuery = useMemo(() => query(collection(firestore, "users")), [firestore])
   const { data: staffList, loading: staffLoading } = useCollection<Staff>(staffQuery)
 
@@ -80,7 +77,6 @@ function ChatHubContent() {
 
   const filteredStaff = useMemo(() => {
     if (!staffList || !user) return []
-    // Show all users except the current user
     let list = staffList.filter(s => s.id !== user.uid)
     if (searchQuery) {
       list = list.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -218,17 +214,17 @@ function ChatHubContent() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)] gap-3 animate-in fade-in duration-500 overflow-hidden">
-      <div className="flex flex-col gap-0.5 px-1">
+    <div className="flex flex-col h-[calc(100vh-8rem)] gap-2 animate-in fade-in duration-500 overflow-hidden">
+      <div className="flex flex-col gap-0 px-1">
         <h1 className="text-2xl font-bold tracking-tight text-[#0D47A1]">Command Hub</h1>
-        <p className="text-[#6B7280] text-[10px] font-bold uppercase tracking-widest">Secure Messaging & Official Dispatch</p>
+        <p className="text-[#6B7280] text-[10px] font-bold uppercase tracking-widest">Unified Communications & Records Center</p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
         <TabsList className="bg-white p-1 rounded-xl shadow-soft border border-slate-100 self-start mb-2 ml-1">
-          <TabsTrigger value="messages" className="rounded-lg font-bold px-5 h-9 text-[11px]">Direct Messages</TabsTrigger>
-          <TabsTrigger value="broadcasts" className="rounded-lg font-bold px-5 h-9 text-[11px]">Global Broadcast</TabsTrigger>
-          <TabsTrigger value="documents" className="rounded-lg font-bold px-5 h-9 text-[11px]">Files & Documents</TabsTrigger>
+          <TabsTrigger value="messages" className="rounded-lg font-bold px-5 h-8 text-[11px]">Direct Messages</TabsTrigger>
+          <TabsTrigger value="broadcasts" className="rounded-lg font-bold px-5 h-8 text-[11px]">Global Broadcast</TabsTrigger>
+          <TabsTrigger value="documents" className="rounded-lg font-bold px-5 h-8 text-[11px]">Files & Documents</TabsTrigger>
         </TabsList>
 
         <TabsContent value="messages" className="flex-1 flex flex-col overflow-hidden m-0">
@@ -249,9 +245,9 @@ function ChatHubContent() {
                 </div>
               </CardHeader>
               <ScrollArea className="flex-1">
-                <div className="p-1.5 divide-y divide-slate-50">
+                <div className="p-1 divide-y divide-slate-50">
                   {staffLoading ? (
-                    Array.from({ length: 8 }).map((_, i) => (
+                    Array.from({ length: 10 }).map((_, i) => (
                       <div key={i} className="p-3 flex items-center gap-3">
                         <Skeleton className="h-8 w-8 rounded-lg" />
                         <Skeleton className="h-3 w-1/2 rounded" />
@@ -269,7 +265,7 @@ function ChatHubContent() {
                                 selectedConvId === conversation?.id ? "bg-primary/5 shadow-inner" : "hover:bg-slate-50"
                                 )}
                             >
-                                <div className="h-9 w-9 rounded-xl bg-slate-100 flex items-center justify-center font-bold text-primary text-[11px]">
+                                <div className="h-8 w-8 rounded-lg bg-slate-100 flex items-center justify-center font-bold text-primary text-[10px]">
                                     {staff.name.charAt(0)}
                                 </div>
                                 <div className="flex-1 min-w-0">
@@ -281,10 +277,7 @@ function ChatHubContent() {
                                             </span>
                                         )}
                                     </div>
-                                    <div className="flex items-center justify-between mt-0.5">
-                                      <p className="text-[10px] text-slate-500 truncate">{conversation?.last_message || "Start conversation..."}</p>
-                                      {staff.status === 'pending' && <span className="text-[7px] font-bold text-orange-500 uppercase tracking-widest bg-orange-50 px-1.5 rounded">Pending</span>}
-                                    </div>
+                                    <p className="text-[10px] text-slate-500 truncate mt-0.5">{conversation?.last_message || "Start conversation..."}</p>
                                 </div>
                             </div>
                         )
@@ -310,7 +303,7 @@ function ChatHubContent() {
                       <ArrowLeft className="h-4 w-4" />
                     </Button>
                     <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center font-bold text-white shadow-lg shadow-primary/20 text-[12px]">
+                      <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center font-bold text-white shadow-lg shadow-primary/20 text-[11px]">
                         {filteredStaff.find(s => s.id === rawConversations?.find(c => c.id === selectedConvId)?.staff_id)?.name.charAt(0) || "U"}
                       </div>
                       <div>
@@ -336,7 +329,7 @@ function ChatHubContent() {
                             )}
                           >
                             <div className={cn(
-                              "px-4 py-2 rounded-2xl text-[12px] leading-relaxed shadow-sm",
+                              "px-3 py-2 rounded-2xl text-[11px] leading-relaxed shadow-sm",
                               msg.sender_role === 'admin' ? "bg-primary text-white rounded-tr-none" : "bg-white border text-slate-800 rounded-tl-none"
                             )}>
                               {msg.message}
@@ -351,94 +344,94 @@ function ChatHubContent() {
                     </div>
                   </ScrollArea>
                   <div className="p-3 border-t">
-                    <form onSubmit={handleSendMessage} className="flex gap-2.5">
+                    <form onSubmit={handleSendMessage} className="flex gap-2">
                       <Input
                         placeholder="Type a message..."
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
-                        className="flex-1 h-11 rounded-xl bg-slate-50 border-none text-[12px]"
+                        className="flex-1 h-10 rounded-xl bg-slate-50 border-none text-[11px]"
                       />
-                      <Button type="submit" disabled={!newMessage.trim()} className="rounded-xl h-11 w-11 p-0 shadow-lg shadow-primary/20">
-                        <Send className="h-4 w-4" />
+                      <Button type="submit" disabled={!newMessage.trim()} className="rounded-xl h-10 w-10 p-0 shadow-lg shadow-primary/20">
+                        <Send className="h-3.5 w-3.5" />
                       </Button>
                     </form>
                   </div>
                 </>
               ) : (
                 <div className="flex flex-col items-center justify-center flex-1 text-slate-300 p-10">
-                  <MessageSquare className="h-16 w-16 opacity-5 mb-3" />
+                  <MessageSquare className="h-12 w-12 opacity-5 mb-3" />
                   <h3 className="text-xl font-bold text-slate-400">Secure Messenger</h3>
-                  <p className="text-center text-[12px] font-medium text-slate-400">Select an employee from the registry to begin communication.</p>
+                  <p className="text-center text-[11px] font-medium text-slate-400">Select an employee from the registry to begin communication.</p>
                 </div>
               )}
             </Card>
           </div>
         </TabsContent>
 
-        <TabsContent value="broadcasts" className="flex-1 overflow-auto m-0">
-          <Card className="max-w-2xl mx-auto border-none shadow-soft rounded-3xl overflow-hidden bg-white mt-1">
-            <CardHeader className="bg-[#0D47A1] text-white py-5 px-8">
+        <TabsContent value="broadcasts" className="flex-1 overflow-auto m-0 pt-2">
+          <Card className="max-w-xl mx-auto border-none shadow-soft rounded-3xl overflow-hidden bg-white">
+            <CardHeader className="bg-[#0D47A1] text-white py-4 px-8">
               <div className="flex items-center gap-3">
-                <Megaphone className="h-6 w-6" />
-                <CardTitle className="text-base font-bold uppercase tracking-wider">Compose Global Broadcast</CardTitle>
+                <Megaphone className="h-5 w-5" />
+                <CardTitle className="text-sm font-bold uppercase tracking-wider">Compose Global Broadcast</CardTitle>
               </div>
             </CardHeader>
-            <CardContent className="space-y-5 pt-7 px-10">
-              <div className="space-y-2">
+            <CardContent className="space-y-4 pt-6 px-10">
+              <div className="space-y-1.5">
                 <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Announcement Title</Label>
                 <Input 
                   placeholder="e.g. System Maintenance Tomorrow" 
                   value={broadcastTitle}
                   onChange={(e) => setBroadcastTitle(e.target.value)}
-                  className="h-12 rounded-xl bg-slate-50 border-slate-200 font-bold"
+                  className="h-10 rounded-xl bg-slate-50 border-slate-200 font-bold text-[13px]"
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Message Content</Label>
                 <Textarea 
                   placeholder="Enter details for all employee app home screens..." 
-                  className="min-h-[180px] rounded-2xl bg-slate-50 border-slate-200 p-5 text-[14px] leading-relaxed"
+                  className="min-h-[150px] rounded-2xl bg-slate-50 border-slate-200 p-4 text-[13px] leading-relaxed"
                   value={broadcastMessage}
                   onChange={(e) => setBroadcastMessage(e.target.value)}
                 />
               </div>
             </CardContent>
-            <CardFooter className="bg-slate-50 border-t p-8">
+            <CardFooter className="bg-slate-50 border-t p-6">
               <Button 
                 onClick={handleBroadcast} 
                 disabled={isBroadcasting}
-                className="w-full h-14 bg-[#0D47A1] rounded-2xl font-bold text-lg gap-3 shadow-lg shadow-[#0D47A1]/20 hover:bg-[#0A3578]"
+                className="w-full h-12 bg-[#0D47A1] rounded-2xl font-bold text-base gap-3 shadow-lg shadow-[#0D47A1]/20 hover:bg-[#0A3578]"
               >
-                <Send className="h-5 w-5" />
-                {isBroadcasting ? "Processing..." : "Push to All Devices"}
+                <Send className="h-4 w-4" />
+                {isBroadcasting ? "Broadcasting..." : "Push to All Devices"}
               </Button>
             </CardFooter>
           </Card>
         </TabsContent>
 
-        <TabsContent value="documents" className="flex-1 overflow-auto m-0">
-          <div className="grid gap-4 max-w-4xl mx-auto mt-1">
+        <TabsContent value="documents" className="flex-1 overflow-auto m-0 pt-2">
+          <div className="grid gap-4 max-w-4xl mx-auto">
             <Card className="border-none shadow-soft rounded-3xl bg-white overflow-hidden">
               <CardHeader className="bg-primary p-4 px-8 text-white">
                 <div className="flex items-center gap-3">
-                  <Plus className="h-5 w-5" />
-                  <CardTitle className="text-base font-bold uppercase tracking-wider">Create & Dispatch Documents</CardTitle>
+                  <Plus className="h-4 w-4" />
+                  <CardTitle className="text-sm font-bold uppercase tracking-wider">Create & Send Official Documents</CardTitle>
                 </div>
               </CardHeader>
-              <CardContent className="p-8">
+              <CardContent className="p-6">
                 <Tabs defaultValue="upload">
-                  <TabsList className="grid w-full grid-cols-2 mb-8 h-10 bg-slate-100 rounded-xl">
-                    <TabsTrigger value="upload" className="text-[11px] font-bold rounded-lg">Upload External File</TabsTrigger>
-                    <TabsTrigger value="template" className="text-[11px] font-bold rounded-lg">Generate from Template</TabsTrigger>
+                  <TabsList className="grid w-full grid-cols-2 mb-6 h-9 bg-slate-100 rounded-xl">
+                    <TabsTrigger value="upload" className="text-[10px] font-bold rounded-lg">Upload File</TabsTrigger>
+                    <TabsTrigger value="template" className="text-[10px] font-bold rounded-lg">Use Template</TabsTrigger>
                   </TabsList>
                   
-                  <TabsContent value="upload" className="m-0 space-y-5">
-                    <form onSubmit={handleUploadSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                      <div className="space-y-2">
-                        <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Select Recipient</Label>
+                  <TabsContent value="upload" className="m-0 space-y-4">
+                    <form onSubmit={handleUploadSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <Label className="text-[9px] font-bold uppercase tracking-widest text-slate-400 ml-1">Recipient</Label>
                         <Select value={selectedStaffId} onValueChange={setSelectedStaffId}>
-                          <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none font-bold text-[13px]">
-                            <SelectValue placeholder="Staff Member" />
+                          <SelectTrigger className="h-9 rounded-xl bg-slate-50 border-none font-bold text-[11px]">
+                            <SelectValue placeholder="Select Staff" />
                           </SelectTrigger>
                           <SelectContent className="rounded-xl">
                             {staffList?.map(s => (
@@ -447,11 +440,11 @@ function ChatHubContent() {
                           </SelectContent>
                         </Select>
                       </div>
-                      <div className="space-y-2">
-                        <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Classification</Label>
+                      <div className="space-y-1">
+                        <Label className="text-[9px] font-bold uppercase tracking-widest text-slate-400 ml-1">Type</Label>
                         <Select value={documentType} onValueChange={setDocumentType}>
-                          <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none font-bold text-[13px]">
-                            <SelectValue placeholder="Select type" />
+                          <SelectTrigger className="h-9 rounded-xl bg-slate-50 border-none font-bold text-[11px]">
+                            <SelectValue placeholder="Classification" />
                           </SelectTrigger>
                           <SelectContent className="rounded-xl">
                             <SelectItem value="Payslip">Payslip</SelectItem>
@@ -460,22 +453,22 @@ function ChatHubContent() {
                           </SelectContent>
                         </Select>
                       </div>
-                      <div className="space-y-2 md:col-span-2">
-                        <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Attach PDF</Label>
-                        <Input type="file" onChange={(e) => setFile(e.target.files?.[0] || null)} className="h-12 rounded-xl border-dashed border-2 pt-3" />
+                      <div className="space-y-1 md:col-span-2">
+                        <Label className="text-[9px] font-bold uppercase tracking-widest text-slate-400 ml-1">File Attachment</Label>
+                        <Input type="file" onChange={(e) => setFile(e.target.files?.[0] || null)} className="h-10 rounded-xl border-dashed border-2 pt-2 text-[10px]" />
                       </div>
-                      <Button disabled={uploading} className="md:col-span-2 rounded-2xl h-14 font-bold text-lg shadow-lg shadow-primary/10">
+                      <Button disabled={uploading} className="md:col-span-2 rounded-xl h-11 font-bold text-sm shadow-lg shadow-primary/10">
                         {uploading ? "Uploading..." : "Dispatch Document"}
                       </Button>
                     </form>
                   </TabsContent>
 
-                  <TabsContent value="template" className="m-0 space-y-5">
-                    <form onSubmit={handleGenerateSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                      <div className="space-y-2">
-                        <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Target Recipient</Label>
+                  <TabsContent value="template" className="m-0 space-y-4">
+                    <form onSubmit={handleGenerateSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <Label className="text-[9px] font-bold uppercase tracking-widest text-slate-400 ml-1">Target Recipient</Label>
                         <Select value={templateStaffId} onValueChange={setTemplateStaffId}>
-                          <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none font-bold text-[13px]">
+                          <SelectTrigger className="h-9 rounded-xl bg-slate-50 border-none font-bold text-[11px]">
                             <SelectValue placeholder="Choose employee" />
                           </SelectTrigger>
                           <SelectContent className="rounded-xl">
@@ -485,11 +478,11 @@ function ChatHubContent() {
                           </SelectContent>
                         </Select>
                       </div>
-                      <div className="space-y-2">
-                        <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">System Template</Label>
+                      <div className="space-y-1">
+                        <Label className="text-[9px] font-bold uppercase tracking-widest text-slate-400 ml-1">Select Template</Label>
                         <Select value={templateDocType} onValueChange={setTemplateDocType}>
-                          <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none font-bold text-[13px]">
-                            <SelectValue placeholder="Select template" />
+                          <SelectTrigger className="h-9 rounded-xl bg-slate-50 border-none font-bold text-[11px]">
+                            <SelectValue placeholder="Template type" />
                           </SelectTrigger>
                           <SelectContent className="rounded-xl">
                             <SelectItem value="Contract">Standard Contract</SelectItem>
@@ -498,36 +491,12 @@ function ChatHubContent() {
                           </SelectContent>
                         </Select>
                       </div>
-                      <Button disabled={generating} className="md:col-span-2 rounded-2xl h-14 font-bold text-lg shadow-lg shadow-primary/10">
-                        {generating ? "Generating..." : "Generate & Send Instantly"}
+                      <Button disabled={generating} className="md:col-span-2 rounded-xl h-11 font-bold text-sm shadow-lg shadow-primary/10">
+                        {generating ? "Generating..." : "Generate & Dispatch"}
                       </Button>
                     </form>
                   </TabsContent>
                 </Tabs>
-              </CardContent>
-            </Card>
-
-            <Card className="border-none shadow-soft rounded-3xl bg-white overflow-hidden">
-              <CardHeader className="bg-slate-50 border-b p-4 px-8">
-                <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Template Master Configuration</CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <Accordion type="single" collapsible className="w-full">
-                  <AccordionItem value="contract" className="border-none px-8">
-                    <AccordionTrigger className="hover:no-underline font-bold text-[13px]">Employee Contract Master</AccordionTrigger>
-                    <AccordionContent className="pb-5 space-y-3">
-                      <Textarea value={contractTemplate} onChange={(e) => setContractTemplate(e.target.value)} className="min-h-[120px] text-xs font-mono bg-slate-50 border-none rounded-xl p-4" />
-                      <Button size="sm" onClick={() => toast({ title: "Template Updated" })} className="rounded-xl px-6 font-bold h-10">Save Changes</Button>
-                    </AccordionContent>
-                  </AccordionItem>
-                  <AccordionItem value="payslip" className="border-none border-t px-8">
-                    <AccordionTrigger className="hover:no-underline font-bold text-[13px]">Payslip Layout Master</AccordionTrigger>
-                    <AccordionContent className="pb-5 space-y-3">
-                      <Textarea value={payslipTemplate} onChange={(e) => setPayslipTemplate(e.target.value)} className="min-h-[120px] text-xs font-mono bg-slate-50 border-none rounded-xl p-4" />
-                      <Button size="sm" onClick={() => toast({ title: "Template Updated" })} className="rounded-xl px-6 font-bold h-10">Save Changes</Button>
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
               </CardContent>
             </Card>
           </div>
