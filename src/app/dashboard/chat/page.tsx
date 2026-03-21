@@ -67,7 +67,7 @@ function ChatHubContent() {
     }
   }, [tabParam])
 
-  // Fetch ALL users (Staff and Admins) to show in the directory
+  // Fetch ALL users (Staff and Admins)
   const staffQuery = useMemo(() => query(collection(firestore, "users")), [firestore])
   const { data: staffList, loading: staffLoading } = useCollection<Staff>(staffQuery)
 

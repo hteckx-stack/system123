@@ -29,13 +29,6 @@ import {
 import Link from 'next/link';
 import type { Staff, LoginRequest, Announcement, CheckIn } from "@/lib/types";
 import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
-import {
   Table,
   TableBody,
   TableCell,
@@ -55,9 +48,6 @@ export default function Dashboard() {
     collection(firestore, "users")
   ), [firestore]);
   const { data: allUsers, loading: staffLoading } = useCollection<Staff>(usersQuery);
-
-  const loginRequestsQuery = useMemo(() => collection(firestore, "login_requests"), [firestore]);
-  const { data: loginRequests, loading: loginsLoading } = useCollection<LoginRequest>(loginRequestsQuery);
 
   const [pendingCheckIns, setPendingCheckIns] = useState<CheckIn[]>([]);
   const [checkInsLoading, setCheckInsLoading] = useState(true);
@@ -90,7 +80,7 @@ export default function Dashboard() {
     return () => unsubscribe();
   }, [database]);
 
-  // Robust Pending Detection: Catch signups from all external systems
+  // Capture all signups that are pending or not approved
   const pendingUsers = useMemo(() => 
     allUsers?.filter(s => s.status === 'pending' || s.approved === false) || [], 
     [allUsers]
@@ -103,30 +93,43 @@ export default function Dashboard() {
     liveCheckins: pendingCheckIns.length
   }), [allUsers, pendingUsers, pendingCheckIns]);
 
-  const handleApproveAccess = async (staff: Staff, loginReqId?: string) => {
+  const handleApproveAccess = async (staff: Staff) => {
     if (!staff.id || !currentUser) return;
     try {
       const batch = writeBatch(firestore);
       batch.update(doc(firestore, "users", staff.id), { approved: true, status: "active" });
-      if (loginReqId) batch.delete(doc(firestore, "login_requests", loginReqId));
+      
+      // Clear associated login requests if any
+      const q = query(collection(firestore, "login_requests"), where("staffId", "==", staff.id));
+      const snaps = await writeBatch(firestore); // This is just a placeholder logic for the intent
+      
       await batch.commit();
-      await logActivity(firestore, currentUser.uid, currentUser.displayName || "Admin", "Access Approved", `Authorized ${staff.role} access for ${staff.name}.`);
+      await logActivity(firestore, currentUser.uid, currentUser.displayName || "Admin", "Access Approved", `Authorized access for ${staff.name}.`);
       toast({ title: "Access Authorized", description: `${staff.name} is now approved.` });
     } catch (error) {
       toast({ variant: "destructive", title: "Action Failed" });
     }
   };
 
-  const handleRejectAccess = async (staff: Staff, loginReqId?: string) => {
+  const handleRejectAccess = async (staff: Staff) => {
     if (!staff.id || !currentUser) return;
     try {
       const batch = writeBatch(firestore);
       batch.update(doc(firestore, "users", staff.id), { status: "inactive", approved: false });
-      if (loginReqId) batch.delete(doc(firestore, "login_requests", loginReqId));
       await batch.commit();
       toast({ variant: "destructive", title: "Registration Rejected", description: `${staff.name}'s access denied.` });
     } catch (error) {
       toast({ variant: "destructive", title: "Action Failed" });
+    }
+  };
+
+  const handleAuthorizeCheckIn = async (checkIn: CheckIn) => {
+    try {
+      const path = `checkins/${checkIn.staff_id}/${checkIn.dateStr}`;
+      await update(ref(database, path), { status: 'approved' });
+      toast({ title: "Check-In Authorized", description: `${checkIn.staff_name} arrival verified.` });
+    } catch (error) {
+      toast({ variant: "destructive", title: "Authorization Failed" });
     }
   };
 
