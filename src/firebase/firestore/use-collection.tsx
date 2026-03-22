@@ -11,13 +11,11 @@ export function useCollection<T extends DocumentData>(query: Query<T> | null) {
     const { user, loading: userLoading } = useUser();
 
     useEffect(() => {
-        // If auth state is still loading, wait.
         if (userLoading) {
             setLoading(true);
             return;
         }
 
-        // If no user or no query, stop.
         if (!user || !query) {
             setData(null);
             setLoading(false);
@@ -28,8 +26,8 @@ export function useCollection<T extends DocumentData>(query: Query<T> | null) {
 
         let unsubscribe: (() => void) | undefined;
 
-        // Increased delay to 500ms to ensure the backend has fully registered the auth state
-        // before the first request is sent. This prevents permission race conditions.
+        // Reduced delay to 100ms for faster UI responsiveness while still allowing
+        // the auth state to settle.
         const timeoutId = setTimeout(() => {
             unsubscribe = onSnapshot(query, 
                 (snapshot) => {
@@ -62,7 +60,7 @@ export function useCollection<T extends DocumentData>(query: Query<T> | null) {
                     setLoading(false);
                 }
             );
-        }, 500); 
+        }, 100); 
 
         return () => {
             clearTimeout(timeoutId);

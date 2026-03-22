@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useMemo, useEffect, useRef, Suspense } from "react"
@@ -68,7 +67,7 @@ function ChatHubContent() {
     }
   }, [tabParam])
 
-  // Universal User Fetching - Ensuring no one is missed
+  // Universal User Fetching - Live Monitoring of all system users
   const usersQuery = useMemo(() => query(collection(firestore, "users")), [firestore])
   const { data: userList, loading: usersLoading } = useCollection<Staff>(usersQuery)
 
@@ -77,6 +76,7 @@ function ChatHubContent() {
 
   const filteredUsers = useMemo(() => {
     if (!userList || !user) return []
+    // Show all users except the current one for administrative chat
     let list = userList.filter(s => s.id !== user.uid)
     if (searchQuery) {
       list = list.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -98,10 +98,22 @@ function ChatHubContent() {
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Message))
-      msgs.sort((a, b) => (a.timestamp?.toMillis() || 0) - (b.timestamp?.toMillis() || 0));
+      
+      // Robust sorting for real-time updates:
+      // Messages with null serverTimestamp (local writes) are treated as newest (Date.now())
+      msgs.sort((a, b) => {
+        const timeA = a.timestamp?.toMillis?.() || Date.now();
+        const timeB = b.timestamp?.toMillis?.() || Date.now();
+        return timeA - timeB;
+      });
+
       setMessages(msgs)
       setMessagesLoading(false)
+      // Smooth scroll to latest message
       setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100)
+    }, (err) => {
+        console.error("Messages listener error:", err);
+        setMessagesLoading(false);
     })
 
     return () => unsubscribe()
@@ -134,7 +146,7 @@ function ChatHubContent() {
     e.preventDefault()
     if (!broadcastTitle || !broadcastMessage) return
 
-    setIsBroadcasting(true)
+    setIsSending(true)
     try {
       const rtdbRef = ref(database, 'announcements');
       await push(rtdbRef, {
@@ -217,7 +229,10 @@ function ChatHubContent() {
     <div className="flex flex-col h-[calc(100vh-6rem)] gap-2 animate-in fade-in duration-500 overflow-hidden">
       <div className="flex flex-col gap-0 px-1 mb-1">
         <h1 className="text-2xl font-bold tracking-tight text-primary">System Command Hub</h1>
-        <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Unified Communications & Record Management</p>
+        <div className="flex items-center gap-2">
+            <div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+            <p className="text-slate-500 text-[9px] font-bold uppercase tracking-widest">Live Messaging Active</p>
+        </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
@@ -307,10 +322,10 @@ function ChatHubContent() {
                     </Button>
                     <div className="flex items-center gap-3">
                       <div className="h-8 w-8 rounded-xl bg-primary flex items-center justify-center font-bold text-white shadow-lg shadow-primary/20 text-[10px]">
-                        {filteredUsers.find(s => s.id === rawConversations?.find(c => c.id === selectedConvId)?.staff_id)?.name.charAt(0) || "U"}
+                        {filteredUsers.find(s => s.id === (rawConversations?.find(c => c.id === selectedConvId)?.staff_id))?.name.charAt(0) || "U"}
                       </div>
                       <div>
-                        <h3 className="font-bold text-slate-900 text-xs">{filteredUsers.find(s => s.id === rawConversations?.find(c => c.id === selectedConvId)?.staff_id)?.name}</h3>
+                        <h3 className="font-bold text-slate-900 text-xs">{filteredUsers.find(s => s.id === (rawConversations?.find(c => c.id === selectedConvId)?.staff_id))?.name}</h3>
                         <p className="text-[8px] font-bold text-primary uppercase tracking-widest leading-none">Administrative Thread</p>
                       </div>
                     </div>
@@ -338,7 +353,7 @@ function ChatHubContent() {
                               {msg.message}
                             </div>
                             <span className="text-[8px] font-bold text-slate-400 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              {msg.timestamp && formatDistanceToNow(msg.timestamp.toDate(), { addSuffix: true })}
+                              {msg.timestamp ? formatDistanceToNow(msg.timestamp.toDate(), { addSuffix: true }) : "Sending..."}
                             </span>
                           </div>
                         ))
