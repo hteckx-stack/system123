@@ -30,6 +30,7 @@ export function AddStaffDialog({ open, onOpenChange }: AddStaffDialogProps) {
     lastName: "",
     phone: "",
     email: "",
+    nrc: "",
     position: "",
     department: "",
   })
@@ -55,6 +56,7 @@ export function AddStaffDialog({ open, onOpenChange }: AddStaffDialogProps) {
         name: fullName,
         phone: formData.phone,
         email: formData.email,
+        nrc: formData.nrc,
         position: formData.position,
         department: formData.department,
         status: 'pending',
@@ -88,6 +90,7 @@ export function AddStaffDialog({ open, onOpenChange }: AddStaffDialogProps) {
           lastName: "", 
           phone: "", 
           email: "", 
+          nrc: "",
           position: "", 
           department: "" 
         });
@@ -115,29 +118,29 @@ export function AddStaffDialog({ open, onOpenChange }: AddStaffDialogProps) {
               <Input id="lastName" name="lastName" value={formData.lastName} onChange={handleChange} placeholder="Doe" className="rounded-xl h-11" required />
             </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="middleName" className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">Middle Name (Optional)</Label>
-            <Input id="middleName" name="middleName" value={formData.middleName} onChange={handleChange} placeholder="Maria" className="rounded-xl h-11" />
-          </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="email" className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">Email</Label>
               <Input id="email" name="email" type="email" value={formData.email} onChange={handleChange} placeholder="jane.doe@company.com" className="rounded-xl h-11" required />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="phone" className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">Phone</Label>
-              <Input id="phone" name="phone" type="tel" value={formData.phone} onChange={handleChange} placeholder="+260..." className="rounded-xl h-11" />
+              <Label htmlFor="nrc" className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">NRC Number</Label>
+              <Input id="nrc" name="nrc" value={formData.nrc} onChange={handleChange} placeholder="123456/78/1" className="rounded-xl h-11" required />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
+              <Label htmlFor="phone" className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">Phone</Label>
+              <Input id="phone" name="phone" type="tel" value={formData.phone} onChange={handleChange} placeholder="+260..." className="rounded-xl h-11" />
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="position" className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">Position</Label>
               <Input id="position" name="position" value={formData.position} onChange={handleChange} placeholder="Officer" className="rounded-xl h-11" required />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="department" className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">Department</Label>
-              <Input id="department" name="department" value={formData.department} onChange={handleChange} placeholder="Ops" className="rounded-xl h-11" required />
-            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="department" className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">Department</Label>
+            <Input id="department" name="department" value={formData.department} onChange={handleChange} placeholder="Operations" className="rounded-xl h-11" required />
           </div>
         </form>
         <DialogFooter className="bg-slate-50 p-6 px-8 border-t flex items-center justify-end gap-3">

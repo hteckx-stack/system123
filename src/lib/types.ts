@@ -7,11 +7,13 @@ export type Staff = {
   name: string;
   phone: string;
   email: string;
+  nrc: string;
   position: string;
   department: string;
   role: 'admin' | 'staff';
-  status: 'pending' | 'active' | 'inactive';
+  status: 'pending' | 'active' | 'inactive' | 'rejected';
   approved: boolean;
+  rejectionReason?: string;
 };
 
 export type LoginRequest = {
@@ -72,6 +74,7 @@ export type CheckIn = {
   status: 'pending' | 'approved' | 'rejected';
   location?: string;
   dateStr?: string; // used for path mapping
+  comment?: string;
 };
 
 export type TopicType = 'Contract' | 'Payslip' | 'Leave' | 'Announcement' | 'General';

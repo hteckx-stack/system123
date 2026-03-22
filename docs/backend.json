@@ -9,11 +9,13 @@
         "name": { "type": "string" },
         "email": { "type": "string", "format": "email" },
         "phone": { "type": "string" },
+        "nrc": { "type": "string" },
         "position": { "type": "string" },
         "department": { "type": "string" },
         "role": { "type": "string", "enum": ["admin", "staff"] },
-        "status": { "type": "string", "enum": ["pending", "active", "inactive"] },
-        "approved": { "type": "boolean" }
+        "status": { "type": "string", "enum": ["pending", "active", "inactive", "rejected"] },
+        "approved": { "type": "boolean" },
+        "rejectionReason": { "type": "string" }
       },
       "required": ["name", "email", "status", "role"]
     },

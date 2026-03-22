@@ -21,7 +21,10 @@ import {
   ShieldCheck,
   AlertCircle,
   UserPlus,
-  RefreshCw
+  RefreshCw,
+  FileText,
+  MapPin,
+  ChevronRight
 } from "lucide-react";
 import type { Staff, CheckIn } from "@/lib/types";
 import {
@@ -33,6 +36,16 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { format } from "date-fns";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Textarea } from "@/components/ui/textarea"
 
 export default function Dashboard() {
   const firestore = useFirestore();
@@ -40,7 +53,10 @@ export default function Dashboard() {
   const { user: currentUser } = useUser();
   const { toast } = useToast();
 
-  // Robust Registry Query: Fetch ALL profiles to capture external signups instantly
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [selectedStaffToReject, setSelectedStaffToReject] = useState<Staff | null>(null);
+
+  // Fetch ALL profiles to capture external signups instantly
   const usersQuery = useMemo(() => query(
     collection(firestore, "users")
   ), [firestore]);
@@ -50,7 +66,6 @@ export default function Dashboard() {
   const [checkInsLoading, setCheckInsLoading] = useState(true);
 
   useEffect(() => {
-    // Attendance Monitor: Live listener to Realtime Database /checkins
     const checkinsRef = ref(database, 'checkins');
     const unsubscribe = onValue(checkinsRef, (snapshot) => {
       const data = snapshot.val();
@@ -78,7 +93,6 @@ export default function Dashboard() {
     return () => unsubscribe();
   }, [database]);
 
-  // Capture all signups awaiting authorization across any system
   const pendingUsers = useMemo(() => 
     allUsers?.filter(s => s.status === 'pending' || s.approved === false) || [], 
     [allUsers]
@@ -104,13 +118,20 @@ export default function Dashboard() {
     }
   };
 
-  const handleRejectAccess = async (staff: Staff) => {
-    if (!staff.id || !currentUser) return;
+  const handleRejectAccess = async () => {
+    if (!selectedStaffToReject || !currentUser) return;
     try {
       const batch = writeBatch(firestore);
-      batch.update(doc(firestore, "users", staff.id), { status: "inactive", approved: false });
+      batch.update(doc(firestore, "users", selectedStaffToReject.id), { 
+        status: "rejected", 
+        approved: false,
+        rejectionReason: rejectionReason 
+      });
       await batch.commit();
-      toast({ variant: "destructive", title: "Registration Rejected", description: `${staff.name}'s access denied.` });
+      await logActivity(firestore, currentUser.uid, currentUser.displayName || "Admin", "Access Rejected", `Rejected access for ${selectedStaffToReject.name}. Reason: ${rejectionReason}`);
+      toast({ variant: "destructive", title: "Registration Rejected", description: `${selectedStaffToReject.name}'s access denied.` });
+      setSelectedStaffToReject(null);
+      setRejectionReason("");
     } catch (error) {
       toast({ variant: "destructive", title: "Action Failed" });
     }
@@ -120,27 +141,39 @@ export default function Dashboard() {
     try {
       const path = `checkins/${checkIn.staff_id}/${checkIn.dateStr}`;
       await update(ref(database, path), { status: 'approved' });
+      await logActivity(firestore, currentUser?.uid || "system", currentUser?.displayName || "Admin", "Attendance Approved", `Approved check-in for ${checkIn.staff_name}.`);
       toast({ title: "Check-In Authorized", description: `${checkIn.staff_name} arrival verified.` });
     } catch (error) {
       toast({ variant: "destructive", title: "Authorization Failed" });
     }
   };
 
+  const handleRejectCheckIn = async (checkIn: CheckIn) => {
+    try {
+      const path = `checkins/${checkIn.staff_id}/${checkIn.dateStr}`;
+      await update(ref(database, path), { status: 'rejected' });
+      await logActivity(firestore, currentUser?.uid || "system", currentUser?.displayName || "Admin", "Attendance Rejected", `Rejected check-in for ${checkIn.staff_name}.`);
+      toast({ variant: "destructive", title: "Check-In Rejected", description: `${checkIn.staff_name} arrival denied.` });
+    } catch (error) {
+      toast({ variant: "destructive", title: "Action Failed" });
+    }
+  };
+
   return (
     <div className="space-y-4 animate-in fade-in duration-500 pb-10">
       <div className="flex flex-col gap-0 mb-2">
-        <h1 className="text-2xl font-bold tracking-tight text-[#1A1A1A]">System Command Center</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-[#1A1A1A]">Control Center</h1>
         <p className="text-[#6B7280] text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5">
-          <RefreshCw className="h-3 w-3 animate-spin-slow" /> Live Synchronization Hub
+          <RefreshCw className="h-3 w-3 animate-spin-slow" /> Real-time System Guard
         </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {[
-          { title: "Total Registry", value: stats.total, icon: Users, color: "text-blue-500", label: "Profiles synced" },
-          { title: "Active Staff", value: stats.active, icon: ShieldCheck, color: "text-green-500", label: "Authorized users" },
+          { title: "Total Employees", value: stats.total, icon: Users, color: "text-blue-500", label: "Registry count" },
           { title: "Pending Review", value: stats.pending, icon: UserPlus, color: "text-orange-500", label: "Awaiting approval" },
-          { title: "Live Arrivals", value: stats.liveCheckins, icon: Clock, color: "text-primary", label: "GPS Authorizations" },
+          { title: "Active Staff", value: stats.active, icon: ShieldCheck, color: "text-green-500", label: "Authorized users" },
+          { title: "Arrivals", value: stats.liveCheckins, icon: Clock, color: "text-primary", label: "Live GPS logs" },
         ].map((stat, i) => (
           <Card key={i} className="border-none shadow-soft rounded-2xl bg-white overflow-hidden">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-6 pt-6">
@@ -162,7 +195,7 @@ export default function Dashboard() {
               <ShieldCheck className="h-5 w-5 text-primary" />
               <div>
                 <CardTitle className="text-sm font-bold uppercase tracking-wider">Attendance Monitor</CardTitle>
-                <CardDescription className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Real-time GPS arrivals</CardDescription>
+                <CardDescription className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Real-time GPS Authorizations</CardDescription>
               </div>
             </div>
           </CardHeader>
@@ -184,9 +217,17 @@ export default function Dashboard() {
                     <TableRow key={`${ci.staff_id}-${ci.dateStr}`} className="h-14 hover:bg-slate-50 transition-colors border-b last:border-0">
                       <TableCell className="px-8 font-bold text-slate-900 text-xs">{ci.staff_name}</TableCell>
                       <TableCell className="text-slate-600 text-[11px] font-bold">{ci.timestamp ? format(new Date(ci.timestamp), 'hh:mm a') : '---'}</TableCell>
-                      <TableCell className="text-slate-500 text-[11px] font-bold">{ci.location || "Office Site"}</TableCell>
+                      <TableCell className="text-slate-500 text-[11px] font-bold">
+                        <div className="flex items-center gap-1.5">
+                          <MapPin className="h-3 w-3" />
+                          {ci.location || "Office Site"}
+                        </div>
+                      </TableCell>
                       <TableCell className="text-right px-8">
-                        <Button size="sm" onClick={() => handleAuthorizeCheckIn(ci)} className="bg-green-500 hover:bg-green-600 font-bold rounded-xl h-8 text-[10px] uppercase tracking-wider shadow-md shadow-green-500/10">Authorize</Button>
+                        <div className="flex justify-end gap-2">
+                          <Button size="sm" onClick={() => handleAuthorizeCheckIn(ci)} className="bg-green-500 hover:bg-green-600 font-bold rounded-xl h-8 text-[10px] uppercase tracking-wider">Approve</Button>
+                          <Button size="sm" variant="ghost" onClick={() => handleRejectCheckIn(ci)} className="text-red-500 hover:text-red-600 h-8 w-8 p-0"><X className="h-4 w-4" /></Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
@@ -221,12 +262,35 @@ export default function Dashboard() {
                       </Avatar>
                       <div>
                         <p className="font-bold text-xs text-slate-900">{staff.name}</p>
-                        <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">{staff.role}</p>
+                        <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">{staff.nrc || "No NRC"}</p>
+                        <p className="text-[8px] text-slate-400 font-medium">{staff.position}</p>
                       </div>
                     </div>
                     <div className="flex gap-1.5">
                       <Button size="sm" className="bg-primary font-bold rounded-lg h-8 text-[9px] px-3 uppercase tracking-wider" onClick={() => handleApproveAccess(staff)}>Approve</Button>
-                      <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-600 h-8 w-8 p-0" onClick={() => handleRejectAccess(staff)}><X className="h-4 w-4" /></Button>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-600 h-8 w-8 p-0" onClick={() => setSelectedStaffToReject(staff)}><X className="h-4 w-4" /></Button>
+                        </DialogTrigger>
+                        <DialogContent className="rounded-2xl border-none">
+                          <DialogHeader>
+                            <DialogTitle>Reject Registration</DialogTitle>
+                            <DialogDescription>
+                              Provide a reason for denying access to {selectedStaffToReject?.name}.
+                            </DialogDescription>
+                          </DialogHeader>
+                          <Textarea 
+                            placeholder="e.g. Documentation incomplete..." 
+                            value={rejectionReason}
+                            onChange={(e) => setRejectionReason(e.target.value)}
+                            className="rounded-xl"
+                          />
+                          <DialogFooter>
+                            <Button variant="ghost" onClick={() => setSelectedStaffToReject(null)}>Cancel</Button>
+                            <Button variant="destructive" onClick={handleRejectAccess}>Confirm Rejection</Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
                     </div>
                   </div>
                 ))
