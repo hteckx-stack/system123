@@ -19,6 +19,7 @@ export default function LoginPage() {
   const { user, loading } = useUser();
   const [email, setEmail] = useState('admin@bluelink.com');
   const [password, setPassword] = useState('password123');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!loading && user) {
@@ -28,10 +29,12 @@ export default function LoginPage() {
 
   const handleLogin = async (event: React.FormEvent) => {
     event.preventDefault();
+    setIsSubmitting(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
       router.push('/dashboard');
     } catch (error: any) {
+      setIsSubmitting(false);
       toast({
         variant: 'destructive',
         title: 'Login Failed',
@@ -39,14 +42,6 @@ export default function LoginPage() {
       });
     }
   };
-
-  if (loading || (!loading && user)) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
-      </div>
-    )
-  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50 p-4">
@@ -94,11 +89,11 @@ export default function LoginPage() {
                 />
               </div>
             </div>
-            <Button type="submit" className="w-full h-12 rounded-xl font-bold text-lg shadow-lg shadow-primary/20">
-              Sign In
+            <Button type="submit" disabled={isSubmitting} className="w-full h-12 rounded-xl font-bold text-lg shadow-lg shadow-primary/20">
+              {isSubmitting ? "Authenticating..." : "Sign In"}
             </Button>
             <div className="text-center text-sm font-medium text-slate-500 pt-2">
-              New administrator?{" "}
+              New user?{" "}
               <Link href="/signup" className="text-primary hover:underline font-bold">Request Access</Link>
             </div>
           </form>

@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useMemo, useEffect, useRef, Suspense } from "react"
@@ -6,7 +5,7 @@ import { collection, query, orderBy, where, onSnapshot, addDoc, serverTimestamp 
 import { ref, push, serverTimestamp as rtdbTimestamp } from "firebase/database"
 import { useFirestore, useCollection, useUser, useDatabase } from "@/firebase"
 import type { Conversation, Message, Staff } from "@/lib/types"
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -15,7 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Send, Search, MessageSquare, ArrowLeft, Megaphone, User, Plus, FileText } from "lucide-react"
+import { Send, Search, MessageSquare, ArrowLeft, Megaphone, User, Plus } from "lucide-react"
 import { sendMessage, getOrCreateConversation } from "@/firebase/firestore/messages"
 import { addDocument } from "@/firebase/firestore/documents"
 import { cn } from "@/lib/utils"
@@ -68,7 +67,7 @@ function ChatHubContent() {
     }
   }, [tabParam])
 
-  // Fetch ALL users in the system for chatting
+  // Fetch ALL users for messaging
   const staffQuery = useMemo(() => query(collection(firestore, "users")), [firestore])
   const { data: staffList, loading: staffLoading } = useCollection<Staff>(staffQuery)
 
@@ -216,8 +215,8 @@ function ChatHubContent() {
   return (
     <div className="flex flex-col h-[calc(100vh-6rem)] gap-2 animate-in fade-in duration-500 overflow-hidden">
       <div className="flex flex-col gap-0 px-1 mb-1">
-        <h1 className="text-2xl font-bold tracking-tight text-[#0D47A1]">System Command Hub</h1>
-        <p className="text-[#6B7280] text-[10px] font-bold uppercase tracking-widest">Unified Communications & Record Management</p>
+        <h1 className="text-2xl font-bold tracking-tight text-primary">System Command Hub</h1>
+        <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Unified Communications & Record Management</p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
@@ -237,7 +236,7 @@ function ChatHubContent() {
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                   <Input 
-                    placeholder="Search all employees..." 
+                    placeholder="Search registry..." 
                     className="pl-10 bg-slate-50 border-none rounded-xl h-9 text-[11px] font-medium"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -364,7 +363,7 @@ function ChatHubContent() {
                 <div className="flex flex-col items-center justify-center flex-1 text-slate-300 p-10 opacity-50">
                   <MessageSquare className="h-16 w-16 mb-4" />
                   <h3 className="text-xl font-bold">Secure Messenger</h3>
-                  <p className="text-center text-[11px] font-bold uppercase tracking-widest mt-2">Select an employee to begin</p>
+                  <p className="text-center text-[10px] font-bold uppercase tracking-widest mt-2">Select a user to begin</p>
                 </div>
               )}
             </Card>
@@ -373,7 +372,7 @@ function ChatHubContent() {
 
         <TabsContent value="broadcasts" className="flex-1 flex flex-col m-0 pt-0">
           <Card className="max-w-xl mx-auto border-none shadow-soft rounded-3xl overflow-hidden bg-white mt-2">
-            <CardHeader className="bg-[#0D47A1] text-white py-3 px-8">
+            <CardHeader className="bg-primary text-white py-3 px-8">
               <div className="flex items-center gap-3">
                 <Megaphone className="h-4 w-4" />
                 <CardTitle className="text-[10px] font-bold uppercase tracking-widest">Compose Global Broadcast</CardTitle>
@@ -392,7 +391,7 @@ function ChatHubContent() {
               <div className="space-y-1.5">
                 <Label className="text-[9px] font-bold uppercase tracking-widest text-slate-400 ml-1">Message Content</Label>
                 <Textarea 
-                  placeholder="Enter details for all employee app home screens..." 
+                  placeholder="Enter details for all app home screens..." 
                   className="min-h-[140px] rounded-2xl bg-slate-50 border-none p-5 text-[12px] leading-relaxed"
                   value={broadcastMessage}
                   onChange={(e) => setBroadcastMessage(e.target.value)}
@@ -401,7 +400,7 @@ function ChatHubContent() {
               <Button 
                 onClick={handleBroadcast} 
                 disabled={isBroadcasting}
-                className="w-full h-10 bg-[#0D47A1] rounded-xl font-bold text-sm gap-2 shadow-lg shadow-[#0D47A1]/20 hover:bg-[#0A3578] mt-2"
+                className="w-full h-10 bg-primary rounded-xl font-bold text-sm gap-2 shadow-lg shadow-primary/20 hover:bg-primary/90 mt-2"
               >
                 <Send className="h-4 w-4" />
                 {isBroadcasting ? "Broadcasting..." : "Push to All Devices"}
@@ -433,7 +432,7 @@ function ChatHubContent() {
                           <Label className="text-[8px] font-bold uppercase tracking-widest text-slate-400 ml-1">Recipient</Label>
                           <Select value={selectedStaffId} onValueChange={setSelectedStaffId}>
                             <SelectTrigger className="h-9 rounded-xl bg-slate-50 border-none text-[11px] font-bold">
-                              <SelectValue placeholder="Select Staff" />
+                              <SelectValue placeholder="Select Recipient" />
                             </SelectTrigger>
                             <SelectContent className="rounded-xl">
                               {staffList?.map(s => (
@@ -470,10 +469,10 @@ function ChatHubContent() {
                     <form onSubmit={handleGenerateSubmit} className="space-y-4">
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1">
-                          <Label className="text-[8px] font-bold uppercase tracking-widest text-slate-400 ml-1">Select Staff</Label>
+                          <Label className="text-[8px] font-bold uppercase tracking-widest text-slate-400 ml-1">Select User</Label>
                           <Select value={templateStaffId} onValueChange={setTemplateStaffId}>
                             <SelectTrigger className="h-9 rounded-xl bg-slate-50 border-none text-[11px] font-bold">
-                              <SelectValue placeholder="Staff Member" />
+                              <SelectValue placeholder="Select User" />
                             </SelectTrigger>
                             <SelectContent className="rounded-xl">
                               {staffList?.map(s => (
