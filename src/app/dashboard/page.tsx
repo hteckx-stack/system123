@@ -45,7 +45,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils"
 
 export default function Dashboard() {
   const firestore = useFirestore();
@@ -56,11 +56,8 @@ export default function Dashboard() {
   const [rejectionReason, setRejectionReason] = useState("");
   const [selectedStaffToReject, setSelectedStaffToReject] = useState<Staff | null>(null);
 
-  // Broad Scan Registry: Listen for EVERYONE in the system immediately
-  const usersQuery = useMemo(() => query(
-    collection(firestore, "users"),
-    orderBy("name", "asc")
-  ), [firestore]);
+  // Broad Scan Registry: Removed orderBy to ensure Moses and new users show up instantly
+  const usersQuery = useMemo(() => collection(firestore, "users"), [firestore]);
   const { data: allUsers, loading: staffLoading } = useCollection<Staff>(usersQuery);
 
   const [pendingCheckIns, setPendingCheckIns] = useState<CheckIn[]>([]);
@@ -250,10 +247,10 @@ export default function Dashboard() {
                   <div key={staff.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-all">
                     <div className="flex items-center gap-2 min-w-0">
                       <Avatar className="h-8 w-8 rounded-xl border-2 border-white shadow-sm shrink-0">
-                        <AvatarFallback className="bg-primary text-white font-bold text-[9px]">{staff.name.charAt(0)}</AvatarFallback>
+                        <AvatarFallback className="bg-primary text-white font-bold text-[9px]">{(staff.name || "U").charAt(0)}</AvatarFallback>
                       </Avatar>
                       <div className="truncate">
-                        <p className="font-bold text-[11px] text-slate-900 truncate">{staff.name}</p>
+                        <p className="font-bold text-[11px] text-slate-900 truncate">{staff.name || "New User"}</p>
                         <p className="text-[7px] text-slate-400 font-bold uppercase tracking-widest truncate">{staff.nrc || "NO NRC"} | {staff.position}</p>
                       </div>
                     </div>

@@ -69,10 +69,11 @@ function ChatHubContent() {
   }, [tabParam])
 
   // Universal Database Scan - Captures EVERYONE (Moses, Admins, Staff) instantly
-  const usersQuery = useMemo(() => query(collection(firestore, "users"), orderBy("name", "asc")), [firestore])
+  // Removed orderBy to ensure all users appear even if name is missing or index is syncing
+  const usersQuery = useMemo(() => collection(firestore, "users"), [firestore])
   const { data: userList, loading: usersLoading } = useCollection<Staff>(usersQuery)
 
-  const convQuery = useMemo(() => query(collection(firestore, "conversations"), orderBy("timestamp", "desc")), [firestore])
+  const convQuery = useMemo(() => collection(firestore, "conversations"), [firestore])
   const { data: rawConversations } = useCollection<Conversation>(convQuery)
 
   const filteredUsers = useMemo(() => {
@@ -80,9 +81,10 @@ function ChatHubContent() {
     // Show EVERYONE in the registry immediately upon signup
     let list = userList.filter(s => s.id !== user.uid)
     if (searchQuery) {
-      list = list.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase()))
+      list = list.filter(s => (s.name || "").toLowerCase().includes(searchQuery.toLowerCase()))
     }
-    return list
+    // Client-side sort to ensure robustness
+    return list.sort((a, b) => (a.name || "").localeCompare(b.name || ""))
   }, [userList, searchQuery, user])
 
   useEffect(() => {
@@ -283,11 +285,11 @@ function ChatHubContent() {
                                 )}
                             >
                                 <div className="h-9 w-9 rounded-xl bg-slate-100 flex items-center justify-center font-bold text-primary text-xs shadow-sm">
-                                    {staff.name.charAt(0)}
+                                    {(staff.name || "U").charAt(0)}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center justify-between">
-                                        <span className="font-bold text-slate-900 text-xs truncate">{staff.name}</span>
+                                        <span className="font-bold text-slate-900 text-xs truncate">{staff.name || "Unknown User"}</span>
                                         {conversation?.timestamp && (
                                             <span className="text-[9px] font-bold text-slate-400">
                                                 {formatDistanceToNow(conversation.timestamp.toDate(), { addSuffix: false })}
