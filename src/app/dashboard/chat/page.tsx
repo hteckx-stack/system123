@@ -67,7 +67,7 @@ function ChatHubContent() {
     }
   }, [tabParam])
 
-  // Universal User Fetching - Live Monitoring of ALL system users (Moses, etc.)
+  // Universal User Fetching - Ensuring "Moses" and everyone else shows up instantly
   const usersQuery = useMemo(() => query(collection(firestore, "users")), [firestore])
   const { data: userList, loading: usersLoading } = useCollection<Staff>(usersQuery)
 
@@ -76,7 +76,7 @@ function ChatHubContent() {
 
   const filteredUsers = useMemo(() => {
     if (!userList || !user) return []
-    // Show EVERYONE except yourself to ensure Moses and others are found immediately
+    // Show EVERYONE in the registry immediately upon signup
     let list = userList.filter(s => s.id !== user.uid)
     if (searchQuery) {
       list = list.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase()))
