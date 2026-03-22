@@ -67,7 +67,7 @@ function ChatHubContent() {
     }
   }, [tabParam])
 
-  // Universal User Fetching - Live Monitoring of all system users
+  // Universal User Fetching - Live Monitoring of ALL system users (Moses, etc.)
   const usersQuery = useMemo(() => query(collection(firestore, "users")), [firestore])
   const { data: userList, loading: usersLoading } = useCollection<Staff>(usersQuery)
 
@@ -76,7 +76,7 @@ function ChatHubContent() {
 
   const filteredUsers = useMemo(() => {
     if (!userList || !user) return []
-    // Show all users except the current one for administrative chat
+    // Show EVERYONE except yourself to ensure Moses and others are found immediately
     let list = userList.filter(s => s.id !== user.uid)
     if (searchQuery) {
       list = list.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -99,8 +99,6 @@ function ChatHubContent() {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Message))
       
-      // Robust sorting for real-time updates:
-      // Messages with null serverTimestamp (local writes) are treated as newest (Date.now())
       msgs.sort((a, b) => {
         const timeA = a.timestamp?.toMillis?.() || Date.now();
         const timeB = b.timestamp?.toMillis?.() || Date.now();
@@ -109,10 +107,8 @@ function ChatHubContent() {
 
       setMessages(msgs)
       setMessagesLoading(false)
-      // Smooth scroll to latest message
       setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100)
     }, (err) => {
-        console.error("Messages listener error:", err);
         setMessagesLoading(false);
     })
 
@@ -146,7 +142,7 @@ function ChatHubContent() {
     e.preventDefault()
     if (!broadcastTitle || !broadcastMessage) return
 
-    setIsSending(true)
+    setIsBroadcasting(true)
     try {
       const rtdbRef = ref(database, 'announcements');
       await push(rtdbRef, {
