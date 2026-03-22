@@ -1,8 +1,7 @@
-
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
-import { collection, query, doc, writeBatch, orderBy, limit } from "firebase/firestore";
+import { collection, query, doc, writeBatch, orderBy, limit, where } from "firebase/firestore";
 import { useCollection, useFirestore, useUser, useDatabase } from "@/firebase";
 import { ref, onValue, update } from "firebase/database";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -56,7 +55,7 @@ export default function Dashboard() {
   const [rejectionReason, setRejectionReason] = useState("");
   const [selectedStaffToReject, setSelectedStaffToReject] = useState<Staff | null>(null);
 
-  // Fetch ALL profiles to capture external signups instantly
+  // Fetch ALL profiles - catching signups from all sources
   const usersQuery = useMemo(() => query(
     collection(firestore, "users")
   ), [firestore]);
@@ -93,8 +92,9 @@ export default function Dashboard() {
     return () => unsubscribe();
   }, [database]);
 
+  // Priority Filter: Show anyone who isn't explicitly approved yet
   const pendingUsers = useMemo(() => 
-    allUsers?.filter(s => s.status === 'pending' || s.approved === false) || [], 
+    allUsers?.filter(s => s.status === 'pending' || s.approved !== true) || [], 
     [allUsers]
   );
 
@@ -162,18 +162,18 @@ export default function Dashboard() {
   return (
     <div className="space-y-4 animate-in fade-in duration-500 pb-10">
       <div className="flex flex-col gap-0 mb-2">
-        <h1 className="text-2xl font-bold tracking-tight text-[#1A1A1A]">Control Center</h1>
-        <p className="text-[#6B7280] text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5">
-          <RefreshCw className="h-3 w-3 animate-spin-slow" /> Real-time System Guard
+        <h1 className="text-2xl font-bold tracking-tight text-primary">Command Center</h1>
+        <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5">
+          <RefreshCw className="h-3 w-3 animate-spin-slow" /> Unified Database Sync
         </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {[
-          { title: "Total Employees", value: stats.total, icon: Users, color: "text-blue-500", label: "Registry count" },
-          { title: "Pending Review", value: stats.pending, icon: UserPlus, color: "text-orange-500", label: "Awaiting approval" },
-          { title: "Active Staff", value: stats.active, icon: ShieldCheck, color: "text-green-500", label: "Authorized users" },
-          { title: "Arrivals", value: stats.liveCheckins, icon: Clock, color: "text-primary", label: "Live GPS logs" },
+          { title: "Database Registry", value: stats.total, icon: Users, color: "text-blue-500", label: "Total Users" },
+          { title: "Pending Review", value: stats.pending, icon: UserPlus, color: "text-orange-500", label: "Awaiting Action" },
+          { title: "Active Staff", value: stats.active, icon: ShieldCheck, color: "text-green-500", label: "Fully Authorized" },
+          { title: "Live Arrivals", value: stats.liveCheckins, icon: Clock, color: "text-primary", label: "Real-time GPS" },
         ].map((stat, i) => (
           <Card key={i} className="border-none shadow-soft rounded-2xl bg-white overflow-hidden">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-6 pt-6">
@@ -194,8 +194,8 @@ export default function Dashboard() {
             <div className="flex items-center gap-3">
               <ShieldCheck className="h-5 w-5 text-primary" />
               <div>
-                <CardTitle className="text-sm font-bold uppercase tracking-wider">Attendance Monitor</CardTitle>
-                <CardDescription className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Real-time GPS Authorizations</CardDescription>
+                <CardTitle className="text-sm font-bold uppercase tracking-wider text-slate-900">Live Attendance Monitor</CardTitle>
+                <CardDescription className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Awaiting GPS Authorization</CardDescription>
               </div>
             </div>
           </CardHeader>
@@ -203,15 +203,15 @@ export default function Dashboard() {
             <Table>
               <TableHeader className="bg-slate-50/50">
                 <TableRow className="h-10 uppercase text-[9px] tracking-widest font-bold">
-                  <TableHead className="px-8">Staff Member</TableHead>
-                  <TableHead>Time</TableHead>
-                  <TableHead>Location</TableHead>
+                  <TableHead className="px-8">User</TableHead>
+                  <TableHead>Arrival Time</TableHead>
+                  <TableHead>Verified Location</TableHead>
                   <TableHead className="text-right px-8">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {checkInsLoading ? (
-                  <TableRow><TableCell colSpan={4} className="py-20 text-center text-[10px] font-bold uppercase text-slate-300 tracking-widest">Syncing logs...</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={4} className="py-20 text-center text-[10px] font-bold uppercase text-slate-300 tracking-widest">Syncing Realtime Database...</TableCell></TableRow>
                 ) : pendingCheckIns.length > 0 ? (
                   pendingCheckIns.map((ci) => (
                     <TableRow key={`${ci.staff_id}-${ci.dateStr}`} className="h-14 hover:bg-slate-50 transition-colors border-b last:border-0">
@@ -232,7 +232,7 @@ export default function Dashboard() {
                     </TableRow>
                   ))
                 ) : (
-                  <TableRow><TableCell colSpan={4} className="h-60 text-center text-slate-200 font-bold uppercase text-[10px] tracking-widest">All arrivals authorized</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={4} className="h-60 text-center text-slate-200 font-bold uppercase text-[10px] tracking-widest">No pending arrivals</TableCell></TableRow>
                 )}
               </TableBody>
             </Table>
@@ -263,31 +263,31 @@ export default function Dashboard() {
                       <div>
                         <p className="font-bold text-xs text-slate-900">{staff.name}</p>
                         <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">{staff.nrc || "No NRC"}</p>
-                        <p className="text-[8px] text-slate-400 font-medium">{staff.position}</p>
+                        <p className="text-[8px] text-slate-400 font-medium">{staff.role} | {staff.position}</p>
                       </div>
                     </div>
                     <div className="flex gap-1.5">
-                      <Button size="sm" className="bg-primary font-bold rounded-lg h-8 text-[9px] px-3 uppercase tracking-wider" onClick={() => handleApproveAccess(staff)}>Approve</Button>
+                      <Button size="sm" className="bg-primary font-bold rounded-lg h-8 text-[9px] px-3 uppercase tracking-wider" onClick={() => handleApproveAccess(staff)}>Authorize</Button>
                       <Dialog>
                         <DialogTrigger asChild>
                           <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-600 h-8 w-8 p-0" onClick={() => setSelectedStaffToReject(staff)}><X className="h-4 w-4" /></Button>
                         </DialogTrigger>
                         <DialogContent className="rounded-2xl border-none">
                           <DialogHeader>
-                            <DialogTitle>Reject Registration</DialogTitle>
+                            <DialogTitle>Deny Registration</DialogTitle>
                             <DialogDescription>
                               Provide a reason for denying access to {selectedStaffToReject?.name}.
                             </DialogDescription>
                           </DialogHeader>
                           <Textarea 
-                            placeholder="e.g. Documentation incomplete..." 
+                            placeholder="e.g. Identity verification failed..." 
                             value={rejectionReason}
                             onChange={(e) => setRejectionReason(e.target.value)}
                             className="rounded-xl"
                           />
                           <DialogFooter>
                             <Button variant="ghost" onClick={() => setSelectedStaffToReject(null)}>Cancel</Button>
-                            <Button variant="destructive" onClick={handleRejectAccess}>Confirm Rejection</Button>
+                            <Button variant="destructive" onClick={handleRejectAccess}>Reject User</Button>
                           </DialogFooter>
                         </DialogContent>
                       </Dialog>
@@ -295,7 +295,7 @@ export default function Dashboard() {
                   </div>
                 ))
               ) : (
-                <div className="py-24 text-center text-slate-200 font-bold text-[9px] uppercase tracking-widest">No pending signups</div>
+                <div className="py-24 text-center text-slate-200 font-bold text-[9px] uppercase tracking-widest">Registry Clear</div>
               )}
             </div>
           </CardContent>
@@ -303,9 +303,9 @@ export default function Dashboard() {
       </div>
 
       <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-4 flex items-start gap-3">
-        <AlertCircle className="h-4 w-4 text-[#0D47A1] shrink-0 mt-0.5" />
-        <p className="text-[10px] text-[#0D47A1]/80 font-bold uppercase tracking-widest leading-relaxed">
-          System Guard: This portal automatically captures signups from all external employee systems for your verification. All changes reflect in real-time.
+        <AlertCircle className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+        <p className="text-[10px] text-primary/80 font-bold uppercase tracking-widest leading-relaxed">
+          Sync Status: Currently tracking all registrations from connected systems. Authorization grants immediate access to employee app features.
         </p>
       </div>
     </div>

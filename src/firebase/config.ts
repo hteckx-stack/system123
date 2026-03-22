@@ -5,6 +5,5 @@ export const firebaseConfig = {
   projectId: "the-system-4da6f",
   storageBucket: "the-system-4da6f.firebasestorage.app",
   messagingSenderId: "839791887144",
-  appId: "1:839791887144:web:e0fc66bb350da8c03e861d",
-  measurementId: "G-8NSR60VNVJ"
+  appId: "1:839791887144:web:e0fc66bb350da8c03e861d"
 };
