@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useMemo, useEffect, useRef, Suspense } from "react"
@@ -14,7 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Send, Search, MessageSquare, ArrowLeft, Megaphone, User, Plus } from "lucide-react"
+import { Send, Search, MessageSquare, ArrowLeft, Megaphone, User, Plus, RefreshCcw } from "lucide-react"
 import { sendMessage, getOrCreateConversation } from "@/firebase/firestore/messages"
 import { addDocument } from "@/firebase/firestore/documents"
 import { cn } from "@/lib/utils"
@@ -67,8 +68,8 @@ function ChatHubContent() {
     }
   }, [tabParam])
 
-  // Universal User Fetching - Ensuring "Moses" and everyone else shows up instantly
-  const usersQuery = useMemo(() => query(collection(firestore, "users")), [firestore])
+  // Universal Database Scan - Captures EVERYONE (Moses, Admins, Staff) instantly
+  const usersQuery = useMemo(() => query(collection(firestore, "users"), orderBy("name", "asc")), [firestore])
   const { data: userList, loading: usersLoading } = useCollection<Staff>(usersQuery)
 
   const convQuery = useMemo(() => query(collection(firestore, "conversations"), orderBy("timestamp", "desc")), [firestore])
@@ -223,11 +224,13 @@ function ChatHubContent() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-6rem)] gap-2 animate-in fade-in duration-500 overflow-hidden">
-      <div className="flex flex-col gap-0 px-1 mb-1">
-        <h1 className="text-2xl font-bold tracking-tight text-primary">System Command Hub</h1>
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between px-1 mb-1">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-primary">System Command Hub</h1>
+          <div className="flex items-center gap-2">
             <div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
-            <p className="text-slate-500 text-[9px] font-bold uppercase tracking-widest">Live Messaging Active</p>
+            <p className="text-slate-500 text-[9px] font-bold uppercase tracking-widest">Live Registry Sync Active</p>
+          </div>
         </div>
       </div>
 
@@ -248,7 +251,7 @@ function ChatHubContent() {
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                   <Input 
-                    placeholder="Search registry..." 
+                    placeholder="Search all users..." 
                     className="pl-10 bg-slate-50 border-none rounded-xl h-9 text-[11px] font-medium"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -258,7 +261,7 @@ function ChatHubContent() {
               <ScrollArea className="flex-1">
                 <div className="p-1.5 space-y-1">
                   {usersLoading ? (
-                    Array.from({ length: 8 }).map((_, i) => (
+                    Array.from({ length: 12 }).map((_, i) => (
                       <div key={i} className="p-3 flex items-center gap-3">
                         <Skeleton className="h-9 w-9 rounded-xl" />
                         <div className="flex-1 space-y-2">
@@ -276,7 +279,7 @@ function ChatHubContent() {
                                 onClick={() => handleSelectStaff(staff)}
                                 className={cn(
                                 "flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all",
-                                selectedConvId === conversation?.id ? "bg-primary/5 shadow-inner" : "hover:bg-slate-50"
+                                selectedConvId === conversation?.id ? "bg-primary/10 shadow-inner" : "hover:bg-slate-50"
                                 )}
                             >
                                 <div className="h-9 w-9 rounded-xl bg-slate-100 flex items-center justify-center font-bold text-primary text-xs shadow-sm">
@@ -291,15 +294,18 @@ function ChatHubContent() {
                                             </span>
                                         )}
                                     </div>
-                                    <p className="text-[10px] text-slate-500 truncate font-medium">{conversation?.last_message || "Start thread..."}</p>
+                                    <div className="flex items-center justify-between">
+                                      <p className="text-[10px] text-slate-500 truncate font-medium">{conversation?.last_message || "Start thread..."}</p>
+                                      {staff.approved === false && <div className="h-1.5 w-1.5 rounded-full bg-orange-500 ml-1" title="Pending Approval" />}
+                                    </div>
                                 </div>
                             </div>
                         )
                     })
                   ) : (
                     <div className="text-center py-24 text-slate-300 flex flex-col items-center gap-3 opacity-50">
-                      <User className="h-12 w-12" />
-                      <p className="text-[10px] font-bold uppercase tracking-widest">Registry Empty</p>
+                      <RefreshCcw className="h-12 w-12 animate-spin duration-[3s]" />
+                      <p className="text-[10px] font-bold uppercase tracking-widest">Scanning Registry...</p>
                     </div>
                   )}
                 </div>
@@ -318,10 +324,10 @@ function ChatHubContent() {
                     </Button>
                     <div className="flex items-center gap-3">
                       <div className="h-8 w-8 rounded-xl bg-primary flex items-center justify-center font-bold text-white shadow-lg shadow-primary/20 text-[10px]">
-                        {filteredUsers.find(s => s.id === (rawConversations?.find(c => c.id === selectedConvId)?.staff_id))?.name.charAt(0) || "U"}
+                        {userList?.find(s => s.id === (rawConversations?.find(c => c.id === selectedConvId)?.staff_id))?.name.charAt(0) || "U"}
                       </div>
                       <div>
-                        <h3 className="font-bold text-slate-900 text-xs">{filteredUsers.find(s => s.id === (rawConversations?.find(c => c.id === selectedConvId)?.staff_id))?.name}</h3>
+                        <h3 className="font-bold text-slate-900 text-xs">{userList?.find(s => s.id === (rawConversations?.find(c => c.id === selectedConvId)?.staff_id))?.name}</h3>
                         <p className="text-[8px] font-bold text-primary uppercase tracking-widest leading-none">Administrative Thread</p>
                       </div>
                     </div>
@@ -375,7 +381,7 @@ function ChatHubContent() {
                 <div className="flex flex-col items-center justify-center flex-1 text-slate-300 p-10 opacity-50">
                   <MessageSquare className="h-16 w-16 mb-4" />
                   <h3 className="text-xl font-bold">Secure Messenger</h3>
-                  <p className="text-center text-[10px] font-bold uppercase tracking-widest mt-2">Select a user to begin</p>
+                  <p className="text-center text-[10px] font-bold uppercase tracking-widest mt-2">Select a user to begin scanning history</p>
                 </div>
               )}
             </Card>
