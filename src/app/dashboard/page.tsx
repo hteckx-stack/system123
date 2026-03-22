@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
@@ -12,18 +13,16 @@ import { Button } from '@/components/ui/button';
 import { useToast } from "@/hooks/use-toast";
 import { logActivity } from "@/firebase/firestore/activity-logs";
 import { 
-  Megaphone, 
   Clock, 
   X,
-  UserCheck,
   Users,
   ShieldCheck,
   AlertCircle,
   UserPlus,
   RefreshCw,
-  FileText,
   MapPin,
-  ChevronRight
+  Search,
+  CheckCircle2
 } from "lucide-react";
 import type { Staff, CheckIn } from "@/lib/types";
 import {
@@ -45,6 +44,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
+import { cn } from "@/lib/utils";
 
 export default function Dashboard() {
   const firestore = useFirestore();
@@ -55,7 +55,7 @@ export default function Dashboard() {
   const [rejectionReason, setRejectionReason] = useState("");
   const [selectedStaffToReject, setSelectedStaffToReject] = useState<Staff | null>(null);
 
-  // Fetch ALL profiles - catching signups from all sources
+  // Fetch ALL users - Live Scanning for external app signups
   const usersQuery = useMemo(() => query(
     collection(firestore, "users")
   ), [firestore]);
@@ -64,6 +64,7 @@ export default function Dashboard() {
   const [pendingCheckIns, setPendingCheckIns] = useState<CheckIn[]>([]);
   const [checkInsLoading, setCheckInsLoading] = useState(true);
 
+  // Realtime Database Monitor for GPS Arrivals
   useEffect(() => {
     const checkinsRef = ref(database, 'checkins');
     const unsubscribe = onValue(checkinsRef, (snapshot) => {
@@ -92,7 +93,7 @@ export default function Dashboard() {
     return () => unsubscribe();
   }, [database]);
 
-  // Priority Filter: Show anyone who isn't explicitly approved yet
+  // Priority Filter: Anyone needing admin attention
   const pendingUsers = useMemo(() => 
     allUsers?.filter(s => s.status === 'pending' || s.approved !== true) || [], 
     [allUsers]
@@ -148,32 +149,24 @@ export default function Dashboard() {
     }
   };
 
-  const handleRejectCheckIn = async (checkIn: CheckIn) => {
-    try {
-      const path = `checkins/${checkIn.staff_id}/${checkIn.dateStr}`;
-      await update(ref(database, path), { status: 'rejected' });
-      await logActivity(firestore, currentUser?.uid || "system", currentUser?.displayName || "Admin", "Attendance Rejected", `Rejected check-in for ${checkIn.staff_name}.`);
-      toast({ variant: "destructive", title: "Check-In Rejected", description: `${checkIn.staff_name} arrival denied.` });
-    } catch (error) {
-      toast({ variant: "destructive", title: "Action Failed" });
-    }
-  };
-
   return (
     <div className="space-y-4 animate-in fade-in duration-500 pb-10">
       <div className="flex flex-col gap-0 mb-2">
         <h1 className="text-2xl font-bold tracking-tight text-primary">Command Center</h1>
-        <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5">
-          <RefreshCw className="h-3 w-3 animate-spin-slow" /> Unified Database Sync
-        </p>
+        <div className="flex items-center gap-2">
+          <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+          <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5">
+            Live Registry Sync Active
+          </p>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {[
-          { title: "Database Registry", value: stats.total, icon: Users, color: "text-blue-500", label: "Total Users" },
+          { title: "System Registry", value: stats.total, icon: Users, color: "text-blue-500", label: "Total Users" },
           { title: "Pending Review", value: stats.pending, icon: UserPlus, color: "text-orange-500", label: "Awaiting Action" },
-          { title: "Active Staff", value: stats.active, icon: ShieldCheck, color: "text-green-500", label: "Fully Authorized" },
-          { title: "Live Arrivals", value: stats.liveCheckins, icon: Clock, color: "text-primary", label: "Real-time GPS" },
+          { title: "Active Staff", value: stats.active, icon: ShieldCheck, color: "text-green-500", label: "Authorized" },
+          { title: "Live GPS Hits", value: stats.liveCheckins, icon: Clock, color: "text-primary", label: "Real-time" },
         ].map((stat, i) => (
           <Card key={i} className="border-none shadow-soft rounded-2xl bg-white overflow-hidden">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-6 pt-6">
@@ -194,8 +187,8 @@ export default function Dashboard() {
             <div className="flex items-center gap-3">
               <ShieldCheck className="h-5 w-5 text-primary" />
               <div>
-                <CardTitle className="text-sm font-bold uppercase tracking-wider text-slate-900">Live Attendance Monitor</CardTitle>
-                <CardDescription className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Awaiting GPS Authorization</CardDescription>
+                <CardTitle className="text-sm font-bold uppercase tracking-wider text-slate-900">Attendance Monitor</CardTitle>
+                <CardDescription className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Real-time GPS arrivals</CardDescription>
               </div>
             </div>
           </CardHeader>
@@ -211,7 +204,7 @@ export default function Dashboard() {
               </TableHeader>
               <TableBody>
                 {checkInsLoading ? (
-                  <TableRow><TableCell colSpan={4} className="py-20 text-center text-[10px] font-bold uppercase text-slate-300 tracking-widest">Syncing Realtime Database...</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={4} className="py-20 text-center text-[10px] font-bold uppercase text-slate-300 tracking-widest">Syncing Live Database...</TableCell></TableRow>
                 ) : pendingCheckIns.length > 0 ? (
                   pendingCheckIns.map((ci) => (
                     <TableRow key={`${ci.staff_id}-${ci.dateStr}`} className="h-14 hover:bg-slate-50 transition-colors border-b last:border-0">
@@ -224,10 +217,7 @@ export default function Dashboard() {
                         </div>
                       </TableCell>
                       <TableCell className="text-right px-8">
-                        <div className="flex justify-end gap-2">
-                          <Button size="sm" onClick={() => handleAuthorizeCheckIn(ci)} className="bg-green-500 hover:bg-green-600 font-bold rounded-xl h-8 text-[10px] uppercase tracking-wider">Approve</Button>
-                          <Button size="sm" variant="ghost" onClick={() => handleRejectCheckIn(ci)} className="text-red-500 hover:text-red-600 h-8 w-8 p-0"><X className="h-4 w-4" /></Button>
-                        </div>
+                        <Button size="sm" onClick={() => handleAuthorizeCheckIn(ci)} className="bg-green-500 hover:bg-green-600 font-bold rounded-xl h-8 text-[10px] uppercase tracking-wider px-4">Authorize</Button>
                       </TableCell>
                     </TableRow>
                   ))
@@ -256,18 +246,17 @@ export default function Dashboard() {
               ) : pendingUsers.length > 0 ? (
                 pendingUsers.map(staff => (
                   <div key={staff.id} className="p-5 flex items-center justify-between hover:bg-slate-50 transition-all">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-9 w-9 rounded-xl border-2 border-white shadow-sm">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <Avatar className="h-9 w-9 rounded-xl border-2 border-white shadow-sm shrink-0">
                         <AvatarFallback className="bg-primary text-white font-bold text-[10px]">{staff.name.charAt(0)}</AvatarFallback>
                       </Avatar>
-                      <div>
-                        <p className="font-bold text-xs text-slate-900">{staff.name}</p>
-                        <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">{staff.nrc || "No NRC"}</p>
-                        <p className="text-[8px] text-slate-400 font-medium">{staff.role} | {staff.position}</p>
+                      <div className="truncate">
+                        <p className="font-bold text-xs text-slate-900 truncate">{staff.name}</p>
+                        <p className="text-[8px] text-slate-400 font-bold uppercase tracking-widest truncate">{staff.nrc || "No NRC"} | {staff.position}</p>
                       </div>
                     </div>
-                    <div className="flex gap-1.5">
-                      <Button size="sm" className="bg-primary font-bold rounded-lg h-8 text-[9px] px-3 uppercase tracking-wider" onClick={() => handleApproveAccess(staff)}>Authorize</Button>
+                    <div className="flex gap-1.5 shrink-0">
+                      <Button size="sm" className="bg-primary font-bold rounded-lg h-8 text-[9px] px-3 uppercase tracking-wider" onClick={() => handleApproveAccess(staff)}>Approve</Button>
                       <Dialog>
                         <DialogTrigger asChild>
                           <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-600 h-8 w-8 p-0" onClick={() => setSelectedStaffToReject(staff)}><X className="h-4 w-4" /></Button>
@@ -276,7 +265,7 @@ export default function Dashboard() {
                           <DialogHeader>
                             <DialogTitle>Deny Registration</DialogTitle>
                             <DialogDescription>
-                              Provide a reason for denying access to {selectedStaffToReject?.name}.
+                              Reason for denying access to {selectedStaffToReject?.name}.
                             </DialogDescription>
                           </DialogHeader>
                           <Textarea 
@@ -287,7 +276,7 @@ export default function Dashboard() {
                           />
                           <DialogFooter>
                             <Button variant="ghost" onClick={() => setSelectedStaffToReject(null)}>Cancel</Button>
-                            <Button variant="destructive" onClick={handleRejectAccess}>Reject User</Button>
+                            <Button variant="destructive" onClick={handleRejectAccess}>Confirm Reject</Button>
                           </DialogFooter>
                         </DialogContent>
                       </Dialog>
@@ -295,7 +284,7 @@ export default function Dashboard() {
                   </div>
                 ))
               ) : (
-                <div className="py-24 text-center text-slate-200 font-bold text-[9px] uppercase tracking-widest">Registry Clear</div>
+                <div className="py-24 text-center text-slate-200 font-bold text-[9px] uppercase tracking-widest">No new signups</div>
               )}
             </div>
           </CardContent>
@@ -305,7 +294,7 @@ export default function Dashboard() {
       <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-4 flex items-start gap-3">
         <AlertCircle className="h-4 w-4 text-primary shrink-0 mt-0.5" />
         <p className="text-[10px] text-primary/80 font-bold uppercase tracking-widest leading-relaxed">
-          Sync Status: Currently tracking all registrations from connected systems. Authorization grants immediate access to employee app features.
+          System Guard: This dashboard is scanning for all registrations from connected employee systems. Authorization grants immediate access to app features.
         </p>
       </div>
     </div>

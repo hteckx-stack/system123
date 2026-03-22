@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useMemo, useEffect, useRef, Suspense } from "react"
@@ -67,21 +68,21 @@ function ChatHubContent() {
     }
   }, [tabParam])
 
-  // Fetch ALL users for messaging
-  const staffQuery = useMemo(() => query(collection(firestore, "users")), [firestore])
-  const { data: staffList, loading: staffLoading } = useCollection<Staff>(staffQuery)
+  // Universal User Fetching - Ensuring no one is missed
+  const usersQuery = useMemo(() => query(collection(firestore, "users")), [firestore])
+  const { data: userList, loading: usersLoading } = useCollection<Staff>(usersQuery)
 
   const convQuery = useMemo(() => query(collection(firestore, "conversations"), orderBy("timestamp", "desc")), [firestore])
   const { data: rawConversations } = useCollection<Conversation>(convQuery)
 
-  const filteredStaff = useMemo(() => {
-    if (!staffList || !user) return []
-    let list = staffList.filter(s => s.id !== user.uid)
+  const filteredUsers = useMemo(() => {
+    if (!userList || !user) return []
+    let list = userList.filter(s => s.id !== user.uid)
     if (searchQuery) {
       list = list.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase()))
     }
     return list
-  }, [staffList, searchQuery, user])
+  }, [userList, searchQuery, user])
 
   useEffect(() => {
     if (!selectedConvId) {
@@ -165,7 +166,7 @@ function ChatHubContent() {
 
     setUploading(true)
     try {
-        const staffMember = staffList?.find(s => s.id === selectedStaffId);
+        const staffMember = userList?.find(s => s.id === selectedStaffId);
         if (staffMember) {
           await addDocument(firestore, {
             staffId: staffMember.id,
@@ -192,7 +193,7 @@ function ChatHubContent() {
     
     setGenerating(true)
     try {
-        const staffMember = staffList?.find(s => s.id === templateStaffId);
+        const staffMember = userList?.find(s => s.id === templateStaffId);
         if (staffMember) {
             await addDocument(firestore, {
                 staffId: staffMember.id,
@@ -245,7 +246,7 @@ function ChatHubContent() {
               </CardHeader>
               <ScrollArea className="flex-1">
                 <div className="p-1.5 space-y-1">
-                  {staffLoading ? (
+                  {usersLoading ? (
                     Array.from({ length: 8 }).map((_, i) => (
                       <div key={i} className="p-3 flex items-center gap-3">
                         <Skeleton className="h-9 w-9 rounded-xl" />
@@ -255,8 +256,8 @@ function ChatHubContent() {
                         </div>
                       </div>
                     ))
-                  ) : filteredStaff.length > 0 ? (
-                    filteredStaff.map((staff) => {
+                  ) : filteredUsers.length > 0 ? (
+                    filteredUsers.map((staff) => {
                         const conversation = rawConversations?.find(c => c.staff_id === staff.id);
                         return (
                             <div
@@ -306,10 +307,10 @@ function ChatHubContent() {
                     </Button>
                     <div className="flex items-center gap-3">
                       <div className="h-8 w-8 rounded-xl bg-primary flex items-center justify-center font-bold text-white shadow-lg shadow-primary/20 text-[10px]">
-                        {filteredStaff.find(s => s.id === rawConversations?.find(c => c.id === selectedConvId)?.staff_id)?.name.charAt(0) || "U"}
+                        {filteredUsers.find(s => s.id === rawConversations?.find(c => c.id === selectedConvId)?.staff_id)?.name.charAt(0) || "U"}
                       </div>
                       <div>
-                        <h3 className="font-bold text-slate-900 text-xs">{filteredStaff.find(s => s.id === rawConversations?.find(c => c.id === selectedConvId)?.staff_id)?.name}</h3>
+                        <h3 className="font-bold text-slate-900 text-xs">{filteredUsers.find(s => s.id === rawConversations?.find(c => c.id === selectedConvId)?.staff_id)?.name}</h3>
                         <p className="text-[8px] font-bold text-primary uppercase tracking-widest leading-none">Administrative Thread</p>
                       </div>
                     </div>
@@ -371,7 +372,7 @@ function ChatHubContent() {
         </TabsContent>
 
         <TabsContent value="broadcasts" className="flex-1 flex flex-col m-0 pt-0">
-          <Card className="max-w-xl mx-auto border-none shadow-soft rounded-3xl overflow-hidden bg-white mt-2">
+          <Card className="max-w-xl mx-auto border-none shadow-soft rounded-3xl overflow-hidden bg-white mt-2 w-full">
             <CardHeader className="bg-primary text-white py-3 px-8">
               <div className="flex items-center gap-3">
                 <Megaphone className="h-4 w-4" />
@@ -435,7 +436,7 @@ function ChatHubContent() {
                               <SelectValue placeholder="Select Recipient" />
                             </SelectTrigger>
                             <SelectContent className="rounded-xl">
-                              {staffList?.map(s => (
+                              {userList?.map(s => (
                                 <SelectItem key={s.id} value={s.id} className="rounded-lg">{s.name}</SelectItem>
                               ))}
                             </SelectContent>
@@ -475,7 +476,7 @@ function ChatHubContent() {
                               <SelectValue placeholder="Select User" />
                             </SelectTrigger>
                             <SelectContent className="rounded-xl">
-                              {staffList?.map(s => (
+                              {userList?.map(s => (
                                 <SelectItem key={s.id} value={s.id} className="rounded-lg">{s.name}</SelectItem>
                               ))}
                             </SelectContent>
