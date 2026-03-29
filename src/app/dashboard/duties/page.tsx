@@ -1,183 +1,75 @@
 "use client"
 
-import { useState, useMemo, useRef } from "react"
-import { useFirestore, useStorage, useCollection, useUser } from "@/firebase"
+import { useState, useMemo } from "react"
+import { useFirestore, useCollection } from "@/firebase"
 import { collection, query, orderBy, where } from "firebase/firestore"
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/hooks/use-toast"
 import {
-  Upload,
+  Users,
   FileText,
   Image,
   File,
-  X,
-  Plus,
+  ArrowLeft,
   Download,
   Eye,
   Calendar,
-  User
+  User,
+  ChevronRight
 } from "lucide-react"
-import { createDuty } from "@/firebase/firestore/duties"
-import { uploadFileToStorage } from "@/firebase/storage/upload"
 import type { Duty, Staff } from "@/lib/types"
 import { cn } from "@/lib/utils"
 import { format } from "date-fns"
 
+type ViewMode = 'staff-list' | 'staff-duties' | 'duty-documents'
+
 export default function DutiesPage() {
   const firestore = useFirestore()
-  const storage = useStorage()
-  const { user: currentUser } = useUser()
   const { toast } = useToast()
-  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Form state
-  const [selectedStaffId, setSelectedStaffId] = useState("")
-  const [title, setTitle] = useState("")
-  const [description, setDescription] = useState("")
-  const [comments, setComments] = useState("")
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
-  const [isUploading, setIsUploading] = useState(false)
+  const [viewMode, setViewMode] = useState<ViewMode>('staff-list')
+  const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null)
+  const [selectedDuty, setSelectedDuty] = useState<Duty | null>(null)
 
-  // Fetch staff members
-  const staffQuery = useMemo(() => query(
+  // Fetch all active users (both staff and admins)
+  const userQuery = useMemo(() => query(
     collection(firestore, "users"),
     where("status", "==", "active"),
-    where("role", "==", "staff")
+    orderBy("name")
   ), [firestore])
-  const { data: staffList } = useCollection<Staff>(staffQuery as any)
+  const { data: userList, loading: userLoading } = useCollection<Staff>(userQuery as any)
 
-  // Fetch duties
-  const dutiesQuery = useMemo(() => query(
-    collection(firestore, "duties"),
-    orderBy("created_at", "desc")
-  ), [firestore])
-  const { data: duties, loading } = useCollection<Duty>(dutiesQuery as any)
+  // Fetch duties for selected user
+  const dutiesQuery = useMemo(() => {
+    if (!selectedStaff) return null
+    return query(
+      collection(firestore, "duties"),
+      where("staff_id", "==", selectedStaff.id),
+      orderBy("created_at", "desc")
+    )
+  }, [firestore, selectedStaff])
+  const { data: userDuties, loading: dutiesLoading } = useCollection<Duty>(dutiesQuery as any)
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (file) {
-      // Validate file type
-      const allowedTypes = [
-        'application/pdf',
-        'application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'application/vnd.ms-excel',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'image/jpeg',
-        'image/png',
-        'image/gif',
-        'image/webp'
-      ]
-
-      if (!allowedTypes.includes(file.type)) {
-        toast({
-          title: "Invalid file type",
-          description: "Please select a PDF, Word, Excel, or image file.",
-          variant: "destructive"
-        })
-        return
-      }
-
-      // Validate file size (10MB limit)
-      if (file.size > 10 * 1024 * 1024) {
-        toast({
-          title: "File too large",
-          description: "Please select a file smaller than 10MB.",
-          variant: "destructive"
-        })
-        return
-      }
-
-      setSelectedFile(file)
-    }
+  const handleStaffClick = (staff: Staff) => {
+    setSelectedStaff(staff)
+    setViewMode('staff-duties')
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleDutyClick = (duty: Duty) => {
+    setSelectedDuty(duty)
+    setViewMode('duty-documents')
+  }
 
-    if (!selectedStaffId || !title || !description || !currentUser) {
-      toast({
-        title: "Missing information",
-        description: "Please fill in all required fields.",
-        variant: "destructive"
-      })
-      return
-    }
-
-    setIsUploading(true)
-
-    try {
-      let documentUrl = null
-      let documentFileName = null
-      let documentType = null
-
-      // Upload file if selected
-      if (selectedFile) {
-        const timestamp = Date.now()
-        const fileExtension = selectedFile.name.split('.').pop()
-        const fileName = `${timestamp}_${selectedFile.name}`
-        const filePath = `duties/${selectedStaffId}/${fileName}`
-
-        // Upload to Firebase Storage
-        const storageRef = ref(storage, filePath)
-        const snapshot = await uploadBytes(storageRef, selectedFile)
-        documentUrl = await getDownloadURL(snapshot.ref)
-        documentFileName = selectedFile.name
-        documentType = selectedFile.type
-      }
-
-      // Get selected staff member
-      const selectedStaff = staffList?.find(s => s.id === selectedStaffId)
-
-      if (!selectedStaff) {
-        throw new Error("Selected staff member not found")
-      }
-
-      // Create duty record
-      await createDuty(
-        firestore,
-        selectedStaffId,
-        selectedStaff.name,
-        title,
-        description,
-        documentUrl,
-        documentFileName,
-        documentType,
-        comments || undefined
-      )
-
-      // Reset form
-      setSelectedStaffId("")
-      setTitle("")
-      setDescription("")
-      setComments("")
-      setSelectedFile(null)
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ""
-      }
-
-      toast({
-        title: "Duty created successfully",
-        description: `Duty assigned to ${selectedStaff.name}`,
-      })
-
-    } catch (error) {
-      console.error("Error creating duty:", error)
-      toast({
-        title: "Error creating duty",
-        description: "Please try again later.",
-        variant: "destructive"
-      })
-    } finally {
-      setIsUploading(false)
+  const handleBack = () => {
+    if (viewMode === 'duty-documents') {
+      setSelectedDuty(null)
+      setViewMode('staff-duties')
+    } else if (viewMode === 'staff-duties') {
+      setSelectedStaff(null)
+      setViewMode('staff-list')
     }
   }
 
@@ -199,201 +91,215 @@ export default function DutiesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-[#0D47A1]">Duties Management</h1>
-        <p className="text-muted-foreground">
-          Assign tasks and documents to staff members with file attachments.
-        </p>
+      {/* Header */}
+      <div className="flex items-center gap-4">
+        {viewMode !== 'staff-list' && (
+          <Button variant="outline" size="sm" onClick={handleBack}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back
+          </Button>
+        )}
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-[#0D47A1]">
+            {viewMode === 'staff-list' && 'Duty Submissions'}
+            {viewMode === 'staff-duties' && `${selectedStaff?.name}'s Submissions`}
+            {viewMode === 'duty-documents' && selectedDuty?.title}
+          </h1>
+          <p className="text-muted-foreground">
+            {viewMode === 'staff-list' && 'View duty submissions from all staff members'}
+            {viewMode === 'staff-duties' && 'Browse all submitted duties from this staff member'}
+            {viewMode === 'duty-documents' && 'View all documents submitted for this duty'}
+          </p>
+        </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Create Duty Form */}
-        <Card className="border-none shadow-soft bg-white rounded-3xl overflow-hidden">
-          <CardHeader className="bg-slate-50/50 border-b">
-            <CardTitle className="text-xl">Create New Duty</CardTitle>
-            <CardDescription>
-              Assign a task with optional document attachment to a staff member.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-6">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Staff Selection */}
-              <div className="space-y-2">
-                <Label htmlFor="staff">Select Staff Member *</Label>
-                <Select value={selectedStaffId} onValueChange={setSelectedStaffId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose a staff member" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {staffList?.map((staff) => (
-                      <SelectItem key={staff.id} value={staff.id}>
-                        {staff.name} - {staff.position}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+      {/* Staff List View */}
+      {viewMode === 'staff-list' && (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {userLoading ? (
+            Array.from({ length: 6 }).map((_, i) => (
+              <Card key={i} className="border-none shadow-soft bg-white rounded-3xl">
+                <CardContent className="p-6">
+                  <Skeleton className="h-6 w-3/4 mb-2" />
+                  <Skeleton className="h-4 w-1/2" />
+                </CardContent>
+              </Card>
+            ))
+          ) : userList && userList.length > 0 ? (
+            userList.map((staff) => (
+              <Card
+                key={staff.id}
+                className="border-none shadow-soft bg-white rounded-3xl cursor-pointer hover:shadow-lg transition-shadow"
+                onClick={() => handleStaffClick(staff)}
+              >
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-[#0D47A1] rounded-full flex items-center justify-center">
+                        <User className="h-5 w-5 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-lg">{staff.name}</h3>
+                        <p className="text-sm text-muted-foreground">{staff.position}</p>
+                      </div>
+                    </div>
+                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            <div className="col-span-full text-center py-12">
+              <Users className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+              <h3 className="text-lg font-semibold mb-2">No Staff Members</h3>
+              <p className="text-muted-foreground">No active staff members found.</p>
+            </div>
+          )}
+        </div>
+      )}
 
-              {/* Title */}
-              <div className="space-y-2">
-                <Label htmlFor="title">Task Title *</Label>
-                <Input
-                  id="title"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Enter task title"
-                  required
-                />
-              </div>
+      {/* Staff Duties View */}
+      {viewMode === 'staff-duties' && selectedStaff && (
+        <div className="space-y-4">
+          {dutiesLoading ? (
+            Array.from({ length: 3 }).map((_, i) => (
+              <Card key={i} className="border-none shadow-soft bg-white rounded-3xl">
+                <CardContent className="p-6">
+                  <Skeleton className="h-6 w-3/4 mb-2" />
+                  <Skeleton className="h-4 w-full mb-2" />
+                  <Skeleton className="h-4 w-1/2" />
+                </CardContent>
+              </Card>
+            ))
+          ) : userDuties && userDuties.length > 0 ? (
+            userDuties.map((duty) => (
+              <Card
+                key={duty.id}
+                className="border-none shadow-soft bg-white rounded-3xl cursor-pointer hover:shadow-lg transition-shadow"
+                onClick={() => handleDutyClick(duty)}
+              >
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-lg mb-2">{duty.title}</h3>
+                      <p className="text-muted-foreground mb-3">{duty.description}</p>
+                      {duty.comments && (
+                        <p className="text-sm text-blue-600 mb-3 italic">
+                          "{duty.comments}"
+                        </p>
+                      )}
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-4 w-4" />
+                          {format(duty.created_at.toDate(), 'MMM dd, yyyy hh:mm a')}
+                        </div>
+                        {duty.documentFileName && (
+                          <div className="flex items-center gap-1">
+                            {getFileIcon(duty.documentType)}
+                            <span>1 document</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <ChevronRight className="h-5 w-5 text-muted-foreground ml-4" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            <div className="text-center py-12">
+              <FileText className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+              <h3 className="text-lg font-semibold mb-2">No Submissions Yet</h3>
+              <p className="text-muted-foreground">
+                {selectedStaff.name} hasn't submitted any duties yet.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
 
-              {/* Description */}
-              <div className="space-y-2">
-                <Label htmlFor="description">Task Description *</Label>
-                <Textarea
-                  id="description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Describe the task requirements"
-                  rows={3}
-                  required
-                />
-              </div>
-
-              {/* File Upload */}
-              <div className="space-y-2">
-                <Label>Document Attachment (Optional)</Label>
-                <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="flex items-center gap-2"
-                  >
-                    <Upload className="h-4 w-4" />
-                    Choose File
-                  </Button>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    onChange={handleFileSelect}
-                    accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif,.webp"
-                    className="hidden"
-                  />
-                  {selectedFile && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      {getFileIcon(selectedFile.type)}
-                      <span>{selectedFile.name}</span>
-                      <span>({formatFileSize(selectedFile.size)})</span>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedFile(null)
-                          if (fileInputRef.current) fileInputRef.current.value = ""
-                        }}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
+      {/* Duty Documents View */}
+      {viewMode === 'duty-documents' && selectedDuty && (
+        <div className="space-y-6">
+          <Card className="border-none shadow-soft bg-white rounded-3xl">
+            <CardHeader>
+              <CardTitle>{selectedDuty.title}</CardTitle>
+              <CardDescription>{selectedDuty.description}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium">Submitted by:</span> {selectedDuty.staff_name}
+                  </div>
+                  <div>
+                    <span className="font-medium">Date:</span> {format(selectedDuty.created_at.toDate(), 'MMM dd, yyyy hh:mm a')}
+                  </div>
+                  {selectedDuty.comments && (
+                    <div className="md:col-span-2">
+                      <span className="font-medium">Comments:</span>
+                      <p className="mt-1 italic text-blue-600">"{selectedDuty.comments}"</p>
                     </div>
                   )}
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Supported: PDF, Word (.doc, .docx), Excel (.xls, .xlsx), Images (JPG, PNG, GIF, WebP) - Max 10MB
-                </p>
               </div>
+            </CardContent>
+          </Card>
 
-              {/* Comments */}
-              <div className="space-y-2">
-                <Label htmlFor="comments">Additional Comments (Optional)</Label>
-                <Textarea
-                  id="comments"
-                  value={comments}
-                  onChange={(e) => setComments(e.target.value)}
-                  placeholder="Any additional notes or instructions"
-                  rows={2}
-                />
-              </div>
-
-              {/* Submit Button */}
-              <Button
-                type="submit"
-                disabled={isUploading}
-                className="w-full bg-[#0D47A1] hover:bg-[#0D47A1]/90"
-              >
-                {isUploading ? "Creating Duty..." : "Create Duty"}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-
-        {/* Recent Duties */}
-        <Card className="border-none shadow-soft bg-white rounded-3xl overflow-hidden">
-          <CardHeader className="bg-slate-50/50 border-b">
-            <CardTitle className="text-xl">Recent Duties</CardTitle>
-            <CardDescription>
-              Latest assigned tasks and documents.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-6">
-            <div className="space-y-4">
-              {loading ? (
-                Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="space-y-2">
-                    <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-3 w-1/2" />
-                    <Skeleton className="h-3 w-1/4" />
-                  </div>
-                ))
-              ) : duties && duties.length > 0 ? (
-                duties.slice(0, 5).map((duty) => (
-                  <div key={duty.id} className="border rounded-lg p-4 space-y-2">
-                    <div className="flex items-start justify-between">
+          {/* Documents Section */}
+          <Card className="border-none shadow-soft bg-white rounded-3xl">
+            <CardHeader>
+              <CardTitle>Submitted Documents</CardTitle>
+              <CardDescription>Documents attached to this duty submission</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {selectedDuty.documentUrl ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      {getFileIcon(selectedDuty.documentType)}
                       <div>
-                        <h4 className="font-medium">{duty.title}</h4>
-                        <p className="text-sm text-muted-foreground">{duty.description}</p>
-                      </div>
-                      {duty.documentUrl && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => window.open(duty.documentUrl!, '_blank')}
-                        >
-                          <Download className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <User className="h-3 w-3" />
-                        {duty.staff_name}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        {format(duty.created_at.toDate(), 'MMM dd, yyyy')}
+                        <p className="font-medium">{selectedDuty.documentFileName}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Submitted {format(selectedDuty.created_at.toDate(), 'MMM dd, yyyy')}
+                        </p>
                       </div>
                     </div>
-
-                    {duty.documentFileName && (
-                      <div className="flex items-center gap-2 text-xs">
-                        {getFileIcon(duty.documentType)}
-                        <span>{duty.documentFileName}</span>
-                      </div>
-                    )}
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => window.open(selectedDuty.documentUrl!, '_blank')}
+                      >
+                        <Eye className="h-4 w-4 mr-2" />
+                        View
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const link = document.createElement('a')
+                          link.href = selectedDuty.documentUrl!
+                          link.download = selectedDuty.documentFileName || 'document'
+                          link.click()
+                        }}
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        Download
+                      </Button>
+                    </div>
                   </div>
-                ))
+                </div>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
-                  <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No duties assigned yet</p>
-                  <p className="text-sm">Create your first duty using the form</p>
+                  <File className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No documents attached to this submission</p>
                 </div>
               )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   )
 }

@@ -5,6 +5,7 @@ import { useMemo, useState, useEffect } from "react";
 import { collection, query, doc, writeBatch, orderBy, limit, where, onSnapshot } from "firebase/firestore";
 import { useCollection, useFirestore, useUser, useDatabase } from "@/firebase";
 import { ref, onValue, update } from "firebase/database";
+import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -46,15 +47,31 @@ import {
 } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
+import { useUserProfile } from "@/firebase/auth/use-user-profile";
+import { createDuty } from "@/firebase/firestore/duties";
+import { uploadFileToStorage } from "@/firebase/storage/upload";
+import { useStorage } from "@/firebase";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Upload, FileText, Image, File as FileIcon } from "lucide-react";
 
 export default function Dashboard() {
   const firestore = useFirestore();
   const database = useDatabase();
+  const storage = useStorage();
   const { user: currentUser } = useUser();
+  const { user, profile, isAdmin } = useUserProfile();
   const { toast } = useToast();
 
   const [rejectionReason, setRejectionReason] = useState("");
   const [selectedStaffToReject, setSelectedStaffToReject] = useState<Staff | null>(null);
+
+  // Duty submission state
+  const [dutyTitle, setDutyTitle] = useState("");
+  const [dutyDescription, setDutyDescription] = useState("");
+  const [dutyComments, setDutyComments] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Broad Scan Registry: Removed orderBy to ensure Moses and new users show up instantly
   const usersQuery = useMemo(() => collection(firestore, "users"), [firestore]);
@@ -147,6 +164,122 @@ export default function Dashboard() {
       toast({ variant: "destructive", title: "Authorization Failed" });
     }
   };
+
+  const handleDutyFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      // Validate file type
+      const allowedTypes = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'image/jpeg',
+        'image/png',
+        'image/gif',
+        'image/webp'
+      ]
+
+      if (!allowedTypes.includes(file.type)) {
+        toast({
+          title: "Invalid file type",
+          description: "Please select a PDF, Word, Excel, or image file.",
+          variant: "destructive"
+        })
+        return
+      }
+
+      // Validate file size (10MB limit)
+      if (file.size > 10 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Please select a file smaller than 10MB.",
+          variant: "destructive"
+        })
+        return
+      }
+
+      setSelectedFile(file)
+    }
+  }
+
+  const handleDutySubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!profile || !dutyTitle || !dutyDescription) {
+      toast({
+        title: "Missing information",
+        description: "Please fill in all required fields.",
+        variant: "destructive"
+      })
+      return
+    }
+
+    setIsSubmitting(true)
+
+    try {
+      let documentUrl = null
+      let documentFileName = null
+      let documentType = null
+
+      // Upload file if selected
+      if (selectedFile) {
+        const timestamp = Date.now()
+        const fileName = `${timestamp}_${selectedFile.name}`
+        const filePath = `duties/${profile.id}/${fileName}`
+
+        // Upload to Firebase Storage
+        const fileRef = storageRef(storage, filePath)
+        const snapshot = await uploadBytes(fileRef, selectedFile)
+        documentUrl = await getDownloadURL(snapshot.ref)
+        documentFileName = selectedFile.name
+        documentType = selectedFile.type
+      }
+
+      // Create duty record
+      await createDuty(
+        firestore,
+        profile.id,
+        profile.name,
+        dutyTitle,
+        dutyDescription,
+        documentUrl,
+        documentFileName,
+        documentType,
+        dutyComments || undefined
+      )
+
+      // Reset form
+      setDutyTitle("")
+      setDutyDescription("")
+      setDutyComments("")
+      setSelectedFile(null)
+
+      toast({
+        title: "Duty submitted successfully",
+        description: "Your submission has been recorded.",
+      })
+
+    } catch (error) {
+      console.error("Error submitting duty:", error)
+      toast({
+        title: "Submission failed",
+        description: "Please try again later.",
+        variant: "destructive"
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const getFileIcon = (fileType: string | null) => {
+    if (!fileType) return <FileIcon className="h-4 w-4" />
+
+    if (fileType.startsWith('image/')) return <Image className="h-4 w-4" />
+    if (fileType === 'application/pdf') return <FileText className="h-4 w-4" />
+    return <FileIcon className="h-4 w-4" />
+  }
 
   return (
     <div className="space-y-3 animate-in fade-in duration-500 pb-10">
@@ -289,6 +422,118 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Duty Submission Form for All Users */}
+      {profile && (
+        <Card className="border-none shadow-soft bg-white rounded-3xl overflow-hidden">
+          <CardHeader className="bg-slate-50 border-b py-4 px-6">
+            <div className="flex items-center gap-2">
+              <FileText className="h-4 w-4 text-primary" />
+              <div>
+                <CardTitle className="text-sm font-bold text-slate-900">Submit Duty Report</CardTitle>
+                <CardDescription className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                  Share your completed tasks and attach supporting documents
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-6">
+            <form onSubmit={handleDutySubmit} className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="dutyTitle" className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                    Duty Title *
+                  </Label>
+                  <Input
+                    id="dutyTitle"
+                    value={dutyTitle}
+                    onChange={(e) => setDutyTitle(e.target.value)}
+                    placeholder="e.g. Monthly Report Preparation"
+                    className="rounded-xl border-slate-200"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="dutyFile" className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                    Supporting Document
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="dutyFile"
+                      type="file"
+                      onChange={handleDutyFileSelect}
+                      accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif,.webp"
+                      className="rounded-xl border-slate-200 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-primary file:text-white hover:file:bg-primary/90"
+                    />
+                    {selectedFile && (
+                      <div className="flex items-center gap-2 mt-2 p-2 bg-slate-50 rounded-lg">
+                        {getFileIcon(selectedFile.type)}
+                        <span className="text-xs text-slate-600 truncate">{selectedFile.name}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setSelectedFile(null)}
+                          className="h-6 w-6 p-0 text-slate-400 hover:text-red-500"
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="dutyDescription" className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                  Description *
+                </Label>
+                <Textarea
+                  id="dutyDescription"
+                  value={dutyDescription}
+                  onChange={(e) => setDutyDescription(e.target.value)}
+                  placeholder="Describe the duty completed, tasks performed, and any relevant details..."
+                  className="rounded-xl border-slate-200 min-h-[80px]"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="dutyComments" className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                  Additional Comments
+                </Label>
+                <Textarea
+                  id="dutyComments"
+                  value={dutyComments}
+                  onChange={(e) => setDutyComments(e.target.value)}
+                  placeholder="Any additional notes or observations..."
+                  className="rounded-xl border-slate-200"
+                />
+              </div>
+
+              <div className="flex justify-end">
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="bg-primary hover:bg-primary/90 font-bold rounded-xl px-6"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-4 w-4 mr-2" />
+                      Submit Duty
+                    </>
+                  )}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-3 flex items-start gap-2">
         <AlertCircle className="h-3 w-3 text-primary shrink-0 mt-0.5" />
