@@ -27,7 +27,7 @@ export default function LeaveRequestsPage() {
     orderBy("created_at", "desc")
   ), [firestore])
 
-  const { data: requests, loading } = useCollection<LeaveRequest>(leaveQuery)
+  const { data: requests, loading } = useCollection<LeaveRequest>(leaveQuery as any)
 
   const handleStatusUpdate = async (request: LeaveRequest, status: 'approved' | 'rejected') => {
     try {

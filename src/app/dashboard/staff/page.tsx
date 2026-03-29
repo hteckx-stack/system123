@@ -27,18 +27,15 @@ export default function StaffPage() {
   const { toast } = useToast()
   
   // Data Fetching: Staff
-  const staffQuery = useMemo(() => query(
-    collection(firestore, "users"), 
-    where("role", "==", "staff")
-  ), [firestore])
-  const { data: staffList, loading: staffLoading } = useCollection<Staff>(staffQuery)
+  const staffQuery = useMemo(() => collection(firestore, "users"), [firestore])
+  const { data: staffList, loading: staffLoading } = useCollection<Staff>(staffQuery as any)
 
   // Data Fetching: Tasks
   const tasksQuery = useMemo(() => query(
     collection(firestore, "tasks"), 
     orderBy("createdAt", "desc")
   ), [firestore])
-  const { data: tasks, loading: tasksLoading } = useCollection<Task>(tasksQuery)
+  const { data: tasks, loading: tasksLoading } = useCollection<Task>(tasksQuery as any)
 
   // State
   const [editingStaff, setEditingStaff] = useState<Staff | null>(null)

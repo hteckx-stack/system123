@@ -68,7 +68,7 @@ export function EditStaffDialog({
             const currentValue = formData[field] ?? ""
             const originalValue = staff[field] ?? ""
             if (currentValue !== originalValue) {
-                updatedFields[field] = currentValue
+                (updatedFields as any)[field] = currentValue as string
             }
         })
 

@@ -24,6 +24,9 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Production optimizations
+  poweredByHeader: false,
+  compress: true,
 };
 
 export default nextConfig;

@@ -16,15 +16,6 @@ export type Staff = {
   rejectionReason?: string;
 };
 
-export type LoginRequest = {
-  id: string;
-  staffName: string;
-  staffId: string;
-  deviceModel: string;
-  deviceId: string;
-  timestamp: Timestamp;
-};
-
 export type Task = {
   id: string;
   title: string;
@@ -95,6 +86,16 @@ export type Message = {
   sender_role: 'admin' | 'staff';
   message: string;
   timestamp: Timestamp;
+  attachments?: MessageAttachment[];
+};
+
+export type MessageAttachment = {
+  id: string;
+  fileName: string;
+  fileUrl: string;
+  fileSize: number;
+  fileType: string;
+  uploadedAt: Timestamp;
 };
 
 export type ActivityLog = {
@@ -114,6 +115,42 @@ export type Notification = {
   type: 'leave' | 'checkin' | 'message' | 'signup';
   read: boolean;
   createdAt: Timestamp;
+};
+
+export type AttendanceRecord = {
+  id: string;
+  staff_id: string;
+  staff_name: string;
+  date: string;
+  check_in_time: Timestamp;
+  status: string;
+};
+
+export type Duty = {
+  id: string;
+  staff_id: string;
+  staff_name: string;
+  title: string;
+  description: string;
+  documentUrl?: string | null;
+  documentFileName?: string | null;
+  documentType?: string | null;
+  created_at: Timestamp;
+};
+
+export type CallRecord = {
+  id: string;
+  conversation_id: string;
+  caller_id: string;
+  caller_name: string;
+  caller_role: 'admin' | 'staff';
+  receiver_id: string;
+  receiver_name: string;
+  receiver_role: 'admin' | 'staff';
+  status: 'initiated' | 'ongoing' | 'ended';
+  started_at: Timestamp;
+  ended_at?: Timestamp;
+  duration?: number;
 };
 
 export type NavItem = {

@@ -32,13 +32,13 @@ export default function TasksPage() {
     where("status", "==", "active"), 
     where("role", "==", "staff")
   ), [firestore]);
-  const { data: staffList } = useCollection<Staff>(staffQuery);
+  const { data: staffList } = useCollection<Staff>(staffQuery as any);
 
   const tasksQuery = useMemo(() => query(
     collection(firestore, "tasks"), 
     orderBy("createdAt", "desc")
   ), [firestore]);
-  const { data: tasks, loading } = useCollection<Task>(tasksQuery);
+  const { data: tasks, loading } = useCollection<Task>(tasksQuery as any);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

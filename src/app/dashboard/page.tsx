@@ -58,7 +58,7 @@ export default function Dashboard() {
 
   // Broad Scan Registry: Removed orderBy to ensure Moses and new users show up instantly
   const usersQuery = useMemo(() => collection(firestore, "users"), [firestore]);
-  const { data: allUsers, loading: staffLoading } = useCollection<Staff>(usersQuery);
+  const { data: allUsers, loading: staffLoading } = useCollection<Staff>(usersQuery as any);
 
   const [pendingCheckIns, setPendingCheckIns] = useState<CheckIn[]>([]);
   const [checkInsLoading, setCheckInsLoading] = useState(true);

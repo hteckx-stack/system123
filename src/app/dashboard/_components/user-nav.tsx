@@ -27,7 +27,7 @@ export function UserNav() {
     () => (user ? doc(firestore, "users", user.uid) : null),
     [user, firestore]
   )
-  const { data: userProfile } = useDoc<Staff>(userDocRef)
+  const { data: userProfile } = useDoc<Staff>(userDocRef as any)
 
   const handleLogout = async () => {
     await signOut(auth)

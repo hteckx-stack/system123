@@ -54,10 +54,10 @@ export default function DocumentsPage() {
   const firestore = useFirestore()
 
   const staffQuery = useMemo(() => collection(firestore, "users"), [firestore])
-  const { data: staffList, loading: staffLoading } = useCollection<Staff>(staffQuery)
+  const { data: staffList, loading: staffLoading } = useCollection<Staff>(staffQuery as any)
 
   const documentsQuery = useMemo(() => collection(firestore, "documents"), [firestore])
-  const { data: documents, loading: documentsLoading } = useCollection<Document>(documentsQuery)
+  const { data: documents, loading: documentsLoading } = useCollection<Document>(documentsQuery as any)
   
   // State for file upload
   const [selectedStaffId, setSelectedStaffId] = useState<string>("")

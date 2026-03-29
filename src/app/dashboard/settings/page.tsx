@@ -35,7 +35,7 @@ export default function SettingsPage() {
     () => (user ? doc(firestore, "users", user.uid) : null),
     [user, firestore]
   )
-  const { data: userProfile, loading: profileLoading } = useDoc<Staff>(userDocRef)
+  const { data: userProfile, loading: profileLoading } = useDoc<Staff>(userDocRef as any)
 
   const [formData, setFormData] = useState<Partial<Staff>>({})
   const [isUpdating, setIsUpdating] = useState(false)
@@ -75,7 +75,7 @@ export default function SettingsPage() {
             const currentValue = formData[field] ?? ""
             const originalValue = userProfile?.[field] ?? ""
             if (currentValue !== originalValue) {
-            updatedFirestoreFields[field] = currentValue
+            (updatedFirestoreFields as any)[field] = currentValue as string
             }
         })
 

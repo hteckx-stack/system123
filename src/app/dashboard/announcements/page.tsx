@@ -31,7 +31,7 @@ export default function AnnouncementsPage() {
     collection(firestore, "announcements"), 
     orderBy("sentAt", "desc")
   ), [firestore]);
-  const { data: sentAnnouncements, loading } = useCollection<Announcement>(announcementsQuery);
+  const { data: sentAnnouncements, loading } = useCollection<Announcement>(announcementsQuery as any);
 
   const handleBroadcast = async (e: React.FormEvent) => {
     e.preventDefault()

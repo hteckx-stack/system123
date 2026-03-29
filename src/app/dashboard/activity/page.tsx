@@ -19,7 +19,7 @@ export default function ActivityPage() {
     limit(50)
   ), [firestore])
 
-  const { data: logs, loading } = useCollection<ActivityLog>(activityQuery)
+  const { data: logs, loading } = useCollection<ActivityLog>(activityQuery as any)
 
   const getActionIcon = (action: string) => {
     if (action.includes('Leave')) return <LucideHistory className="h-4 w-4 text-blue-500" />

@@ -3,16 +3,17 @@
 import { useState, useMemo, useEffect, useRef } from "react"
 import { collection, query, orderBy, where, onSnapshot } from "firebase/firestore"
 import { useFirestore, useCollection, useUser } from "@/firebase"
-import type { Conversation, Message } from "@/lib/types"
+import type { Conversation, Message, Staff } from "@/lib/types"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Send, Search, MessageSquare, ArrowLeft } from "lucide-react"
-import { sendMessage } from "@/firebase/firestore/messages"
+import { Send, Search, MessageSquare, ArrowLeft, User, Users } from "lucide-react"
+import { sendMessage, getOrCreateConversation } from "@/firebase/firestore/messages"
 import { cn } from "@/lib/utils"
 import { formatDistanceToNow } from "date-fns"
 
@@ -25,6 +26,7 @@ export default function MessagesPage() {
   const [messages, setMessages] = useState<Message[]>([])
   const [messagesLoading, setMessagesLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+  const [activeTab, setActiveTab] = useState("conversations")
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const convQuery = useMemo(() => {
@@ -34,7 +36,11 @@ export default function MessagesPage() {
     return query(collection(firestore, "conversations"), orderBy("timestamp", "desc"))
   }, [firestore, topicFilter])
 
-  const { data: rawConversations, loading: convsLoading } = useCollection<Conversation>(convQuery)
+  const { data: rawConversations, loading: convsLoading } = useCollection<Conversation>(convQuery as any)
+
+  // Fetch ALL users in the system - no restrictions, everyone shows up immediately
+  const usersQuery = useMemo(() => collection(firestore, "users"), [firestore])
+  const { data: userList, loading: usersLoading } = useCollection<Staff>(usersQuery as any)
 
   const conversations = useMemo(() => {
     if (!rawConversations) return null;
@@ -44,6 +50,18 @@ export default function MessagesPage() {
     }
     return filtered.sort((a, b) => (b.timestamp?.toMillis() || 0) - (a.timestamp?.toMillis() || 0));
   }, [rawConversations, searchQuery]);
+
+  // Filter users - show ALL users in the system, no restrictions
+  const filteredUsers = useMemo(() => {
+    if (!userList || !user) return []
+    // Show EVERYONE in the registry immediately upon signup - no filtering by role or status
+    let list = userList.filter(s => s.id !== user.uid) // Exclude current user
+    if (searchQuery) {
+      list = list.filter(s => (s.name || "").toLowerCase().includes(searchQuery.toLowerCase()))
+    }
+    // Sort alphabetically for easy finding
+    return list.sort((a, b) => (a.name || "").localeCompare(b.name || ""))
+  }, [userList, searchQuery, user])
 
   const selectedConv = useMemo(() => 
     conversations?.find(c => c.id === selectedConvId), 
@@ -83,6 +101,26 @@ export default function MessagesPage() {
       await sendMessage(firestore, selectedConvId, user.uid, 'admin', text)
     } catch (error) {
       console.error("Error sending message:", error)
+    }
+  }
+
+  // Handle selecting a user - either start new conversation or select existing one
+  const handleSelectUser = async (selectedUser: Staff) => {
+    if (!user) return
+
+    // Check if conversation already exists
+    const existingConv = conversations?.find(c => c.staff_id === selectedUser.id)
+    if (existingConv) {
+      setSelectedConvId(existingConv.id)
+      return
+    }
+
+    // Create new conversation
+    try {
+      const convId = await getOrCreateConversation(firestore, selectedUser.id, selectedUser.name, 'General')
+      setSelectedConvId(convId)
+    } catch (error) {
+      console.error("Error creating conversation:", error)
     }
   }
 
@@ -126,10 +164,22 @@ export default function MessagesPage() {
           selectedConvId ? "hidden md:flex" : "flex"
         )}>
           <CardHeader className="bg-white border-b p-5">
-            <div className="relative">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-2 bg-slate-50 rounded-xl p-1">
+                <TabsTrigger value="conversations" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Conversations
+                </TabsTrigger>
+                <TabsTrigger value="users" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                  <Users className="h-4 w-4 mr-2" />
+                  All Users
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+            <div className="relative mt-4">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <Input 
-                placeholder="Search staff..." 
+                placeholder={activeTab === "conversations" ? "Search conversations..." : "Search users..."} 
                 className="pl-10 bg-slate-50 border-none rounded-xl h-11"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -137,7 +187,9 @@ export default function MessagesPage() {
             </div>
           </CardHeader>
           <ScrollArea className="flex-1">
-            <div className="p-2 divide-y divide-slate-50">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsContent value="conversations" className="mt-0">
+                <div className="p-2 divide-y divide-slate-50">
               {convsLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <div key={i} className="p-4 space-y-2">
@@ -175,7 +227,50 @@ export default function MessagesPage() {
                   <p className="text-xs font-bold uppercase tracking-widest">No Threads Found</p>
                 </div>
               )}
-            </div>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="users" className="mt-0">
+                <div className="p-2 divide-y divide-slate-50">
+                  {usersLoading ? (
+                    Array.from({ length: 5 }).map((_, i) => (
+                      <div key={i} className="p-4 space-y-2">
+                        <Skeleton className="h-4 w-1/2 rounded" />
+                        <Skeleton className="h-3 w-3/4 rounded" />
+                      </div>
+                    ))
+                  ) : filteredUsers && filteredUsers.length > 0 ? (
+                    filteredUsers.map((user) => (
+                      <div
+                        key={user.id}
+                        onClick={() => handleSelectUser(user)}
+                        className="flex flex-col gap-1 p-5 rounded-2xl cursor-pointer transition-all hover:bg-slate-50"
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-bold text-slate-900">{user.name}</span>
+                          <Badge className={cn(
+                            "text-[9px] font-bold px-2 py-1 capitalize",
+                            user.role === 'admin' ? "bg-purple-50 text-purple-700" : "bg-blue-50 text-blue-700"
+                          )}>
+                            {user.role}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] text-slate-500">{user.position}</span>
+                          <span className="text-[11px] text-slate-500">{user.department}</span>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-8 text-center text-slate-500">
+                      <Users className="h-12 w-12 mx-auto mb-4 text-slate-300" />
+                      <p className="text-sm">No users found</p>
+                      <p className="text-xs mt-1">Users will appear here when they sign up</p>
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
           </ScrollArea>
         </Card>
 

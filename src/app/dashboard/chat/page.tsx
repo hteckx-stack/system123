@@ -71,20 +71,32 @@ function ChatHubContent() {
   // Universal Database Scan - Captures EVERYONE (Moses, Admins, Staff) instantly
   // Removed orderBy to ensure all users appear even if name is missing or index is syncing
   const usersQuery = useMemo(() => collection(firestore, "users"), [firestore])
-  const { data: userList, loading: usersLoading } = useCollection<Staff>(usersQuery)
+  const { data: userList, loading: usersLoading } = useCollection<Staff>(usersQuery as any)
 
   const convQuery = useMemo(() => collection(firestore, "conversations"), [firestore])
-  const { data: rawConversations } = useCollection<Conversation>(convQuery)
+  const { data: rawConversations } = useCollection<Conversation>(convQuery as any)
 
   const filteredUsers = useMemo(() => {
     if (!userList || !user) return []
-    // Show EVERYONE in the registry immediately upon signup
-    let list = userList.filter(s => s.id !== user.uid)
+    // Show EVERYONE in the registry immediately upon signup - no filtering by role or status
+    let list = userList.filter(s => s.id !== user.uid) // Exclude current admin
     if (searchQuery) {
-      list = list.filter(s => (s.name || "").toLowerCase().includes(searchQuery.toLowerCase()))
+      list = list.filter(s =>
+        (s.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (s.email || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (s.position || "").toLowerCase().includes(searchQuery.toLowerCase())
+      )
     }
-    // Client-side sort to ensure robustness
-    return list.sort((a, b) => (a.name || "").localeCompare(b.name || ""))
+    // Sort alphabetically by name, then by role priority
+    return list.sort((a, b) => {
+      // First sort by role (admins first, then staff)
+      const roleOrder = { 'admin': 0, 'staff': 1 }
+      const roleDiff = (roleOrder[a.role] || 2) - (roleOrder[b.role] || 2)
+      if (roleDiff !== 0) return roleDiff
+
+      // Then sort alphabetically by name
+      return (a.name || "").localeCompare(b.name || "")
+    })
   }, [userList, searchQuery, user])
 
   useEffect(() => {

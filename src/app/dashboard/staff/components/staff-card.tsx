@@ -231,7 +231,7 @@ export function StaffCard({ staff, onEdit }: StaffCardProps) {
               className={cn(
                 "capitalize px-3 py-1 border-none font-bold text-[10px] tracking-widest rounded-lg",
                 staff.status === "active" && "bg-green-50 text-green-600",
-                staff.status === "pending" && "bg-orange-50 text-orange-600",
+                (staff.status as string) === "pending" && "bg-orange-50 text-orange-600",
                 staff.status === "inactive" && "bg-red-50 text-red-600"
               )}
             >

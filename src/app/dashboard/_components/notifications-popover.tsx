@@ -31,7 +31,7 @@ export function NotificationsPopover() {
     )
   }, [firestore, user])
 
-  const { data: notifications, loading } = useCollection<Notification>(notificationsQuery)
+  const { data: notifications, loading } = useCollection<Notification>(notificationsQuery as any)
 
   const unreadCount = useMemo(() => 
     notifications?.filter(n => !n.read).length || 0, 
