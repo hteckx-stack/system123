@@ -25,7 +25,8 @@ export const createDuty = async (
   description: string,
   documentUrl?: string,
   documentFileName?: string,
-  documentType?: string
+  documentType?: string,
+  comments?: string
 ) => {
   const docRef = await addDoc(collection(firestore, "duties"), {
     staff_id: staffId,
@@ -35,6 +36,7 @@ export const createDuty = async (
     documentUrl: documentUrl || null,
     documentFileName: documentFileName || null,
     documentType: documentType || null,
+    comments: comments || null,
     created_at: serverTimestamp()
   })
   return docRef.id

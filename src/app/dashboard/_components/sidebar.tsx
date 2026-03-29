@@ -13,6 +13,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronDown,
+  FileText,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/firebase"
@@ -27,6 +28,7 @@ import {
 const navItems = [
   { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { title: "Staff Directory", href: "/dashboard/staff", icon: Users },
+  { title: "Duties", href: "/dashboard/duties", icon: FileText },
   { title: "Leave Requests", href: "/dashboard/leave-requests", icon: CalendarDays },
   { 
     title: "Chat Hub", 

@@ -135,6 +135,7 @@ export type Duty = {
   documentUrl?: string | null;
   documentFileName?: string | null;
   documentType?: string | null;
+  comments?: string | null;
   created_at: Timestamp;
 };
 
