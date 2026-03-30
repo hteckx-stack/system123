@@ -42,6 +42,23 @@ export default function DutiesPage() {
   ), [firestore])
   const { data: userList, loading: userLoading } = useCollection<Staff>(userQuery as any)
 
+  // Fetch all duties for counting
+  const allDutiesQuery = useMemo(() => query(
+    collection(firestore, "duties"),
+    orderBy("created_at", "desc")
+  ), [firestore])
+  const { data: allDuties, loading: allDutiesLoading } = useCollection<Duty>(allDutiesQuery as any)
+
+  // Calculate duty counts per staff
+  const dutyCounts = useMemo(() => {
+    if (!allDuties) return {}
+    const counts: Record<string, number> = {}
+    allDuties.forEach(duty => {
+      counts[duty.staff_id] = (counts[duty.staff_id] || 0) + 1
+    })
+    return counts
+  }, [allDuties])
+
   // Fetch duties for selected user
   const dutiesQuery = useMemo(() => {
     if (!selectedStaff) return null
@@ -107,7 +124,7 @@ export default function DutiesPage() {
           </h1>
           <p className="text-muted-foreground">
             {viewMode === 'staff-list' && 'View duty submissions from all staff members'}
-            {viewMode === 'staff-duties' && 'Browse all submitted duties from this staff member'}
+            {viewMode === 'staff-duties' && `Browse all submitted duties from this staff member (${userDuties?.length || 0} submissions)`}
             {viewMode === 'duty-documents' && 'View all documents submitted for this duty'}
           </p>
         </div>
@@ -116,7 +133,7 @@ export default function DutiesPage() {
       {/* Staff List View */}
       {viewMode === 'staff-list' && (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {userLoading ? (
+          {userLoading || allDutiesLoading ? (
             Array.from({ length: 6 }).map((_, i) => (
               <Card key={i} className="border-none shadow-soft bg-white rounded-3xl">
                 <CardContent className="p-6">
@@ -143,7 +160,12 @@ export default function DutiesPage() {
                         <p className="text-sm text-muted-foreground">{staff.position}</p>
                       </div>
                     </div>
-                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary" className="bg-[#0D47A1]/10 text-[#0D47A1]">
+                        {dutyCounts[staff.id] || 0} duties
+                      </Badge>
+                      <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                    </div>
                   </div>
                 </CardContent>
               </Card>

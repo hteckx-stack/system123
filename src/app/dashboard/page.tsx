@@ -295,7 +295,7 @@ export default function Dashboard() {
 
       <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
         {[
-          { title: "System Registry", value: stats.total, icon: Users, color: "text-blue-500", label: "Total Users" },
+          { title: "Total Registered Users", value: stats.total, icon: Users, color: "text-blue-500", label: "System Registry" },
           { title: "Pending Review", value: stats.pending, icon: UserPlus, color: "text-orange-500", label: "Awaiting Action" },
           { title: "Active Staff", value: stats.active, icon: ShieldCheck, color: "text-green-500", label: "Authorized" },
           { title: "Live GPS Hits", value: stats.liveCheckins, icon: Zap, color: "text-primary", label: "Real-time" },
